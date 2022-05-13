@@ -1,0 +1,74 @@
+dns: # DNS service providers
+  providers:
+    infblxA: # Infoblox NIOS over WAPI
+      type: infblx
+      id: infblxA
+      name: Infoblox A
+      url: https://infoblox.example.com/wapi/v2.10
+      auth: #endpoint specific
+        user: username
+        pass: password
+    infblxB:
+      type: infblx
+      name: Infoblox B
+      url: https://infoblox.example.org/wapi/v2.8
+      auth:
+        user: username
+        pass: password
+    dns3l:
+      type: otc # Open Telekom Cloud (OTC) DNS
+      name: DNS3L Labs Inc. OTC tenant
+      url: https://dns.eu-de.otc.t-systems.com/v2
+      auth:
+        ak: access key ID
+        sk: secret access key
+# somepdns:
+#   type: pdns # PowerDNS AS
+#   ...
+ca: #ACME and none ACME CA
+  providers:
+    le: #Add least /directory to endpoint URL
+      type: acme
+      name: Let's Encrypt
+      catype: public
+      url: https://acme-v02.api.letsencrypt.org
+      roots: https://letsencrypt.org/certificates/
+    tsec-staging:
+      type: acme
+      name: T-Sec Trust Center ACME Staging
+      catype: public
+      url: https://acme.npp.test.telesec.de/v2
+      auth: #CA specific
+        account: Account Id
+        key: EAB KeyId
+        hmac: EAB HMAC
+      roots: https://www.telesec.de/en/root-program/root-program/overview/
+    step:
+      type: acme
+      name: ACME RA for Smallstep CM
+      catype: private
+      url: https://acme.example.com/acme/acme
+      roots: null
+    tsec:
+      type: legacy
+      name: T-Sec Trust Center
+      catype: public
+      roots: https://www.telesec.de/en/root-program/root-program/overview/
+#AutoDNS & DNS-01 validation
+#DNS provider implementations shall support zone nesting
+#For legacy CA a CSR template can be assigned to each rtzn implicitly by convention
+rtzn:
+  - root: .foo.example.org
+    autodns: null
+    acmedns: dns3l
+    ca:
+      - step
+      - tsec
+  - root: .bar.example.com
+    autodns: infblxA
+    acmedns: dns3l
+    ca: ['*'] 
+  - root: .foo.bar.example.com
+    autodns: infblxB
+    acmedns: dns3l
+    ca: ['*']
