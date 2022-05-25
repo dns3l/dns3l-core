@@ -29,6 +29,12 @@ make
 
 to obtain a statically linked binary.
 
+To obtain a Docker image, run
+
+```
+docker build -t <tag-name> -f docker/Dockerfile-dns3ld .
+```
+
 # Usage
 
 ```
