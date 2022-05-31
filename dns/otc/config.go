@@ -7,9 +7,13 @@ type Config struct {
 	Name string `yaml:"name"`
 	URL  string `yaml:"url"`
 	Auth struct {
-		AccessKey string `yaml:"ak"`
-		SecretKey string `yaml:"sk"`
+		AuthURL     string `yaml:"authurl"`
+		ProjectName string `yaml:"projectname"`
+		ProjectID   string `yaml:"projectid"`
+		AccessKey   string `yaml:"ak"`
+		SecretKey   string `yaml:"sk"`
 	} `yaml:"auth"`
+	OSRegion string `yaml:"os-region"`
 }
 
 func (c *Config) NewInstance() (dns_types.DNSProvider, error) {

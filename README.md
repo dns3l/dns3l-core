@@ -56,3 +56,13 @@ Example
 ```
 ./dns3ld --config config-example.yaml --socket 127.0.0.1:8080
 ```
+
+# Test
+
+dns3ld will test with real (maybe non-production but staging) endpoints.
+Therefore, credentials must be given in the `config-example.yaml` format.
+
+```
+export DNS3L_TEST_CONFIG=/my/secret/folder/dns3l-config4test.yaml
+go test ./...
+```

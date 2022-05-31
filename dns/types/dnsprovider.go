@@ -14,4 +14,8 @@ type DNSProviderInfo struct {
 
 type DNSProvider interface {
 	GetInfo() *DNSProviderInfo
+	SetRecordAcmeChallenge(domainName string, challenge string) error
+	SetRecordA(domainName string, ipv4Addr string) error
+	DeleteRecordAcmeChallenge(domainName string) error
+	DeleteRecordA(domainName string) error
 }

@@ -20,8 +20,12 @@ dns: # DNS service providers
       name: DNS3L Labs Inc. OTC tenant
       url: https://dns.eu-de.otc.t-systems.com/v2
       auth:
+        authurl: https://iam.eu-de.otc.t-systems.com/v3
+        projectname: #omitted
+        projectid: #omitted
         ak: access key ID
         sk: secret access key
+      os-region: eu-de
 # somepdns:
 #   type: pdns # PowerDNS AS
 #   ...

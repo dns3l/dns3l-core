@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	github.com/gorilla/mux v1.8.0
+	github.com/huaweicloud/golangsdk v0.0.0-20210831081626-d823fe11ceba
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.4.0
 	gopkg.in/yaml.v2 v2.4.0
