@@ -17,7 +17,7 @@ var rootCmd = &cobra.Command{
 			panic(err)
 		}
 		conf := service.Config{}
-		err = conf.FromFile(confPath) //TODO: parameterize
+		err = conf.FromFile(confPath)
 		if err != nil {
 			panic(err)
 		}

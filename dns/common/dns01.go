@@ -2,9 +2,12 @@ package common
 
 import (
 	"errors"
+	"math/rand"
 	"regexp"
 	"strings"
 )
+
+var acmeChallengeRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_=-")
 
 var acmeChallengeRe = regexp.MustCompile(`^[A-Za-z0-9_=-]{1,64}$`)
 
@@ -33,4 +36,12 @@ func ValidateAcmeChallengeInput(challenge string) error {
 		return nil
 	}
 	return errors.New("ACME challenge provided has invalid format or is too long")
+}
+
+func GenerateAcmeChallenge() string {
+	b := make([]rune, 64)
+	for i := range b {
+		b[i] = acmeChallengeRunes[rand.Intn(len(acmeChallengeRunes))]
+	}
+	return string(b)
 }

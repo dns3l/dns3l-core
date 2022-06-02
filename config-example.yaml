@@ -4,21 +4,25 @@ dns: # DNS service providers
       type: infblx
       id: infblxA
       name: Infoblox A
-      url: https://infoblox.example.com/wapi/v2.10
+      #url: https://infoblox.example.com/wapi/v2.10
+      host: foo.bar2.local
+      port: 12345
+      version: v2.10
       auth: #endpoint specific
         user: username
         pass: password
     infblxB:
       type: infblx
       name: Infoblox B
-      url: https://infoblox.example.org/wapi/v2.8
+      host: foo.bar.local
+      port: 1234
+      version: v2.8
       auth:
         user: username
         pass: password
     dns3l:
       type: otc # Open Telekom Cloud (OTC) DNS
       name: DNS3L Labs Inc. OTC tenant
-      url: https://dns.eu-de.otc.t-systems.com/v2
       auth:
         authurl: https://iam.eu-de.otc.t-systems.com/v3
         projectname: #omitted

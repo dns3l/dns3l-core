@@ -11,7 +11,7 @@ func (p *DNSProvider) GetInfo() *types.DNSProviderInfo {
 	return &types.DNSProviderInfo{
 		Name:        p.c.Name,
 		Feature:     []string{"A", "TXT"},
-		ZoneNesting: false, //TODO
+		ZoneNesting: true,
 	}
 
 }
