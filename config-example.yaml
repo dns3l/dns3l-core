@@ -39,13 +39,13 @@ ca: #ACME and none ACME CA
       type: acme
       name: Let's Encrypt
       catype: public
-      url: https://acme-v02.api.letsencrypt.org
+      url: https://acme-v02.api.letsencrypt.org/directory
       roots: https://letsencrypt.org/certificates/
     tsec-staging:
       type: acme
       name: T-Sec Trust Center ACME Staging
       catype: public
-      url: https://acme.npp.test.telesec.de/v2
+      url: https://acme.npp.test.telesec.de/v2/directory
       auth: #CA specific
         account: Account Id
         key: EAB KeyId
@@ -55,7 +55,7 @@ ca: #ACME and none ACME CA
       type: acme
       name: ACME RA for Smallstep CM
       catype: private
-      url: https://acme.example.com/acme/acme
+      url: https://acme.example.com/acme/acme/directory
       roots: null
     tsec:
       type: legacy

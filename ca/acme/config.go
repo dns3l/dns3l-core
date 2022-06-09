@@ -11,7 +11,8 @@ type Config struct {
 		User string `yaml:"user"`
 		Pass string `yaml:"pass"`
 	} `yaml:"auth"`
-	Roots string `yaml:"roots"`
+	Roots                 string `yaml:"roots"`
+	DaysRenewBeforeExpiry int    `yaml:"daysRenewBeforeExpiry" default:"16"`
 }
 
 func (c *Config) NewInstance() (ca_types.CAProvider, error) {
