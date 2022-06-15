@@ -12,13 +12,13 @@ type CAStateManagerSession interface {
 	Close() error
 
 	//returns privKey, expiryTime, error
-	GetCACertByID(keyname string) (*CACertInfo, error)
+	GetCACertByID(keyname string, caid string) (*CACertInfo, error)
 
-	PutCACertData(update bool, keyname string, info *CACertInfo, certStr, issuerCertStr string) error
+	PutCACertData(update bool, keyname string, caid string, info *CACertInfo, certStr, issuerCertStr string) error
 
-	GetResource(keyID string, resourceName string) (string, error)
+	GetResource(keyID string, caid string, resourceName string) (string, error)
 
-	GetResources(keyID string, resourceNames ...string) ([]string, error)
+	GetResources(keyID string, caid string, resourceNames ...string) ([]string, error)
 }
 
 //A NotFoundError is thrown if the requested resource was not found or is not supposed

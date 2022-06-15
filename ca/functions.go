@@ -11,16 +11,16 @@ type CAFunctionHandler struct {
 	State  types.CAStateManager
 }
 
-func (h *CAFunctionHandler) GetResource(keyID, objectType string) (string, string, error) {
+func (h *CAFunctionHandler) GetResource(keyID, caID, objectType string) (string, string, error) {
 
-	return h.getResourceNoUpd(keyID, objectType)
+	return h.getResourceNoUpd(keyID, caID, objectType)
 
 }
 
 // GetResource returns an autokey-obtained resource (key, cert, issuer etc..) to the user
 // of the autokey service. The GetUpdate function must be called first, otherwise
 // GetObject will return NotFoundError because the resources are not yet present.
-func (h *CAFunctionHandler) getResourceNoUpd(keyID, objectType string) (string, string, error) {
+func (h *CAFunctionHandler) getResourceNoUpd(keyID, caID, objectType string) (string, string, error) {
 
 	err := common.ValidateKeyName(keyID)
 	if err != nil {
@@ -39,16 +39,16 @@ func (h *CAFunctionHandler) getResourceNoUpd(keyID, objectType string) (string, 
 	switch objectType {
 	case "key":
 		//"resourceName" of sess.GetResource must never be user input > not validated!
-		res, err := sess.GetResource(keyID, "priv_key")
+		res, err := sess.GetResource(keyID, caID, "priv_key")
 		return res, "application/x-pem-file", err
 	case "crt":
-		res, err := sess.GetResource(keyID, "cert")
+		res, err := sess.GetResource(keyID, caID, "cert")
 		return res, "application/x-pem-file", err
 	case "issuer-cert":
-		res, err := sess.GetResource(keyID, "issuer_cert")
+		res, err := sess.GetResource(keyID, caID, "issuer_cert")
 		return res, "application/x-pem-file", err
 	case "fullchain":
-		res, err := sess.GetResources(keyID, "cert", "issuer_cert")
+		res, err := sess.GetResources(keyID, caID, "cert", "issuer_cert")
 		return res[0] + "\n" + res[1], "application/x-pem-file", err
 	}
 	return "", "", &types.NotFoundError{}

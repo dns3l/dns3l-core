@@ -30,9 +30,10 @@ func (s *CAStateManagerSQLSession) Close() error {
 	return s.db.Close()
 }
 
-func (s *CAStateManagerSQLSession) GetCACertByID(keyname string) (*types.CACertInfo, error) {
-	row := s.db.QueryRow("SELECT priv_key, acme_user, issued_by, domains, expiry_time, valid_start_time FROM "+s.prov.Prov.DBName("keycerts")+" WHERE key_name=$1 LIMIT 1",
-		keyname)
+func (s *CAStateManagerSQLSession) GetCACertByID(keyname string, caid string) (*types.CACertInfo, error) {
+	row := s.db.QueryRow("SELECT priv_key, acme_user, issued_by, domains, expiry_time, valid_start_time "+
+		"FROM "+s.prov.Prov.DBName("keycerts")+" WHERE key_name=$1 AND ca_id=$2 LIMIT 1", keyname,
+		caid)
 	info := &types.CACertInfo{}
 	var expiryTimeStr string
 	var validityStartTimeStr string
@@ -61,7 +62,7 @@ func (s *CAStateManagerSQLSession) GetCACertByID(keyname string) (*types.CACertI
 
 }
 
-func (s *CAStateManagerSQLSession) PutCACertData(update bool, keyname string, info *types.CACertInfo, certStr,
+func (s *CAStateManagerSQLSession) PutCACertData(update bool, keyname string, caid string, info *types.CACertInfo, certStr,
 	issuerCertStr string) error {
 	expiryTimeStr := sql.TimeToDBStr(info.ExpiryTime)
 	validStartTimeStr := sql.TimeToDBStr(info.ValidStartTime)
@@ -71,9 +72,10 @@ func (s *CAStateManagerSQLSession) PutCACertData(update bool, keyname string, in
 		log.Debugf("Updating certificate data for key '%s' in database",
 			keyname)
 		_, err := s.db.Exec(`UPDATE `+s.prov.Prov.DBName("keycerts")+` SET cert=$1, issuer_cert=$2, `+
-			`acme_user=$3, issued_by=$4, domains=$5, expiry_time=$6, valid_start_time=$7 WHERE key_name=$8;`,
+			`acme_user=$3, issued_by=$4, domains=$5, expiry_time=$6, valid_start_time=$7 `+
+			`WHERE key_name=$8 AND ca_id=$9;`,
 			certStr, issuerCertStr, info.ACMEUser, info.IssuedByUser, domainsStr,
-			expiryTimeStr, validStartTimeStr, keyname)
+			expiryTimeStr, validStartTimeStr, keyname, caid)
 		if err != nil {
 			return fmt.Errorf("problem while storing new cert for existing key in database: %v",
 				err)
@@ -83,10 +85,10 @@ func (s *CAStateManagerSQLSession) PutCACertData(update bool, keyname string, in
 
 	log.Debugf("Storing new cert/key pair '%s' for user '%s' in database",
 		keyname, info.ACMEUser)
-	_, err := s.db.Exec(`INSERT INTO `+s.prov.Prov.DBName("keycerts")+` (key_name, `+
+	_, err := s.db.Exec(`INSERT INTO `+s.prov.Prov.DBName("keycerts")+` (key_name, ca_id,`+
 		`acme_user, issued_by, priv_key, cert, issuer_cert, domains, expiry_time, valid_start_time) `+
-		`values ($1, $2, $3, $4, $5, $6, $7, $8, $9);`,
-		keyname, info.ACMEUser, info.IssuedByUser, info.PrivKey, certStr,
+		`values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);`,
+		keyname, caid, info.ACMEUser, info.IssuedByUser, info.PrivKey, certStr,
 		issuerCertStr, domainsStr, expiryTimeStr, validStartTimeStr)
 	if err != nil {
 		return fmt.Errorf("problem while storing new key and cert in database: %v", err)
@@ -96,9 +98,9 @@ func (s *CAStateManagerSQLSession) PutCACertData(update bool, keyname string, in
 
 }
 
-func (s *CAStateManagerSQLSession) GetResource(keyName, resourceName string) (string, error) {
+func (s *CAStateManagerSQLSession) GetResource(keyName, caid, resourceName string) (string, error) {
 
-	returns, err := s.GetResources(keyName, resourceName)
+	returns, err := s.GetResources(keyName, caid, resourceName)
 	if err != nil {
 		return "", err
 	}
@@ -109,7 +111,7 @@ func (s *CAStateManagerSQLSession) GetResource(keyName, resourceName string) (st
 
 }
 
-func (s *CAStateManagerSQLSession) GetResources(keyName string, resourceNames ...string) ([]string, error) {
+func (s *CAStateManagerSQLSession) GetResources(keyName, caid string, resourceNames ...string) ([]string, error) {
 
 	returns := make([]string, len(resourceNames))
 	returns_ptr := make([]interface{}, len(resourceNames))

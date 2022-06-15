@@ -9,6 +9,7 @@ import (
 )
 
 type ACMEStateManagerSQL struct {
+	CAID string
 	Prov sql.SQLDBProvider
 }
 
@@ -32,7 +33,7 @@ func (s *ACMEStateManagerSQLSession) Close() error {
 func (s *ACMEStateManagerSQLSession) GetACMEUserPrivkeyByID(userid string) (string, string, error) {
 
 	row := s.db.QueryRow(`select privatekey, registration from `+s.prov.Prov.DBName("users")+
-		` where user_id = $1 limit 1;`, userid)
+		` where user_id = $1 AND ca_id = $2 limit 1;`, userid, s.prov.CAID)
 
 	var keyStr string
 	var registrationStr string
@@ -51,8 +52,8 @@ func (s *ACMEStateManagerSQLSession) PutACMEUser(userid, privatekey,
 	registrationStr string, registrationDate time.Time) error {
 
 	_, err := s.db.Exec(`INSERT INTO `+s.prov.Prov.DBName("users")+
-		` (user_id, privatekey, registration, registration_date) values ($1, $2, $3, $4);`,
-		userid, privatekey, registrationStr, sql.TimeToDBStr(registrationDate))
+		` (user_id, ca_id, privatekey, registration, registration_date) values ($1, $2, $3, $4, $5);`,
+		userid, s.prov.CAID, privatekey, registrationStr, sql.TimeToDBStr(registrationDate))
 
 	if err != nil {
 		return fmt.Errorf("problem while obtaining certificate: %v", err)

@@ -46,7 +46,10 @@ func TestWithLEStaging() {
 		Prov: dbprov,
 	}
 
+	caID := "foo"
+
 	e := acme.Engine{
+		CAID: caID,
 		Conf: &acme.Config{
 			ID:                    "test-lestaging",
 			Name:                  "Test LE Staging",
@@ -57,6 +60,7 @@ func TestWithLEStaging() {
 		},
 		DNSConf: c.DNS,
 		State: &acme.ACMEStateManagerSQL{
+			CAID: caID,
 			Prov: dbprov,
 		},
 		CAState: casm,
@@ -110,7 +114,7 @@ func TestWithLEStaging() {
 		}
 	}
 
-	key, ctype, err := h.GetResource(keyid, "key")
+	key, ctype, err := h.GetResource(keyid, caID, "key")
 	if err != nil {
 		panic(err)
 	}
@@ -124,7 +128,7 @@ func TestWithLEStaging() {
 		panic(err)
 	}
 
-	crt, ctype, err := h.GetResource(keyid, "crt")
+	crt, ctype, err := h.GetResource(keyid, caID, "crt")
 	if err != nil {
 		panic(err)
 	}
@@ -132,7 +136,7 @@ func TestWithLEStaging() {
 	if err != nil {
 		panic(err)
 	}
-	fullchain, ctype, err := h.GetResource(keyid, "fullchain")
+	fullchain, ctype, err := h.GetResource(keyid, caID, "fullchain")
 	if err != nil {
 		panic(err)
 	}

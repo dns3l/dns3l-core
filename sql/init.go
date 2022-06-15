@@ -7,8 +7,8 @@ import (
 func getSQLInitStatement(dbProv SQLDBProvider) string {
 	return `
 -- CREATE INDEX user_idx ON ` + dbProv.DBName("users") + `(user_id);
-CREATE TABLE IF NOT EXISTS ` + dbProv.DBName("users") + ` (user_id TEXT PRIMARY KEY, privatekey TEXT, registration TEXT, registration_date TIMESTAMP);
-CREATE TABLE IF NOT EXISTS ` + dbProv.DBName("keycerts") + ` (key_name TEXT PRIMARY KEY, acme_user TEXT, issued_by TEXT, priv_key TEXT, cert TEXT, issuer_cert TEXT, domains TEXT, expiry_time TIMESTAMP, valid_start_time TIMESTAMP);
+CREATE TABLE IF NOT EXISTS ` + dbProv.DBName("users") + ` (user_id TEXT, ca_id TEXT, privatekey TEXT, registration TEXT, registration_date TIMESTAMP, PRIMARY KEY (user_id, ca_id));
+CREATE TABLE IF NOT EXISTS ` + dbProv.DBName("keycerts") + ` (key_name TEXT, ca_id TEXT, acme_user TEXT, issued_by TEXT, priv_key TEXT, cert TEXT, issuer_cert TEXT, domains TEXT, expiry_time TIMESTAMP, valid_start_time TIMESTAMP, PRIMARY KEY (key_name, ca_id));
 `
 }
 

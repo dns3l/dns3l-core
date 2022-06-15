@@ -24,6 +24,7 @@ const keyBitLength = 2048
 
 //The Engine is created to have a consistent, object-based handle for Autokey operations
 type Engine struct {
+	CAID    string
 	Conf    *Config
 	DNSConf *dns.Config
 	State   ACMEStateManager
@@ -73,7 +74,7 @@ func (e *Engine) TriggerUpdate(acmeuser string, keyname string, domains []string
 	}
 	defer castate.Close()
 
-	info, err := castate.GetCACertByID(keyname)
+	info, err := castate.GetCACertByID(keyname, e.CAID)
 	if err != nil {
 		return err
 	}
@@ -181,7 +182,7 @@ func (e *Engine) TriggerUpdate(acmeuser string, keyname string, domains []string
 	certStr := string(certificates.Certificate)
 	issuerCertStr := string(certificates.IssuerCertificate)
 
-	return castate.PutCACertData(!noKey, keyname, info,
+	return castate.PutCACertData(!noKey, keyname, e.CAID, info,
 		certStr, issuerCertStr)
 
 }
