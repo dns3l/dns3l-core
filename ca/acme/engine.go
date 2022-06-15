@@ -7,19 +7,18 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"regexp"
 	"strings"
 	"time"
 
-	"github.com/dta4/dns3l-go/ca/common.go"
+	"github.com/dta4/dns3l-go/ca/common"
+	"github.com/dta4/dns3l-go/ca/types"
 	dns "github.com/dta4/dns3l-go/dns"
 	dnscommon "github.com/dta4/dns3l-go/dns/common"
 	dnstypes "github.com/dta4/dns3l-go/dns/types"
+	"github.com/dta4/dns3l-go/util"
 	"github.com/go-acme/lego/v4/certificate"
 	legodns01 "github.com/go-acme/lego/v4/challenge/dns01"
 )
-
-var keyNameRe = regexp.MustCompile(`^[A-Za-z0-9_-]{1,32}$`)
 
 const keyBitLength = 2048
 
@@ -28,13 +27,16 @@ type Engine struct {
 	Conf    *Config
 	DNSConf *dns.Config
 	State   ACMEStateManager
+	CAState types.CAStateManager
 }
 
 //TriggerUpdate ensures that a key/certificate pair of the given line is available. It expects that the user
 //is authenticated and authorized for the requested domain.
 //It will look up the current state of the user and the key/certificate and ensures that the user and
 //the requested key/cert is present.
-func (e *Engine) TriggerUpdate(uid string, keyname string, domains []string, dnsProviderID, email string) error {
+func (e *Engine) TriggerUpdate(acmeuser string, keyname string, domains []string, dnsProviderID, email, issuedBy string) error {
+
+	keyMustExist := acmeuser == "" || len(domains) <= 0
 
 	for _, domain := range domains {
 		err := dnscommon.ValidateDomainNameWildcard(domain)
@@ -43,19 +45,21 @@ func (e *Engine) TriggerUpdate(uid string, keyname string, domains []string, dns
 		}
 	}
 
-	err := validateKeyName(keyname)
+	err := common.ValidateKeyName(keyname)
 	if err != nil {
 		return err
 	}
 
-	log.Infof("Trigger request by user '%s' for key '%s', domains '%s'", uid, keyname, strings.Join(domains, ","))
+	log.Infof("Trigger request by user '%s' for key '%s', domains '%s'", acmeuser, keyname, strings.Join(domains, ","))
 
-	domainsSanitized, err := sanitizeDomains(domains)
-	if err != nil {
-		return err
+	var domainsSanitized []string //Domains that came in new..
+	if domains != nil {
+		domainsSanitized, err = sanitizeDomains(domains)
+		if err != nil {
+			return err
+		}
+		log.Debugf("Domains '%s' validated and sanitized. Checking for existing keys/certificates...", strings.Join(domains, ","))
 	}
-
-	log.Debugf("Domains '%s' validated and sanitized. Checking for existing keys/certificates...", strings.Join(domains, ","))
 
 	state, err := e.State.NewSession()
 	if err != nil {
@@ -63,33 +67,68 @@ func (e *Engine) TriggerUpdate(uid string, keyname string, domains []string, dns
 	}
 	defer state.Close()
 
-	privKeyStr, expiryTime, err := state.GetACMECertPrivkeyByID(keyname, uid)
+	castate, err := e.CAState.NewSession()
+	if err != nil {
+		return err
+	}
+	defer castate.Close()
+
+	info, err := castate.GetCACertByID(keyname)
 	if err != nil {
 		return err
 	}
 
-	noKey := privKeyStr == ""
+	noKey := info == nil
 
 	if !noKey {
-		now := time.Now()
-		renewalDate := expiryTime.AddDate(0, 0, -e.Conf.DaysRenewBeforeExpiry)
-		if now.Before(renewalDate) {
-			//Not yet due for renewal
-			return &NoRenewalDueError{RenewalDate: renewalDate}
+
+		forceUpdate := false
+		if len(domainsSanitized) > 0 && !util.StringSlicesEqual(info.Domains, domainsSanitized) {
+			log.Warnf("Domains for key %s have changed from %v to %v, must force update.",
+				keyname, info.Domains, domainsSanitized)
+			info.Domains = domainsSanitized
+			forceUpdate = true
 		}
-		log.Infof("Key '%s' for user '%s' exists, cert is due for renewal", keyname, uid)
+		if acmeuser != "" && acmeuser != info.ACMEUser {
+			log.Warnf("ACME user for key %s has changed from %s to %s, must force update.",
+				keyname, info.ACMEUser, acmeuser)
+			info.ACMEUser = acmeuser
+			forceUpdate = true
+		}
+		if issuedBy != "" && info.IssuedByUser != issuedBy {
+			log.Infof("Issued-by-user for key %s has changed from %s to %s")
+			info.IssuedByUser = issuedBy
+		}
+
+		now := time.Now()
+		if !forceUpdate {
+			renewalDate := info.ExpiryTime.AddDate(0, 0, -e.Conf.DaysRenewBeforeExpiry)
+			if now.Before(renewalDate) {
+				//Not yet due for renewal
+				return &NoRenewalDueError{RenewalDate: renewalDate}
+			}
+			log.Infof("Key '%s' exists, cert is due for renewal", keyname)
+		}
 	}
 
 	var privKey *rsa.PrivateKey
 	if noKey {
-		log.Infof("Generating new RSA private key '%s' for user '%s'", keyname, uid)
+		if keyMustExist {
+			return &types.NotFoundError{}
+		}
+		info = &types.CACertInfo{
+			ACMEUser:     acmeuser,
+			Domains:      domainsSanitized,
+			IssuedByUser: issuedBy,
+		}
+		log.Infof("Generating new RSA private key '%s' issued by user '%s'", keyname, acmeuser)
 		privKey, err = generateRSAPrivateKey()
 		if err != nil {
 			return err
 		}
-		privKeyStr = common.RSAPrivKeyToStr(privKey)
+		info.PrivKey = common.RSAPrivKeyToStr(privKey)
 	} else {
-		privKey, err = common.RSAPrivKeyFromStr(privKeyStr)
+		privKey, err = common.RSAPrivKeyFromStr(info.PrivKey)
 		if err != nil {
 			return err
 		}
@@ -98,7 +137,7 @@ func (e *Engine) TriggerUpdate(uid string, keyname string, domains []string, dns
 	var u User = &DefaultUser{
 		Config: e.Conf,
 		State:  state,
-		UID:    uid,
+		UID:    acmeuser,
 		Email:  email,
 	}
 
@@ -118,12 +157,12 @@ func (e *Engine) TriggerUpdate(uid string, keyname string, domains []string, dns
 	}
 
 	request := certificate.ObtainRequest{
-		Domains:    domainsSanitized,
+		Domains:    info.Domains,
 		PrivateKey: privKey,
 		Bundle:     true,
 	}
 	log.Debugf("Requesting new certificate for key '%s', user '%s' via ACME",
-		keyname, uid)
+		keyname, acmeuser)
 	certificates, err := u.GetClient().Certificate.Obtain(request)
 	if err != nil {
 		return err
@@ -136,11 +175,14 @@ func (e *Engine) TriggerUpdate(uid string, keyname string, domains []string, dns
 	if len(cert) <= 0 {
 		return errors.New("no certs have been returned")
 	}
+
+	info.ValidStartTime = cert[0].NotBefore
+	info.ExpiryTime = cert[0].NotAfter
 	certStr := string(certificates.Certificate)
 	issuerCertStr := string(certificates.IssuerCertificate)
 
-	return state.PutACMECertData(!noKey, uid, keyname, privKeyStr,
-		certStr, issuerCertStr, cert[0].NotAfter)
+	return castate.PutCACertData(!noKey, keyname, info,
+		certStr, issuerCertStr)
 
 }
 
@@ -222,49 +264,4 @@ func parseCertificatePEM(certificate []byte) ([]*x509.Certificate, error) {
 
 	return result, nil
 
-}
-
-// GetResource returns an autokey-obtained resource (key, cert, issuer etc..) to the user
-// of the autokey service. The GetUpdate function must be called first, otherwise
-// GetObject will return NotFoundError because the resources are not yet present.
-func (e *Engine) GetResource(keyName, userID, objectType string) (string, string, error) {
-
-	err := validateKeyName(keyName)
-	if err != nil {
-		return "", "", err
-	}
-
-	log.Debugf("Request for resource '%s' belonging to key name '%s' by user '%s'",
-		objectType, keyName, userID)
-
-	sess, err := e.State.NewSession()
-	if err != nil {
-		return "", "", err
-	}
-	defer sess.Close()
-
-	switch objectType {
-	case "key":
-		//"resourceName" of sess.GetResource must never be user input > not validated!
-		res, err := sess.GetResource(keyName, userID, "priv_key")
-		return res, "application/x-pem-file", err
-	case "crt":
-		res, err := sess.GetResource(keyName, userID, "cert")
-		return res, "application/x-pem-file", err
-	case "issuer-cert":
-		res, err := sess.GetResource(keyName, userID, "issuer_cert")
-		return res, "application/x-pem-file", err
-	case "fullchain":
-		res, err := sess.GetResources(keyName, userID, "cert", "issuer_cert")
-		return res[0] + "\n" + res[1], "application/x-pem-file", err
-	}
-	return "", "", &NotFoundError{}
-
-}
-
-func validateKeyName(key string) error {
-	if keyNameRe.MatchString(key) {
-		return nil
-	}
-	return errors.New("key_name provided has invalid format or is too long")
 }

@@ -1,4 +1,4 @@
-package acme
+package test
 
 import (
 	sqlraw "database/sql"
@@ -7,6 +7,9 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/dta4/dns3l-go/ca"
+	"github.com/dta4/dns3l-go/ca/acme"
+	"github.com/dta4/dns3l-go/ca/types"
 	dns "github.com/dta4/dns3l-go/dns"
 	dnscommon "github.com/dta4/dns3l-go/dns/common"
 	"github.com/dta4/dns3l-go/sql"
@@ -39,19 +42,28 @@ func TestWithLEStaging() {
 		},
 	}
 
-	e := Engine{
-		Conf: &Config{
+	var casm types.CAStateManager = &ca.CAStateManagerSQL{
+		Prov: dbprov,
+	}
+
+	e := acme.Engine{
+		Conf: &acme.Config{
 			ID:                    "test-lestaging",
 			Name:                  "Test LE Staging",
 			CAType:                "public",
 			URL:                   "https://acme-staging-v02.api.letsencrypt.org/directory",
 			Roots:                 "",
-			DaysRenewBeforeExpiry: 16,
+			DaysRenewBeforeExpiry: 100, //16,
 		},
 		DNSConf: c.DNS,
-		State: &ACMEStateManagerSQL{
+		State: &acme.ACMEStateManagerSQL{
 			Prov: dbprov,
 		},
+		CAState: casm,
+	}
+
+	h := ca.CAFunctionHandler{
+		State: casm,
 	}
 
 	err = sql.InitDB(dbprov)
@@ -61,7 +73,8 @@ func TestWithLEStaging() {
 
 	dnsProvider := "dns3l"
 	email := "leo@nobach.net"
-	userid := "testuser1"
+	issuedBy := "testuser1"
+	acmeuser := "testacmeuser1"
 	keyid := "testkey1"
 
 	domainName1, err := dnscommon.MakeNewDomainName4Test(c.DNSTest.TestableZones[dnsProvider])
@@ -73,17 +86,31 @@ func TestWithLEStaging() {
 		panic(err)
 	}
 
-	err = e.TriggerUpdate(userid, keyid, []string{domainName1, domainName2}, dnsProvider, email)
+	err = e.TriggerUpdate(acmeuser, keyid, []string{domainName1, domainName2},
+		dnsProvider, email, issuedBy)
 	if err != nil {
-		var norenew *NoRenewalDueError
+		var norenew *acme.NoRenewalDueError
 		if errors.As(err, &norenew) {
-			log.Infof("No renewal due yet, continuing. %s", norenew.RenewalDate.Format(time.RFC3339))
+			log.Infof("No renewal due yet, continuing. %s",
+				norenew.RenewalDate.Format(time.RFC3339))
 		} else {
 			panic(err)
 		}
 	}
 
-	key, ctype, err := e.GetResource(keyid, userid, "key")
+	//this should trigger updating the existing key while getting details from database
+	err = e.TriggerUpdate("", keyid, nil, dnsProvider, email, "")
+	if err != nil {
+		var norenew *acme.NoRenewalDueError
+		if errors.As(err, &norenew) {
+			log.Infof("No renewal due yet, continuing. %s",
+				norenew.RenewalDate.Format(time.RFC3339))
+		} else {
+			panic(err)
+		}
+	}
+
+	key, ctype, err := h.GetResource(keyid, "key")
 	if err != nil {
 		panic(err)
 	}
@@ -97,7 +124,7 @@ func TestWithLEStaging() {
 		panic(err)
 	}
 
-	crt, ctype, err := e.GetResource(keyid, userid, "crt")
+	crt, ctype, err := h.GetResource(keyid, "crt")
 	if err != nil {
 		panic(err)
 	}
@@ -105,7 +132,7 @@ func TestWithLEStaging() {
 	if err != nil {
 		panic(err)
 	}
-	fullchain, ctype, err := e.GetResource(keyid, userid, "crt")
+	fullchain, ctype, err := h.GetResource(keyid, "fullchain")
 	if err != nil {
 		panic(err)
 	}
