@@ -1,4 +1,4 @@
-package ca
+package state
 
 import (
 	sqlraw "database/sql"
@@ -6,11 +6,11 @@ import (
 	"strings"
 
 	"github.com/dta4/dns3l-go/ca/types"
-	"github.com/dta4/dns3l-go/sql"
+	"github.com/dta4/dns3l-go/state"
 )
 
 type CAStateManagerSQL struct {
-	Prov sql.SQLDBProvider
+	Prov state.SQLDBProvider
 }
 
 type CAStateManagerSQLSession struct {
@@ -46,12 +46,12 @@ func (s *CAStateManagerSQLSession) GetCACertByID(keyname string, caid string) (*
 		return nil, err
 	}
 
-	info.ExpiryTime, err = sql.DBStrToTime(expiryTimeStr)
+	info.ExpiryTime, err = state.DBStrToTime(expiryTimeStr)
 	if err != nil {
 		return nil, err
 	}
 
-	info.ValidStartTime, err = sql.DBStrToTime(validityStartTimeStr)
+	info.ValidStartTime, err = state.DBStrToTime(validityStartTimeStr)
 	if err != nil {
 		return nil, err
 	}
@@ -62,10 +62,28 @@ func (s *CAStateManagerSQLSession) GetCACertByID(keyname string, caid string) (*
 
 }
 
+func (s *CAStateManagerSQLSession) DelCACertByID(keyID string, caID string) error {
+	res, err := s.db.Exec("DELETE FROM "+s.prov.Prov.DBName("keycerts")+" WHERE key_name=$1 AND ca_id=$2 LIMIT 1",
+		keyID, caID)
+
+	if err == nil {
+		count, err := res.RowsAffected()
+		if err != nil {
+			return err
+		}
+		if count <= 0 {
+			return &types.NotFoundError{}
+		}
+	}
+
+	return err
+
+}
+
 func (s *CAStateManagerSQLSession) PutCACertData(update bool, keyname string, caid string, info *types.CACertInfo, certStr,
 	issuerCertStr string) error {
-	expiryTimeStr := sql.TimeToDBStr(info.ExpiryTime)
-	validStartTimeStr := sql.TimeToDBStr(info.ValidStartTime)
+	expiryTimeStr := state.TimeToDBStr(info.ExpiryTime)
+	validStartTimeStr := state.TimeToDBStr(info.ValidStartTime)
 	domainsStr := strings.Join(info.Domains, ",")
 
 	if update {
@@ -114,10 +132,10 @@ func (s *CAStateManagerSQLSession) GetResource(keyName, caid, resourceName strin
 func (s *CAStateManagerSQLSession) GetResources(keyName, caid string, resourceNames ...string) ([]string, error) {
 
 	returns := make([]string, len(resourceNames))
-	returns_ptr := make([]interface{}, len(resourceNames))
-	for i := range returns_ptr {
+	returnsPtr := make([]interface{}, len(resourceNames))
+	for i := range returnsPtr {
 		//hackity hack
-		returns_ptr[i] = &returns[i]
+		returnsPtr[i] = &returns[i]
 	}
 
 	// TODO: validate -> just to be sure it is not wrongly used in the future.
@@ -125,7 +143,7 @@ func (s *CAStateManagerSQLSession) GetResources(keyName, caid string, resourceNa
 	row := s.db.QueryRow(`SELECT `+strings.Join(resourceNames, ",")+` FROM `+s.prov.Prov.DBName("keycerts")+` WHERE key_name=$1 `+
 		`LIMIT 1`, keyName)
 
-	err := row.Scan(returns_ptr...)
+	err := row.Scan(returnsPtr...)
 	if err == sqlraw.ErrNoRows {
 		return nil, nil
 	}

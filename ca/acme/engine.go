@@ -6,15 +6,12 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
-	"fmt"
 	"strings"
 	"time"
 
 	"github.com/dta4/dns3l-go/ca/common"
 	"github.com/dta4/dns3l-go/ca/types"
-	dns "github.com/dta4/dns3l-go/dns"
 	dnscommon "github.com/dta4/dns3l-go/dns/common"
-	dnstypes "github.com/dta4/dns3l-go/dns/types"
 	"github.com/dta4/dns3l-go/util"
 	"github.com/go-acme/lego/v4/certificate"
 	legodns01 "github.com/go-acme/lego/v4/challenge/dns01"
@@ -26,16 +23,15 @@ const keyBitLength = 2048
 type Engine struct {
 	CAID    string
 	Conf    *Config
-	DNSConf *dns.Config
+	Context types.ProviderConfigurationContext
 	State   ACMEStateManager
-	CAState types.CAStateManager
 }
 
 //TriggerUpdate ensures that a key/certificate pair of the given line is available. It expects that the user
 //is authenticated and authorized for the requested domain.
 //It will look up the current state of the user and the key/certificate and ensures that the user and
 //the requested key/cert is present.
-func (e *Engine) TriggerUpdate(acmeuser string, keyname string, domains []string, dnsProviderID, email, issuedBy string) error {
+func (e *Engine) TriggerUpdate(acmeuser string, keyname string, domains []string, email, issuedBy string) error {
 
 	keyMustExist := acmeuser == "" || len(domains) <= 0
 
@@ -68,7 +64,7 @@ func (e *Engine) TriggerUpdate(acmeuser string, keyname string, domains []string
 	}
 	defer state.Close()
 
-	castate, err := e.CAState.NewSession()
+	castate, err := e.Context.GetStateMgr().NewSession()
 	if err != nil {
 		return err
 	}
@@ -147,12 +143,7 @@ func (e *Engine) TriggerUpdate(acmeuser string, keyname string, domains []string
 		return err
 	}
 
-	dnsprovider, exists := e.DNSConf.Providers[dnsProviderID]
-	if !exists {
-		return fmt.Errorf("DNS provider 's' for setting ACME challenge has not been configured")
-	}
-
-	err = u.GetClient().Challenge.SetDNS01Provider(e.NewDNSProviderDNS3L(dnsprovider.Prov))
+	err = u.GetClient().Challenge.SetDNS01Provider(e.NewDNSProviderDNS3L(e.Context))
 	if err != nil {
 		return err
 	}
@@ -198,21 +189,27 @@ func sanitizeDomains(domains []string) ([]string, error) {
 }
 
 //NewDNSProviderOTC is a factory function for creating a new DNSProviderDNS3L
-func (e *Engine) NewDNSProviderDNS3L(prov dnstypes.DNSProvider) *DNSProviderWrapper {
-	return &DNSProviderWrapper{Provider: prov}
+func (e *Engine) NewDNSProviderDNS3L(ctx types.ProviderConfigurationContext) *DNSProviderWrapper {
+	return &DNSProviderWrapper{Context: ctx}
 }
 
 //The DNSProviderWrapper implements lego's DNS01 validation hook with acmeotc
 type DNSProviderWrapper struct {
-	Provider dnstypes.DNSProvider
+	Context types.ProviderConfigurationContext
 }
 
 // Present is called when the DNS01 challenge record shall be set up in the DNS.
 // It wraps the acmeotc's DNS01 challenge setter into lego's DNS01 Present function.
 func (p *DNSProviderWrapper) Present(domain, token, keyAuth string) error {
+
+	dnsprovider, err := p.Context.GetDNSProviderForDomain(domain, true)
+	if err != nil {
+		return err
+	}
+
 	fqdn, challenge := legodns01.GetRecord(domain, keyAuth)
 	log.Debugf("Presenting challenge '%s', for domain '%s', fqdn '%s'...", challenge, domain, fqdn)
-	err := p.Provider.SetRecordAcmeChallenge(domain, challenge)
+	err = dnsprovider.SetRecordAcmeChallenge(domain, challenge)
 	if err != nil {
 		return err
 	}
@@ -223,8 +220,14 @@ func (p *DNSProviderWrapper) Present(domain, token, keyAuth string) error {
 // CleanUp is called when the DNS01 challenge record shall be set up in the DNS.
 // It wraps the acmeotc's DNS01 challenge deleter into lego's DNS01 CleanUp function.
 func (p *DNSProviderWrapper) CleanUp(domain, token, keyAuth string) error {
+
+	dnsprovider, err := p.Context.GetDNSProviderForDomain(domain, true)
+	if err != nil {
+		return err
+	}
+
 	log.Debugf("Cleaning up challenge for domain '%s'...", domain)
-	err := p.Provider.DeleteRecordAcmeChallenge(domain)
+	err = dnsprovider.DeleteRecordAcmeChallenge(domain)
 	if err != nil {
 		return err
 	}

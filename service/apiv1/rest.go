@@ -26,6 +26,11 @@ func (hdlr *RestV1Handler) Handle(r *mux.Router) {
 	r.HandleFunc("/dns/rtzn", hdlr.GetDNSRootzones)
 	r.HandleFunc("/ca", hdlr.GetCAs)
 	r.HandleFunc("/ca/{id:[A-Za-z0-9_-]+}", hdlr.GetCA)
+	r.HandleFunc("/ca/{id:[A-Za-z0-9_-]+}/crt", hdlr.HandleCAAnonCert)
+	r.HandleFunc("/ca/{caID:[A-Za-z0-9_-]+}/crt/{crtID:\\*?[A-Za-z0-9_-]+}", hdlr.HandleCANamedCert)
+	r.HandleFunc("/ca/{caID:[A-Za-z0-9_-]+}/crt/{crtID:\\*?[A-Za-z0-9_-]+}/pem", hdlr.HandleCertObjs)
+	r.HandleFunc("/ca/{caID:[A-Za-z0-9_-]+}/crt/{crtID:\\*?[A-Za-z0-9_-]+}/pem/{obj:[a-z_-]+}",
+		hdlr.HandleNamedCertObj)
 }
 
 func (hdlr *RestV1Handler) NotFound(w http.ResponseWriter, r *http.Request) {
@@ -73,6 +78,153 @@ func (hdlr *RestV1Handler) GetCA(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(200)
 	json.NewEncoder(w).Encode(ca)
+}
+
+func (hdlr *RestV1Handler) HandleCAAnonCert(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Content-Type", "application/json")
+	vars := mux.Vars(r)
+	caID, idSet := vars["id"]
+	if !idSet {
+		httpError(w, 500, "'caID' not set")
+		return
+	}
+
+	if r.Method == http.MethodPost {
+		//Claim Cert
+		cinfo := &CertClaimInfo{}
+		err := json.NewDecoder(r.Body).Decode(&cinfo)
+		if err != nil {
+			httpError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		err = hdlr.Service.ClaimCertificate(caID, cinfo)
+		if err != nil {
+			httpError(w, 500, err.Error())
+			return
+		}
+	} else if r.Method == http.MethodGet {
+		//Get info of all CA's certs
+		httpError(w, 500, "Not yet implemented")
+		return
+	} else {
+		httpError(w, 500, "Wrong method")
+		return
+	}
+
+	w.WriteHeader(200)
+}
+
+func (hdlr *RestV1Handler) HandleCANamedCert(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Content-Type", "application/json")
+	vars := mux.Vars(r)
+	caID, idSet := vars["caID"]
+	if !idSet {
+		httpError(w, 500, "'caID' not set")
+		return
+	}
+	crtID, idSet := vars["crtID"]
+	if !idSet {
+		httpError(w, 500, "'crtID' not set")
+		return
+	}
+
+	if r.Method == http.MethodDelete {
+		//Delete cert
+
+		err := hdlr.Service.DeleteCertificate(caID, crtID)
+		if err != nil {
+			httpError(w, 500, err.Error())
+			return
+		}
+	} else if r.Method == http.MethodGet {
+		httpError(w, 500, "Not yet implemented")
+		return
+	} else {
+		httpError(w, 500, "Wrong method")
+		return
+	}
+
+	w.WriteHeader(200)
+}
+
+func (hdlr *RestV1Handler) HandleCertObjs(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Content-Type", "application/json")
+	vars := mux.Vars(r)
+	caID, idSet := vars["caID"]
+	if !idSet {
+		httpError(w, 500, "'caID' not set")
+		return
+	}
+	crtID, idSet := vars["crtID"]
+	if !idSet {
+		httpError(w, 500, "'crtID' not set")
+		return
+	}
+
+	if r.Method == http.MethodGet {
+		//Get all cert PEM infos
+
+		obj, err := hdlr.Service.GetAllCertResources(caID, crtID)
+		if err != nil {
+			httpError(w, 500, err.Error())
+			return
+		}
+
+		err = json.NewEncoder(w).Encode(obj)
+		if err != nil {
+			httpError(w, 500, err.Error())
+		}
+
+	} else {
+		httpError(w, 500, "Wrong method")
+		return
+	}
+
+	w.WriteHeader(200)
+}
+
+func (hdlr *RestV1Handler) HandleNamedCertObj(w http.ResponseWriter, r *http.Request) {
+
+	vars := mux.Vars(r)
+	caID, set := vars["caID"]
+	if !set {
+		w.Header().Add("Content-Type", "application/json")
+		httpError(w, 500, "'caID' not set")
+		return
+	}
+	crtID, set := vars["crtID"]
+	if !set {
+		w.Header().Add("Content-Type", "application/json")
+		httpError(w, 500, "'crtID' not set")
+		return
+	}
+
+	obj, set := vars["obj"]
+	if !set {
+		w.Header().Add("Content-Type", "application/json")
+		httpError(w, 500, "'obj' not set")
+		return
+	}
+
+	if r.Method == http.MethodGet {
+
+		res, ctype, err := hdlr.Service.GetCertificateResource(caID, crtID, obj)
+		if err != nil {
+			w.Header().Add("Content-Type", "application/json")
+			httpError(w, 500, err.Error())
+			return
+		}
+
+		w.Header().Add("Content-Type", ctype)
+		w.WriteHeader(200)
+		w.Write([]byte(res))
+	} else {
+		w.Header().Add("Content-Type", "application/json")
+		httpError(w, 500, "Wrong method")
+		return
+	}
+
 }
 
 func httpError(w http.ResponseWriter, sc int, message string) {

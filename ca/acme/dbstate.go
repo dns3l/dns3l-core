@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/dta4/dns3l-go/sql"
+	"github.com/dta4/dns3l-go/state"
 )
 
 type ACMEStateManagerSQL struct {
 	CAID string
-	Prov sql.SQLDBProvider
+	Prov state.SQLDBProvider
 }
 
 type ACMEStateManagerSQLSession struct {
@@ -53,7 +53,7 @@ func (s *ACMEStateManagerSQLSession) PutACMEUser(userid, privatekey,
 
 	_, err := s.db.Exec(`INSERT INTO `+s.prov.Prov.DBName("users")+
 		` (user_id, ca_id, privatekey, registration, registration_date) values ($1, $2, $3, $4, $5);`,
-		userid, s.prov.CAID, privatekey, registrationStr, sql.TimeToDBStr(registrationDate))
+		userid, s.prov.CAID, privatekey, registrationStr, state.TimeToDBStr(registrationDate))
 
 	if err != nil {
 		return fmt.Errorf("problem while obtaining certificate: %v", err)

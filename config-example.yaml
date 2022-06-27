@@ -2,7 +2,6 @@ dns: # DNS service providers
   providers:
     infblxA: # Infoblox NIOS over WAPI
       type: infblx
-      id: infblxA
       name: Infoblox A
       #url: https://infoblox.example.com/wapi/v2.10
       host: foo.bar2.local
@@ -80,3 +79,7 @@ rtzn:
     autodns: infblxB
     acmedns: dns3l
     ca: ['*']
+db:
+  type: sqlite3
+  url: database.db
+  dbprefix: dns3l.

@@ -43,3 +43,22 @@ type CAInfo struct {
 	Rootzones   []string `json:"rtzn"`
 	Enabled     bool
 }
+
+type AutoDNSInfo struct {
+	IPv4 string `json:"ipv4"`
+}
+
+type CertClaimInfo struct {
+	Name            string      `json:"name"`
+	Wildcard        bool        `json:"wildcard"` //TODO get rid of this flag and autodetect?
+	SubjectAltNames []string    `json:"san"`
+	AutoDNS         AutoDNSInfo `json:"autodns"`
+	Hints           interface{} `json:"hints"`
+}
+
+type CertResources struct {
+	Certificate string `json:"cert"`
+	Key         string `json:"key"`
+	Chain       string `json:"chain"`
+	FullChain   string `json:"fullchain"`
+}

@@ -1,4 +1,4 @@
-package sql
+package state
 
 import "github.com/sirupsen/logrus"
 

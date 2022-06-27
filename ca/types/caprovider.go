@@ -1,10 +1,6 @@
 package types
 
-//Can spawn a new instance of a DNS provider.
-//Provider-specific config is unmarshaled into the builder's implementing struct.
-type CAProviderBuilder interface {
-	NewInstance() (CAProvider, error)
-}
+import dnstypes "github.com/dta4/dns3l-go/dns/types"
 
 type CAProviderInfo struct {
 	Name        string
@@ -17,8 +13,21 @@ type CAProviderInfo struct {
 }
 
 type CAProvider interface {
+	//triggered after construction form config to init things
+	Init(ctx ProviderConfigurationContext) error
+
 	GetInfo() *CAProviderInfo
 	GetTotalValid() int
 	GetTotalIssued() int
 	IsEnabled() bool
+
+	ClaimCertificate(cinfo *CertificateClaimInfo) error
+	CleanupBeforeDeletion(keyID string) error
+}
+
+type ProviderConfigurationContext interface {
+	GetCAID() string
+	GetStateMgr() CAStateManager
+	//GetDNSProvider(provID string) (dnstypes.DNSProvider, bool)
+	GetDNSProviderForDomain(domain string, challenge bool) (dnstypes.DNSProvider, error)
 }

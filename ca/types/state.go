@@ -12,7 +12,9 @@ type CAStateManagerSession interface {
 	Close() error
 
 	//returns privKey, expiryTime, error
-	GetCACertByID(keyname string, caid string) (*CACertInfo, error)
+	GetCACertByID(keyID string, caID string) (*CACertInfo, error)
+
+	DelCACertByID(keyID string, caID string) error
 
 	PutCACertData(update bool, keyname string, caid string, info *CACertInfo, certStr, issuerCertStr string) error
 

@@ -1,6 +1,8 @@
 package legacy
 
-import ca_types "github.com/dta4/dns3l-go/ca/types"
+import (
+	ca_types "github.com/dta4/dns3l-go/ca/types"
+)
 
 type Config struct {
 	ID     string `yaml:"id"`

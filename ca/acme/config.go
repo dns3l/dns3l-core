@@ -1,9 +1,11 @@
 package acme
 
-import ca_types "github.com/dta4/dns3l-go/ca/types"
+import (
+	ca_types "github.com/dta4/dns3l-go/ca/types"
+)
 
 type Config struct {
-	ID     string `yaml:"id"`
+	Type   string `yaml:"type"`
 	Name   string `yaml:"name"`
 	CAType string `yaml:"catype"` //public or private only...
 	URL    string `yaml:"url"`
@@ -16,5 +18,5 @@ type Config struct {
 }
 
 func (c *Config) NewInstance() (ca_types.CAProvider, error) {
-	return &CAProvider{c}, nil
+	return &CAProvider{c: c}, nil
 }

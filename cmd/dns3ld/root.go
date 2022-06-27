@@ -21,7 +21,7 @@ var rootCmd = &cobra.Command{
 		if err != nil {
 			panic(err)
 		}
-		err = conf.ConnectDotsSanityCheck()
+		err = conf.Initialize()
 		if err != nil {
 			panic(err)
 		}

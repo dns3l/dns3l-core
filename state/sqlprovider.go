@@ -1,9 +1,11 @@
-package sql
+package state
 
 import (
 	"database/sql"
 	"fmt"
 	"time"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 // DBProvider provides new sql.DB connections on request. On GetNewDBConn()
@@ -18,10 +20,10 @@ type SQLDBProvider interface {
 // DBProviderDefault is the default database provider. Type and URL must be given,
 // which are needed to call sql.Open()
 type SQLDBProviderDefault struct {
-	Type        string
-	URL         string
+	Type        string `yaml:"type"`
+	URL         string `yaml:"url"`
 	PreExecFunc func(*sql.DB) error
-	DBPrefix    string
+	DBPrefix    string `yaml:"dbprefix"`
 }
 
 // SetDBPreExec sets a function which is executed every time a new database connection is created.

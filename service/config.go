@@ -6,13 +6,15 @@ import (
 
 	"github.com/dta4/dns3l-go/ca"
 	"github.com/dta4/dns3l-go/dns"
+	"github.com/dta4/dns3l-go/state"
 	"gopkg.in/yaml.v2"
 )
 
 type Config struct {
-	DNS       *dns.Config     `yaml:"dns"`
-	CA        *ca.Config      `yaml:"ca"`
-	RootZones []*dns.RootZone `yaml:"rtzn"`
+	DNS       *dns.Config                 `yaml:"dns"`
+	CA        *ca.Config                  `yaml:"ca"`
+	RootZones dns.RootZones               `yaml:"rtzn"`
+	DB        *state.SQLDBProviderDefault `yaml:"db"` //SQL hard-coded (only here)
 
 	//RootZoneAllowedCA map[string] //maybe we need this later...
 	//CAAllowedRootZones map[string][]dns.RootZone
@@ -31,7 +33,7 @@ func (c *Config) FromYamlBytes(bytes []byte) error {
 }
 
 //Must be executed after config struct initialization
-func (c *Config) ConnectDotsSanityCheck() error {
+func (c *Config) Initialize() error {
 
 	for _, rtzn := range c.RootZones {
 		if foo := rtzn.CAs[0]; foo == "*" {
@@ -39,7 +41,7 @@ func (c *Config) ConnectDotsSanityCheck() error {
 			for _, ca := range c.CA.Providers {
 				ca.AddAllowedRootZone(rtzn)
 			}
-			return nil
+			continue
 		}
 		for _, caID := range rtzn.CAs {
 			ca, exists := c.CA.Providers[caID]
@@ -48,6 +50,13 @@ func (c *Config) ConnectDotsSanityCheck() error {
 			}
 			ca.AddAllowedRootZone(rtzn)
 		}
+	}
+
+	err := c.CA.Init(&CAConfigurationContextImpl{
+		StateProvider: c.DB,
+	})
+	if err != nil {
+		return err
 	}
 
 	return nil

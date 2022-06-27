@@ -9,12 +9,13 @@ import (
 
 	"github.com/dta4/dns3l-go/ca"
 	"github.com/dta4/dns3l-go/ca/acme"
+	castate "github.com/dta4/dns3l-go/ca/state"
 	"github.com/dta4/dns3l-go/ca/types"
 	dns "github.com/dta4/dns3l-go/dns"
 	dnscommon "github.com/dta4/dns3l-go/dns/common"
-	"github.com/dta4/dns3l-go/sql"
+	dnstypes "github.com/dta4/dns3l-go/dns/types"
+	"github.com/dta4/dns3l-go/state"
 	"github.com/dta4/dns3l-go/util"
-	_ "github.com/mattn/go-sqlite3"
 )
 
 type RootConfig struct {
@@ -22,6 +23,24 @@ type RootConfig struct {
 	DNSTest struct {
 		TestableZones map[string][]string
 	} `yaml:"dns-test"`
+}
+
+type ProvConfigurationContextImpl struct {
+	caID    string
+	dnsprov dnstypes.DNSProvider
+	state   types.CAStateManager
+}
+
+func (ctx *ProvConfigurationContextImpl) GetCAID() string {
+	return ctx.caID
+}
+
+func (ctx *ProvConfigurationContextImpl) GetStateMgr() types.CAStateManager {
+	return ctx.state
+}
+
+func (ctx *ProvConfigurationContextImpl) GetDNSProviderForDomain(domain string, challenge bool) (dnstypes.DNSProvider, error) {
+	return ctx.dnsprov, nil
 }
 
 func TestWithLEStaging() {
@@ -33,7 +52,7 @@ func TestWithLEStaging() {
 		panic(err)
 	}
 
-	var dbprov sql.SQLDBProvider = &sql.SQLDBProviderDefault{
+	var dbprov state.SQLDBProvider = &state.SQLDBProviderDefault{
 		Type:     "sqlite3",
 		DBPrefix: "dns3l.test",
 		PreExecFunc: func(db *sqlraw.DB) error {
@@ -42,7 +61,7 @@ func TestWithLEStaging() {
 		},
 	}
 
-	var casm types.CAStateManager = &ca.CAStateManagerSQL{
+	var casm types.CAStateManager = &castate.CAStateManagerSQL{
 		Prov: dbprov,
 	}
 
@@ -51,26 +70,28 @@ func TestWithLEStaging() {
 	e := acme.Engine{
 		CAID: caID,
 		Conf: &acme.Config{
-			ID:                    "test-lestaging",
 			Name:                  "Test LE Staging",
 			CAType:                "public",
 			URL:                   "https://acme-staging-v02.api.letsencrypt.org/directory",
 			Roots:                 "",
 			DaysRenewBeforeExpiry: 100, //16,
 		},
-		DNSConf: c.DNS,
 		State: &acme.ACMEStateManagerSQL{
 			CAID: caID,
 			Prov: dbprov,
 		},
-		CAState: casm,
+		Context: &ProvConfigurationContextImpl{
+			caID:    caID,
+			dnsprov: c.DNS.Providers["dns3l"].Prov,
+			state:   casm,
+		},
 	}
 
 	h := ca.CAFunctionHandler{
 		State: casm,
 	}
 
-	err = sql.InitDB(dbprov)
+	err = state.InitDB(dbprov)
 	if err != nil {
 		panic(err)
 	}
@@ -91,7 +112,7 @@ func TestWithLEStaging() {
 	}
 
 	err = e.TriggerUpdate(acmeuser, keyid, []string{domainName1, domainName2},
-		dnsProvider, email, issuedBy)
+		email, issuedBy)
 	if err != nil {
 		var norenew *acme.NoRenewalDueError
 		if errors.As(err, &norenew) {
@@ -103,7 +124,7 @@ func TestWithLEStaging() {
 	}
 
 	//this should trigger updating the existing key while getting details from database
-	err = e.TriggerUpdate("", keyid, nil, dnsProvider, email, "")
+	err = e.TriggerUpdate("", keyid, nil, email, "")
 	if err != nil {
 		var norenew *acme.NoRenewalDueError
 		if errors.As(err, &norenew) {
@@ -114,7 +135,7 @@ func TestWithLEStaging() {
 		}
 	}
 
-	key, ctype, err := h.GetResource(keyid, caID, "key")
+	key, ctype, err := h.GetCertificateResource(keyid, caID, "key")
 	if err != nil {
 		panic(err)
 	}
@@ -128,7 +149,7 @@ func TestWithLEStaging() {
 		panic(err)
 	}
 
-	crt, ctype, err := h.GetResource(keyid, caID, "crt")
+	crt, ctype, err := h.GetCertificateResource(keyid, caID, "crt")
 	if err != nil {
 		panic(err)
 	}
@@ -136,7 +157,7 @@ func TestWithLEStaging() {
 	if err != nil {
 		panic(err)
 	}
-	fullchain, ctype, err := h.GetResource(keyid, caID, "fullchain")
+	fullchain, ctype, err := h.GetCertificateResource(keyid, caID, "fullchain")
 	if err != nil {
 		panic(err)
 	}
