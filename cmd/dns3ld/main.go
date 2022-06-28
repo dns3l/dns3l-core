@@ -1,10 +1,23 @@
-package cmd
+package main
 
 import (
+	"os"
+
 	"github.com/dta4/dns3l-go/context"
 	"github.com/dta4/dns3l-go/service"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
+
+func main() {
+
+	log.SetLevel(log.DebugLevel)
+
+	err := Execute()
+	if err != nil {
+		os.Exit(1)
+	}
+}
 
 var rootCmd = &cobra.Command{
 	Use:   "dns3ld",

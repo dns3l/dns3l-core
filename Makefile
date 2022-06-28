@@ -6,7 +6,7 @@ GOENV := GOARCH=$(GOARCH) GOOS=linux
 GODIRS := ./acme/... ./cmd/... ./dns/... ./service/... ./util/... ./context/...
 
 build:
-	$(GOENV) go build -v -ldflags $(GO_LDFLAGS) -o dns3ld .
+	$(GOENV) go build -v -ldflags $(GO_LDFLAGS) -o dns3ld ./cmd/dns3ld/.
 
 test:
 	$(GOENV) go test $(GODIRS) -coverprofile coverage.out
