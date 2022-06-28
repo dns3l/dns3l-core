@@ -145,7 +145,7 @@ func (sm *ProviderConfigurationContextImpl) GetDNSProvider(provID string) (dnsty
 
 func (sm *ProviderConfigurationContextImpl) GetDNSProviderForDomain(domain string, challenge bool) (dnstypes.DNSProvider, error) {
 
-	rz, err := sm.pinfo.RootZones.GetLowestRZForDomain("foo")
+	rz, err := sm.pinfo.RootZones.GetLowestRZForDomain(domain)
 	if err != nil {
 		return nil, err
 	}

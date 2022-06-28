@@ -32,7 +32,7 @@ func (s *ACMEStateManagerSQLSession) Close() error {
 
 func (s *ACMEStateManagerSQLSession) GetACMEUserPrivkeyByID(userid string) (string, string, error) {
 
-	row := s.db.QueryRow(`select privatekey, registration from `+s.prov.Prov.DBName("users")+
+	row := s.db.QueryRow(`select privatekey, registration from `+s.prov.Prov.DBName("acmeusers")+
 		` where user_id = $1 AND ca_id = $2 limit 1;`, userid, s.prov.CAID)
 
 	var keyStr string
@@ -51,7 +51,7 @@ func (s *ACMEStateManagerSQLSession) GetACMEUserPrivkeyByID(userid string) (stri
 func (s *ACMEStateManagerSQLSession) PutACMEUser(userid, privatekey,
 	registrationStr string, registrationDate time.Time) error {
 
-	_, err := s.db.Exec(`INSERT INTO `+s.prov.Prov.DBName("users")+
+	_, err := s.db.Exec(`INSERT INTO `+s.prov.Prov.DBName("acmeusers")+
 		` (user_id, ca_id, privatekey, registration, registration_date) values ($1, $2, $3, $4, $5);`,
 		userid, s.prov.CAID, privatekey, registrationStr, state.TimeToDBStr(registrationDate))
 

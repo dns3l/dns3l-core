@@ -54,6 +54,7 @@ func (c *Config) Initialize() error {
 
 	err := c.CA.Init(&CAConfigurationContextImpl{
 		StateProvider: c.DB,
+		DNSConfig:     c.DNS,
 	})
 	if err != nil {
 		return err

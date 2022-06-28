@@ -27,9 +27,9 @@ func (hdlr *RestV1Handler) Handle(r *mux.Router) {
 	r.HandleFunc("/ca", hdlr.GetCAs)
 	r.HandleFunc("/ca/{id:[A-Za-z0-9_-]+}", hdlr.GetCA)
 	r.HandleFunc("/ca/{id:[A-Za-z0-9_-]+}/crt", hdlr.HandleCAAnonCert)
-	r.HandleFunc("/ca/{caID:[A-Za-z0-9_-]+}/crt/{crtID:\\*?[A-Za-z0-9_-]+}", hdlr.HandleCANamedCert)
-	r.HandleFunc("/ca/{caID:[A-Za-z0-9_-]+}/crt/{crtID:\\*?[A-Za-z0-9_-]+}/pem", hdlr.HandleCertObjs)
-	r.HandleFunc("/ca/{caID:[A-Za-z0-9_-]+}/crt/{crtID:\\*?[A-Za-z0-9_-]+}/pem/{obj:[a-z_-]+}",
+	r.HandleFunc("/ca/{caID:[A-Za-z0-9_-]+}/crt/{crtID:\\*?[A-Za-z0-9\\._-]+}", hdlr.HandleCANamedCert)
+	r.HandleFunc("/ca/{caID:[A-Za-z0-9_-]+}/crt/{crtID:\\*?[A-Za-z0-9\\._-]+}/pem", hdlr.HandleCertObjs)
+	r.HandleFunc("/ca/{caID:[A-Za-z0-9_-]+}/crt/{crtID:\\*?[A-Za-z0-9\\._-]+}/pem/{obj:[a-z_-]+}",
 		hdlr.HandleNamedCertObj)
 }
 
@@ -171,17 +171,17 @@ func (hdlr *RestV1Handler) HandleCertObjs(w http.ResponseWriter, r *http.Request
 			return
 		}
 
+		w.WriteHeader(200)
+
 		err = json.NewEncoder(w).Encode(obj)
 		if err != nil {
-			httpError(w, 500, err.Error())
+			log.WithError(err).Error("Error while decoding")
+			return
 		}
-
-	} else {
-		httpError(w, 500, "Wrong method")
 		return
-	}
 
-	w.WriteHeader(200)
+	}
+	httpError(w, 500, "Wrong method")
 }
 
 func (hdlr *RestV1Handler) HandleNamedCertObj(w http.ResponseWriter, r *http.Request) {
@@ -219,11 +219,10 @@ func (hdlr *RestV1Handler) HandleNamedCertObj(w http.ResponseWriter, r *http.Req
 		w.Header().Add("Content-Type", ctype)
 		w.WriteHeader(200)
 		w.Write([]byte(res))
-	} else {
-		w.Header().Add("Content-Type", "application/json")
-		httpError(w, 500, "Wrong method")
 		return
 	}
+	w.Header().Add("Content-Type", "application/json")
+	httpError(w, 500, "Wrong method")
 
 }
 

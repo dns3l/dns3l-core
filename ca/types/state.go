@@ -16,26 +16,19 @@ type CAStateManagerSession interface {
 
 	DelCACertByID(keyID string, caID string) error
 
-	PutCACertData(update bool, keyname string, caid string, info *CACertInfo, certStr, issuerCertStr string) error
+	PutCACertData(update bool, keyname string, caid string, info *CACertInfo, certStr, issuerCertStr string, claimTime time.Time) error
 
 	GetResource(keyID string, caid string, resourceName string) (string, error)
 
 	GetResources(keyID string, caid string, resourceNames ...string) ([]string, error)
 }
 
-//A NotFoundError is thrown if the requested resource was not found or is not supposed
-//to exist at all
-type NotFoundError struct{}
-
-func (e *NotFoundError) Error() string {
-	return "Requested resource not found"
-}
-
 type CACertInfo struct {
 	PrivKey        string
 	IssuedByUser   string
+	RenewTime      time.Time
 	ValidStartTime time.Time
-	ExpiryTime     time.Time
+	ValidEndTime   time.Time
 	Domains        []string
 	ACMEUser       string
 }

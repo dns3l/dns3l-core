@@ -5,6 +5,8 @@ import (
 
 	"github.com/dta4/dns3l-go/ca/common"
 	"github.com/dta4/dns3l-go/ca/types"
+	cmn "github.com/dta4/dns3l-go/common"
+	"github.com/sirupsen/logrus"
 )
 
 //Provides API-close functions with
@@ -45,7 +47,10 @@ func (h *CAFunctionHandler) DeleteCertificate(caID, keyID string) error {
 		return fmt.Errorf("no CA provider with name '%s' exists", caID)
 	}
 
-	prov.Prov.CleanupBeforeDeletion(keyID)
+	err = prov.Prov.CleanupBeforeDeletion(keyID)
+	if err != nil {
+		log.WithError(err).Errorf("Problems cleaning up before deletion")
+	}
 
 	sess, err := h.State.NewSession()
 	if err != nil {
@@ -53,7 +58,7 @@ func (h *CAFunctionHandler) DeleteCertificate(caID, keyID string) error {
 	}
 	defer sess.Close()
 
-	return sess.DelCACertByID(caID, keyID)
+	return sess.DelCACertByID(keyID, caID)
 
 }
 
@@ -74,11 +79,19 @@ func (h *CAFunctionHandler) ListCertificates(caID string, rootZonesFilter []stri
 
 func (h *CAFunctionHandler) GetCertificateResources(keyID, caID string) (*types.CertificateResources, error) {
 
+	log.WithFields(logrus.Fields{"keyID": keyID, "caID": caID}).Debug("Request for certificate resources")
+
 	return h.getResourcesNoUpd(keyID, caID)
 
 }
 
 func (h *CAFunctionHandler) GetCertificateResource(keyID, caID, objectType string) (string, string, error) {
+
+	log.WithFields(logrus.Fields{
+		"keyID":      keyID,
+		"caID":       caID,
+		"objectType": objectType},
+	).Debug("Request for certificate resource")
 
 	return h.getResourceNoUpd(keyID, caID, objectType)
 
@@ -102,7 +115,7 @@ func (h *CAFunctionHandler) getResourcesNoUpd(keyID, caID string) (*types.Certif
 	}
 	defer sess.Close()
 
-	res, err := sess.GetResources(keyID, caID, "key", "cert", "issuer_cert")
+	res, err := sess.GetResources(keyID, caID, "priv_key", "cert", "issuer_cert")
 
 	if err != nil {
 		return nil, err
@@ -112,7 +125,7 @@ func (h *CAFunctionHandler) getResourcesNoUpd(keyID, caID string) (*types.Certif
 		Certificate: res[1],
 		Key:         res[0],
 		Chain:       res[2],
-		FullChain:   res[2] + res[3],
+		FullChain:   res[1] + res[2],
 	}, nil
 
 }
@@ -151,6 +164,6 @@ func (h *CAFunctionHandler) getResourceNoUpd(keyID, caID, objectType string) (st
 		res, err := sess.GetResources(keyID, caID, "cert", "issuer_cert")
 		return res[0] + "\n" + res[1], "application/x-pem-file", err
 	}
-	return "", "", &types.NotFoundError{}
+	return "", "", &cmn.NotFoundError{RequestedResource: keyID}
 
 }

@@ -11,6 +11,7 @@ import (
 
 	"github.com/dta4/dns3l-go/ca/common"
 	"github.com/dta4/dns3l-go/ca/types"
+	cmn "github.com/dta4/dns3l-go/common"
 	dnscommon "github.com/dta4/dns3l-go/dns/common"
 	"github.com/dta4/dns3l-go/util"
 	"github.com/go-acme/lego/v4/certificate"
@@ -99,7 +100,7 @@ func (e *Engine) TriggerUpdate(acmeuser string, keyname string, domains []string
 
 		now := time.Now()
 		if !forceUpdate {
-			renewalDate := info.ExpiryTime.AddDate(0, 0, -e.Conf.DaysRenewBeforeExpiry)
+			renewalDate := info.ValidEndTime.AddDate(0, 0, -e.Conf.DaysRenewBeforeExpiry)
 			if now.Before(renewalDate) {
 				//Not yet due for renewal
 				return &NoRenewalDueError{RenewalDate: renewalDate}
@@ -111,7 +112,7 @@ func (e *Engine) TriggerUpdate(acmeuser string, keyname string, domains []string
 	var privKey *rsa.PrivateKey
 	if noKey {
 		if keyMustExist {
-			return &types.NotFoundError{}
+			return &cmn.NotFoundError{RequestedResource: keyname}
 		}
 		info = &types.CACertInfo{
 			ACMEUser:     acmeuser,
@@ -134,7 +135,7 @@ func (e *Engine) TriggerUpdate(acmeuser string, keyname string, domains []string
 	var u User = &DefaultUser{
 		Config: e.Conf,
 		State:  state,
-		UID:    acmeuser,
+		UID:    info.ACMEUser,
 		Email:  email,
 	}
 
@@ -151,7 +152,7 @@ func (e *Engine) TriggerUpdate(acmeuser string, keyname string, domains []string
 	request := certificate.ObtainRequest{
 		Domains:    info.Domains,
 		PrivateKey: privKey,
-		Bundle:     true,
+		Bundle:     false,
 	}
 	log.Debugf("Requesting new certificate for key '%s', user '%s' via ACME",
 		keyname, acmeuser)
@@ -169,12 +170,16 @@ func (e *Engine) TriggerUpdate(acmeuser string, keyname string, domains []string
 	}
 
 	info.ValidStartTime = cert[0].NotBefore
-	info.ExpiryTime = cert[0].NotAfter
-	certStr := string(certificates.Certificate)
+	info.ValidEndTime = cert[0].NotAfter
+	info.RenewTime = time.Now()
+	certStr, err := common.ConvertCertBundleToPEMStr([]*x509.Certificate{cert[0]})
+	if err != nil {
+		return err
+	}
 	issuerCertStr := string(certificates.IssuerCertificate)
 
 	return castate.PutCACertData(!noKey, keyname, e.CAID, info,
-		certStr, issuerCertStr)
+		certStr, issuerCertStr, info.RenewTime)
 
 }
 

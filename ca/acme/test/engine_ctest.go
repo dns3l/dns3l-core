@@ -82,7 +82,7 @@ func TestWithLEStaging() {
 		},
 		Context: &ProvConfigurationContextImpl{
 			caID:    caID,
-			dnsprov: c.DNS.Providers["dns3l"].Prov,
+			dnsprov: c.DNS.Providers["otc"].Prov,
 			state:   casm,
 		},
 	}
@@ -91,7 +91,7 @@ func TestWithLEStaging() {
 		State: casm,
 	}
 
-	err = state.InitDB(dbprov)
+	err = state.CreateSQLDB(dbprov)
 	if err != nil {
 		panic(err)
 	}
