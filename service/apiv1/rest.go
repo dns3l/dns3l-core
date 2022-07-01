@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"gopkg.in/validator.v2"
 )
 
 var Version = "1.0" //this is the API version, not the one of the daemon
@@ -95,6 +96,12 @@ func (hdlr *RestV1Handler) HandleCAAnonCert(w http.ResponseWriter, r *http.Reque
 		err := json.NewDecoder(r.Body).Decode(&cinfo)
 		if err != nil {
 			httpError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		err = validator.Validate(cinfo)
+		if err != nil {
+			httpError(w, 400, err.Error())
 			return
 		}
 

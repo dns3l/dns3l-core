@@ -49,7 +49,7 @@ type AutoDNSInfo struct {
 }
 
 type CertClaimInfo struct {
-	Name            string      `json:"name"`
+	Name            string      `json:"name" validate:"required,min=3,max=64"`
 	Wildcard        bool        `json:"wildcard"` //TODO get rid of this flag and autodetect?
 	SubjectAltNames []string    `json:"san"`
 	AutoDNS         AutoDNSInfo `json:"autodns"`
