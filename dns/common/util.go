@@ -5,8 +5,8 @@ import (
 	"regexp"
 )
 
-var domainNameRe = regexp.MustCompile(`^[A-Za-z0-9-_\.]{1,253}$`)
-var domainNameWildcardRe = regexp.MustCompile(`^[A-Za-z0-9-_\.\*]{1,253}$`)
+var domainNameRe = regexp.MustCompile(`^[A-Za-z0-9-_\.]{1,253}\.$`)
+var domainNameWildcardRe = regexp.MustCompile(`^[A-Za-z0-9-_\.\*]{1,253}\.$`)
 
 // ValidateDomainName checks if the parameter 'domain' is a valid domain name.
 func ValidateDomainName(domain string) error {

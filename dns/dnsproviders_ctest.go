@@ -3,7 +3,6 @@ package dns
 import (
 	"math/rand"
 	"net"
-	"testing"
 
 	"github.com/dta4/dns3l-go/dns/common"
 	"github.com/dta4/dns3l-go/util"
@@ -16,11 +15,14 @@ var log = logrus.WithField("module", "dns-test")
 type RootConfig struct {
 	DNS     *Config `yaml:"dns"`
 	DNSTest struct {
-		TestableZones map[string][]string
+		TestableZones map[string]struct {
+			Zones        []string `yaml:"zones"`
+			Checkservers []string `yaml:"checkservers"`
+		}
 	} `yaml:"dns-test"`
 }
 
-func TestAllProvidersFromConfig(t *testing.T) {
+func TestAllProvidersFromConfig() {
 
 	c := &RootConfig{}
 
@@ -38,7 +40,7 @@ func TestAllProvidersFromConfig(t *testing.T) {
 
 		log.WithField("provider", id).Info("Testing A record behavior")
 
-		domainName, err := common.MakeNewDomainName4Test(testableZones)
+		domainName, err := common.MakeNewDomainName4Test(testableZones.Zones)
 		if err != nil {
 			panic(err)
 		}
@@ -52,10 +54,19 @@ func TestAllProvidersFromConfig(t *testing.T) {
 			panic(err)
 		}
 
-		err = rt.WaitForAActive(domainName, ipAddr)
-		if err != nil {
-			panic(err)
+		log.WithField("provider", id).Info("Trying to resolve A record now...")
+
+		rt.DNSCheckServers = testableZones.Checkservers
+		if len(rt.DNSCheckServers) > 0 {
+			err := rt.WaitForAActive(domainName, ipAddr)
+			if err != nil {
+				panic(err)
+			}
+		} else {
+			log.WithField("provider", id).Info("DNS check skipped, no servers.")
 		}
+
+		log.WithField("provider", id).Info("Success with resolving, deleting A record now...")
 
 		err = p.Prov.DeleteRecordA(domainName)
 		if err != nil {
@@ -64,7 +75,7 @@ func TestAllProvidersFromConfig(t *testing.T) {
 
 		log.WithField("provider", id).Info("Testing acme-challenge TXT record behavior")
 
-		domainName, err = common.MakeNewDomainName4Test(testableZones)
+		domainName, err = common.MakeNewDomainName4Test(testableZones.Zones)
 		if err != nil {
 			panic(err)
 		}
@@ -75,10 +86,19 @@ func TestAllProvidersFromConfig(t *testing.T) {
 			panic(err)
 		}
 
-		err = rt.WaitForChallengeActive(domainName, acmeChallenge)
-		if err != nil {
-			panic(err)
+		log.WithField("provider", id).Info("Trying to resolve TXT record now...")
+
+		rt.DNSCheckServers = testableZones.Checkservers
+		if len(rt.DNSCheckServers) > 0 {
+			err = rt.WaitForChallengeActive(domainName, acmeChallenge)
+			if err != nil {
+				panic(err)
+			}
+		} else {
+			log.WithField("provider", id).Info("DNS check skipped, no servers.")
 		}
+
+		log.WithField("provider", id).Info("Success with resolving, deleting TXT record now...")
 
 		err = p.Prov.DeleteRecordAcmeChallenge(domainName)
 		if err != nil {

@@ -20,7 +20,7 @@ func (p *DNSProvider) GetInfo() *types.DNSProviderInfo {
 
 }
 
-func (p *DNSProvider) getIBConnector() (ibclient.IBConnector, error) {
+func (p *DNSProvider) getIBConnector() (*ibclient.Connector, error) {
 
 	hostConfig := ibclient.HostConfig{
 		Host:     p.c.Host,
@@ -29,7 +29,12 @@ func (p *DNSProvider) getIBConnector() (ibclient.IBConnector, error) {
 		Username: p.c.Auth.User,
 		Password: p.c.Auth.Pass,
 	}
-	transportConfig := ibclient.NewTransportConfig("true", 20, 10)
+
+	if p.c.SSLVerify == "" {
+		p.c.SSLVerify = "true"
+	}
+
+	transportConfig := ibclient.NewTransportConfig(p.c.SSLVerify, 20, 10)
 	requestBuilder := &ibclient.WapiRequestBuilder{}
 	requestor := &ibclient.WapiHttpRequestor{}
 	return ibclient.NewConnector(hostConfig, transportConfig, requestBuilder, requestor)

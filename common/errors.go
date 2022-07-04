@@ -11,8 +11,8 @@ type NotFoundError struct {
 func (e *NotFoundError) Error() string {
 	if e.RequestedResource == "" {
 		return "Requested resource not found"
-	} else {
-		return fmt.Sprintf("Requested resource '%s' not found", e.RequestedResource)
 	}
+
+	return fmt.Sprintf("Requested resource '%s' not found", e.RequestedResource)
 
 }

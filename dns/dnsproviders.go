@@ -7,6 +7,6 @@ import (
 )
 
 var DNSProviderBuilders = map[string]func() types.DNSProviderBuilder{
-	"infblx": func() types.DNSProviderBuilder { return &infblx.Config{} },
-	"otc":    func() types.DNSProviderBuilder { return &otc.Config{} },
+	"infoblox": func() types.DNSProviderBuilder { return &infblx.Config{} },
+	"otc":      func() types.DNSProviderBuilder { return &otc.Config{} },
 }

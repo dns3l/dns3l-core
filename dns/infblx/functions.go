@@ -1,14 +1,16 @@
 package infblx
 
 import (
-	"errors"
+	"fmt"
 	"net"
+	"strings"
 
 	"github.com/dta4/dns3l-go/dns/common"
+	"github.com/dta4/dns3l-go/util"
 	ibclient "github.com/infobloxopen/infoblox-go-client/v2"
 )
 
-func (s *DNSProvider) SetRecordAcmeChallenge(domainName string, challenge string) error {
+func (p *DNSProvider) SetRecordAcmeChallenge(domainName string, challenge string) error {
 
 	err := common.ValidateDomainName(domainName)
 	if err != nil {
@@ -20,14 +22,20 @@ func (s *DNSProvider) SetRecordAcmeChallenge(domainName string, challenge string
 		return err
 	}
 
-	c, err := s.getIBConnector()
+	c, err := p.getIBConnector()
 	if err != nil {
 		return err
 	}
+	defer c.Logout()
+
+	// _, err = p.getHighestPrefixZoneFor(c, p.c.DNSView, domainName)
+	// if err != nil {
+	// 	return err
+	// }
 
 	_, err = c.CreateObject(ibclient.NewRecordTXT(ibclient.RecordTXT{
-		View: "TODOdnsView",
-		Name: dName,
+		View: p.c.DNSView,
+		Name: util.GetDomainNoFQDNDot(dName),
 		Text: challenge,
 		Ttl:  360,
 	}))
@@ -40,20 +48,26 @@ func (s *DNSProvider) SetRecordAcmeChallenge(domainName string, challenge string
 
 }
 
-func (s *DNSProvider) SetRecordA(domainName string, ttl uint32, addr net.IP) error {
+func (p *DNSProvider) SetRecordA(domainName string, ttl uint32, addr net.IP) error {
 
 	err := common.ValidateDomainName(domainName)
 	if err != nil {
 		return err
 	}
 
-	c, err := s.getIBConnector()
+	c, err := p.getIBConnector()
 	if err != nil {
 		return err
 	}
+	defer c.Logout()
 
-	_, err = c.CreateObject(ibclient.NewRecordA("TODOdnsView",
-		"TODOzone", domainName, addr.String(), ttl, true, "TODOcomment", make(ibclient.EA), ""))
+	// _, err = p.getHighestPrefixZoneFor(c, p.c.DNSView, domainName)
+	// if err != nil {
+	// 	return err
+	// }
+
+	_, err = c.CreateObject(ibclient.NewRecordA(p.c.DNSView,
+		"", util.GetDomainNoFQDNDot(domainName), addr.String(), ttl, true, "Created by dns3l", make(ibclient.EA), ""))
 	if err != nil {
 		return err
 	}
@@ -62,10 +76,111 @@ func (s *DNSProvider) SetRecordA(domainName string, ttl uint32, addr net.IP) err
 
 }
 
-func (s *DNSProvider) DeleteRecordAcmeChallenge(domainName string) error {
-	return errors.New("not implemented yet")
+func (p *DNSProvider) DeleteRecordAcmeChallenge(domainName string) error {
+	err := common.ValidateDomainName(domainName)
+	if err != nil {
+		return err
+	}
+
+	dName, err := common.EnsureAcmeChallengeFormat(domainName)
+	if err != nil {
+		return err
+	}
+
+	c, err := p.getIBConnector()
+	if err != nil {
+		return err
+	}
+	defer c.Logout()
+
+	sf := map[string]string{
+		"view": p.c.DNSView,
+		"name": util.GetDomainNoFQDNDot((dName)),
+	}
+
+	recordTXT := ibclient.NewRecordTXT(ibclient.RecordTXT{})
+	var res []ibclient.RecordTXT
+
+	queryParams := ibclient.NewQueryParams(false, sf)
+	err = c.GetObject(recordTXT, "", queryParams, &res)
+
+	if err != nil {
+		return err
+	} else if len(res) <= 0 {
+		log.WithField("domainName", dName).Warn("No TXT record could be found, ignoring deletion request.")
+	} else if len(res) > 1 {
+		log.WithField("domainName", domainName).Warn("Query resulted in more than one TXT record (%d records), not deleting anything for safety.", len(res))
+	}
+
+	_, err = c.DeleteObject(res[0].Ref)
+
+	return err
 }
 
-func (s *DNSProvider) DeleteRecordA(domainName string) error {
-	return errors.New("not implemented yet")
+func (p *DNSProvider) DeleteRecordA(domainName string) error {
+
+	err := common.ValidateDomainName(domainName)
+	if err != nil {
+		return err
+	}
+
+	c, err := p.getIBConnector()
+	if err != nil {
+		return err
+	}
+	defer c.Logout()
+
+	sf := map[string]string{
+		"view": p.c.DNSView,
+		"name": util.GetDomainNoFQDNDot((domainName)),
+	}
+
+	recordA := ibclient.NewEmptyRecordA()
+	var res []ibclient.RecordA
+
+	queryParams := ibclient.NewQueryParams(false, sf)
+	err = c.GetObject(recordA, "", queryParams, &res)
+
+	if err != nil {
+		return err
+	} else if len(res) <= 0 {
+		log.WithField("domainName", domainName).Warn("No A record could be found, ignoring deletion request.")
+	} else if len(res) > 1 {
+		log.WithField("domainName", domainName).Warn("Query resulted in more than one A record (%d records), not deleting anything for safety.", len(res))
+	}
+
+	_, err = c.DeleteObject(res[0].Ref)
+
+	return err
+
+}
+
+func (p *DNSProvider) getHighestPrefixZoneFor(c ibclient.IBConnector, dnsView,
+	domainName string) (*ibclient.ZoneAuth, error) {
+
+	var res []ibclient.ZoneAuth
+	obj := ibclient.NewZoneAuth(ibclient.ZoneAuth{})
+	err := c.GetObject(obj, "", &ibclient.QueryParams{}, &res)
+	if err != nil {
+		return nil, err
+	}
+
+	var longestZone *ibclient.ZoneAuth
+	for _, zone := range res {
+
+		if strings.HasSuffix(domainName, zone.Fqdn) {
+			if longestZone == nil || len(longestZone.Fqdn) < len(zone.Fqdn) {
+				longestZone = &zone
+			}
+		}
+	}
+
+	if longestZone == nil {
+		return nil, fmt.Errorf("no appropriate zone could be found for domain name %s", domainName)
+	}
+
+	fmt.Println(longestZone.Fqdn)
+
+	return longestZone, nil
+
 }
