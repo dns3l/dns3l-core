@@ -3,7 +3,7 @@ package otc
 import "github.com/dta4/dns3l-go/dns/types"
 
 type DNSProvider struct {
-	c *Config
+	c *Config `validate:"required"`
 }
 
 func (p *DNSProvider) GetInfo() *types.DNSProviderInfo {

@@ -8,12 +8,12 @@ import (
 )
 
 type Config struct {
-	Providers map[string]*ProviderInfo //configured DNS providers mapped with their ID
+	Providers map[string]*ProviderInfo `yaml:"providers" validate:"required,dive"` //configured DNS providers mapped with their ID
 }
 
 type ProviderInfo struct {
-	Type string `yaml:"type"`
-	Prov types.DNSProvider
+	Type string            `yaml:"type" validate:"required,alphanumUnderscoreDash"`
+	Prov types.DNSProvider `validate:"required"`
 }
 
 var _ yaml.Unmarshaler = &ProviderInfo{}
@@ -35,6 +35,7 @@ func (f *ProviderInfo) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	if err != nil {
 		return err
 	}
+	f.Type = t.Type
 	f.Prov, err = builder.NewInstance()
 	if err != nil {
 		return err

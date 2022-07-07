@@ -8,17 +8,18 @@ import (
 	"github.com/dta4/dns3l-go/ca/types"
 	"github.com/dta4/dns3l-go/dns"
 	dnstypes "github.com/dta4/dns3l-go/dns/types"
+
 	"github.com/dta4/dns3l-go/state"
 	"gopkg.in/yaml.v2"
 )
 
 type Config struct {
-	Providers map[string]*ProviderInfo //configured DNS providers mapped with their ID
+	Providers map[string]*ProviderInfo `validate:"required,dive"` //configured DNS providers mapped with their ID
 	Functions *CAFunctionHandler
 }
 
 type ProviderInfo struct {
-	Type      string `yaml:"type"`
+	Type      string `yaml:"type" validate:"required,alphanum"`
 	Prov      types.CAProvider
 	RootZones dns.RootZones
 }
@@ -96,6 +97,7 @@ func (f *ProviderInfo) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	if err != nil {
 		return err
 	}
+	f.Type = t.Type
 	f.Prov, err = builder.NewInstance()
 	if err != nil {
 		return err

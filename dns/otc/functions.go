@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/dta4/dns3l-go/dns/common"
+	"github.com/dta4/dns3l-go/util"
 	"github.com/huaweicloud/golangsdk"
 	"github.com/huaweicloud/golangsdk/openstack"
 	"github.com/huaweicloud/golangsdk/openstack/dns/v2/recordsets"
@@ -34,12 +35,14 @@ func (s *DNSProvider) SetRecordAcmeChallenge(domainName string, challenge string
 		return err
 	}
 
-	err = common.ValidateDomainName(domainName)
+	dName := util.GetDomainFQDNDot(domainName)
+
+	err = common.ValidateDomainName(dName)
 	if err != nil {
 		return err
 	}
 
-	dName, err := common.EnsureAcmeChallengeFormat(domainName)
+	dName, err = common.EnsureAcmeChallengeFormat(dName)
 	if err != nil {
 		return err
 	}
@@ -77,7 +80,9 @@ func (s *DNSProvider) SetRecordA(domainName string, ttl uint32, addr net.IP) err
 		return err
 	}
 
-	err = common.ValidateDomainName(domainName)
+	dName := util.GetDomainFQDNDot(domainName)
+
+	err = common.ValidateDomainName(dName)
 	if err != nil {
 		return err
 	}
@@ -92,12 +97,12 @@ func (s *DNSProvider) SetRecordA(domainName string, ttl uint32, addr net.IP) err
 		return fmt.Errorf("error while getting DNS API endpoint: %v", err)
 	}
 
-	zone, err := getManagingZone(client, domainName)
+	zone, err := getManagingZone(client, dName)
 	if err != nil {
 		return fmt.Errorf("error while getting managing zone: %v", err)
 	}
 
-	err = setRecordInZone(client, zone.ID, domainName, "A", ttl, addr.String())
+	err = setRecordInZone(client, zone.ID, dName, "A", ttl, addr.String())
 	if err != nil {
 		return fmt.Errorf("error while setting TXT record in zone: %v", err)
 	}
@@ -111,12 +116,14 @@ func (s *DNSProvider) SetRecordA(domainName string, ttl uint32, addr net.IP) err
 // which needs to be changed.
 func (s *DNSProvider) DeleteRecordAcmeChallenge(domainName string) error {
 
-	err := common.ValidateDomainName(domainName)
+	dName := util.GetDomainFQDNDot(domainName)
+
+	err := common.ValidateDomainName(dName)
 	if err != nil {
 		return err
 	}
 
-	dName, err := common.EnsureAcmeChallengeFormat(domainName)
+	dName, err = common.EnsureAcmeChallengeFormat(dName)
 	if err != nil {
 		return err
 	}
@@ -150,7 +157,9 @@ func (s *DNSProvider) DeleteRecordAcmeChallenge(domainName string) error {
 // which needs to be changed.
 func (s *DNSProvider) DeleteRecordA(domainName string) error {
 
-	err := common.ValidateDomainName(domainName)
+	dName := util.GetDomainFQDNDot(domainName)
+
+	err := common.ValidateDomainName(dName)
 	if err != nil {
 		return err
 	}
@@ -165,12 +174,12 @@ func (s *DNSProvider) DeleteRecordA(domainName string) error {
 		return err
 	}
 
-	zone, err := getManagingZone(client, domainName)
+	zone, err := getManagingZone(client, dName)
 	if err != nil {
 		return err
 	}
 
-	err = deleteRecordInZone(client, zone.ID, domainName, "A")
+	err = deleteRecordInZone(client, zone.ID, dName, "A")
 	if err != nil {
 		return err
 	}

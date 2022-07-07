@@ -8,6 +8,8 @@ import (
 func (s *V1) ClaimCertificate(caID string, cinfo *apiv1.CertClaimInfo) error {
 	fu := s.Service.Config.CA.Functions
 
+	//TODO: Autodns here
+
 	return fu.ClaimCertificate(caID, &types.CertificateClaimInfo{
 		Name:            cinfo.Name,
 		SubjectAltNames: cinfo.SubjectAltNames,

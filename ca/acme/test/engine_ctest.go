@@ -21,7 +21,10 @@ import (
 type RootConfig struct {
 	DNS     *dns.Config `yaml:"dns"`
 	DNSTest struct {
-		TestableZones map[string][]string
+		TestableZones map[string]struct {
+			Zones        []string `yaml:"zones"`
+			Checkservers []string `yaml:"checkservers"`
+		} `yaml:"testablezones"`
 	} `yaml:"dns-test"`
 }
 
@@ -74,7 +77,7 @@ func TestWithLEStaging() {
 			CAType:                "public",
 			URL:                   "https://acme-staging-v02.api.letsencrypt.org/directory",
 			Roots:                 "",
-			DaysRenewBeforeExpiry: 100, //16,
+			DaysRenewBeforeExpiry: 100, //this is to test immediale renewal
 		},
 		State: &acme.ACMEStateManagerSQL{
 			CAID: caID,
@@ -96,17 +99,17 @@ func TestWithLEStaging() {
 		panic(err)
 	}
 
-	dnsProvider := "dns3l"
+	dnsProvider := "otc"
 	email := "leo@nobach.net"
 	issuedBy := "testuser1"
 	acmeuser := "testacmeuser1"
 	keyid := "testkey1"
 
-	domainName1, err := dnscommon.MakeNewDomainName4Test(c.DNSTest.TestableZones[dnsProvider])
+	domainName1, err := dnscommon.MakeNewDomainName4Test(c.DNSTest.TestableZones[dnsProvider].Zones)
 	if err != nil {
 		panic(err)
 	}
-	domainName2, err := dnscommon.MakeNewDomainName4Test(c.DNSTest.TestableZones[dnsProvider])
+	domainName2, err := dnscommon.MakeNewDomainName4Test(c.DNSTest.TestableZones[dnsProvider].Zones)
 	if err != nil {
 		panic(err)
 	}

@@ -18,7 +18,7 @@ type RootConfig struct {
 		TestableZones map[string]struct {
 			Zones        []string `yaml:"zones"`
 			Checkservers []string `yaml:"checkservers"`
-		}
+		} `yaml:"testablezones"`
 	} `yaml:"dns-test"`
 }
 

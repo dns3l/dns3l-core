@@ -7,7 +7,7 @@ import (
 )
 
 type DNSProvider struct {
-	c *Config
+	c *Config `validate:"required"`
 }
 
 func (p *DNSProvider) GetInfo() *types.DNSProviderInfo {

@@ -6,6 +6,7 @@ import (
 	"github.com/dta4/dns3l-go/ca/common"
 	"github.com/dta4/dns3l-go/ca/types"
 	cmn "github.com/dta4/dns3l-go/common"
+	"github.com/dta4/dns3l-go/util"
 	"github.com/sirupsen/logrus"
 )
 
@@ -24,7 +25,7 @@ func (h *CAFunctionHandler) ClaimCertificate(caID string, cinfo *types.Certifica
 	}
 
 	for _, san := range cinfo.SubjectAltNames {
-		if !prov.DomainIsInAllowedRootZone(san) {
+		if !prov.DomainIsInAllowedRootZone(util.GetDomainFQDNDot(san)) {
 			return fmt.Errorf("subject alt name '%s' is not in the allowed root zones of CA provider '%s'",
 				san, caID)
 		}

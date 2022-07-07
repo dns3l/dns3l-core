@@ -20,10 +20,10 @@ type SQLDBProvider interface {
 // DBProviderDefault is the default database provider. Type and URL must be given,
 // which are needed to call sql.Open()
 type SQLDBProviderDefault struct {
-	Type        string `yaml:"type"`
-	URL         string `yaml:"url"`
+	Type        string `yaml:"type" validate:"required,alphanumUnderscoreDash"`
+	URL         string `yaml:"url" validate:"required"`
 	PreExecFunc func(*sql.DB) error
-	DBPrefix    string `yaml:"dbprefix"`
+	DBPrefix    string `yaml:"dbprefix" validate:"alphanumUnderscoreDashDot"`
 }
 
 // SetDBPreExec sets a function which is executed every time a new database connection is created.

@@ -65,17 +65,17 @@ ca: #ACME and none ACME CA
 #DNS provider implementations shall support zone nesting
 #For legacy CA a CSR template can be assigned to each rtzn implicitly by convention
 rtzn:
-  - root: .foo.example.org
+  - root: foo.example.org. #Rootzones always have a dot at the end
     autodns: null
     acmedns: dns3l
     ca:
       - step
       - tsec
-  - root: .bar.example.com
+  - root: bar.example.com.
     autodns: infblxA
     acmedns: dns3l
     ca: ['*'] 
-  - root: .foo.bar.example.com
+  - root: foo.bar.example.com.
     autodns: infblxB
     acmedns: dns3l
     ca: ['*']

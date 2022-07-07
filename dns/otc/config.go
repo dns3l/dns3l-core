@@ -4,7 +4,7 @@ import dns_types "github.com/dta4/dns3l-go/dns/types"
 
 type Config struct {
 	ID   string `yaml:"id"`
-	Name string `yaml:"name"`
+	Name string `yaml:"name" validate:"required,numeric"`
 	Auth struct {
 		AuthURL     string `yaml:"authurl"`
 		ProjectName string `yaml:"projectname"`

@@ -5,7 +5,6 @@ import (
 
 	"github.com/dta4/dns3l-go/service/apiv1"
 	"github.com/gorilla/mux"
-	log "github.com/sirupsen/logrus"
 )
 
 type Service struct {
@@ -19,7 +18,7 @@ func (s *Service) GetV1() *V1 {
 
 func (s *Service) Run() error {
 
-	log.Printf("Service runs...")
+	log.Printf("Service is running...")
 
 	r := mux.NewRouter().StrictSlash(true)
 

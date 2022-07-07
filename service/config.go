@@ -7,14 +7,16 @@ import (
 	"github.com/dta4/dns3l-go/ca"
 	"github.com/dta4/dns3l-go/dns"
 	"github.com/dta4/dns3l-go/state"
+	myvalidation "github.com/dta4/dns3l-go/util/validation"
+	"github.com/go-playground/validator/v10"
 	"gopkg.in/yaml.v2"
 )
 
 type Config struct {
-	DNS       *dns.Config                 `yaml:"dns"`
-	CA        *ca.Config                  `yaml:"ca"`
-	RootZones dns.RootZones               `yaml:"rtzn"`
-	DB        *state.SQLDBProviderDefault `yaml:"db"` //SQL hard-coded (only here)
+	DNS       *dns.Config                 `yaml:"dns" validate:"required"`
+	CA        *ca.Config                  `yaml:"ca" validate:"required"`
+	RootZones dns.RootZones               `yaml:"rtzn" validate:"required,dive"`
+	DB        *state.SQLDBProviderDefault `yaml:"db" validate:"required"` //SQL hard-coded (only here)
 
 	//RootZoneAllowedCA map[string] //maybe we need this later...
 	//CAAllowedRootZones map[string][]dns.RootZone
@@ -35,6 +37,18 @@ func (c *Config) FromYamlBytes(bytes []byte) error {
 //Must be executed after config struct initialization
 func (c *Config) Initialize() error {
 
+	log.Debug("Validating config...")
+	validate := validator.New()
+	myvalidation.RegisterDNS3LValidations(validate)
+
+	err := validate.StructFiltered(c, func(ns []byte) bool {
+		return false
+	})
+	if err != nil {
+		return err
+	}
+	log.Info("Successfully validated config.")
+
 	for _, rtzn := range c.RootZones {
 		if foo := rtzn.CAs[0]; foo == "*" {
 			//all CAs can handle this root zone
@@ -52,7 +66,7 @@ func (c *Config) Initialize() error {
 		}
 	}
 
-	err := c.CA.Init(&CAConfigurationContextImpl{
+	err = c.CA.Init(&CAConfigurationContextImpl{
 		StateProvider: c.DB,
 		DNSConfig:     c.DNS,
 	})
