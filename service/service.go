@@ -25,7 +25,10 @@ func (s *Service) Run() error {
 	v1hdlr := &apiv1.RestV1Handler{
 		Service: s.GetV1(),
 	}
-	v1hdlr.Handle(r.PathPrefix("/api/v1").Subrouter())
+	err := v1hdlr.Init(r.PathPrefix("/api/v1").Subrouter())
+	if err != nil {
+		return err
+	}
 
 	return http.ListenAndServe(s.Socket, r)
 

@@ -45,13 +45,13 @@ type CAInfo struct {
 }
 
 type AutoDNSInfo struct {
-	IPv4 string `json:"ipv4"`
+	IPv4 string `json:"ipv4" validate:"required,ipv4"`
 }
 
 type CertClaimInfo struct {
-	Name            string      `json:"name" validate:"required,min=3,max=64"`
+	Name            string      `json:"name" validate:"required,fqdn"`
 	Wildcard        bool        `json:"wildcard"`
-	SubjectAltNames []string    `json:"san"`
+	SubjectAltNames []string    `json:"san" validate:"dive,required,fqdn|fqdnWildcard"`
 	AutoDNS         AutoDNSInfo `json:"autodns"`
 	Hints           interface{} `json:"hints"`
 }

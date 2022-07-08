@@ -4,14 +4,14 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
 )
 
 var Version = "1.0" //this is the API version, not the one of the daemon
 
 type RestV1Handler struct {
-	Service ServiceV1
+	Service   ServiceV1
+	Validator Validator
 }
 
 type ErrorMsg struct {
@@ -19,7 +19,7 @@ type ErrorMsg struct {
 	Message string `json:"message"`
 }
 
-func (hdlr *RestV1Handler) Handle(r *mux.Router) {
+func (hdlr *RestV1Handler) Init(r *mux.Router) error {
 
 	r.NotFoundHandler = http.HandlerFunc(hdlr.NotFound)
 	r.HandleFunc("/info", hdlr.GetServerInfo)
@@ -32,6 +32,9 @@ func (hdlr *RestV1Handler) Handle(r *mux.Router) {
 	r.HandleFunc("/ca/{caID:[A-Za-z0-9_-]+}/crt/{crtID:\\*?[A-Za-z0-9\\._-]+}/pem", hdlr.HandleCertObjs)
 	r.HandleFunc("/ca/{caID:[A-Za-z0-9_-]+}/crt/{crtID:\\*?[A-Za-z0-9\\._-]+}/pem/{obj:[a-z_-]+}",
 		hdlr.HandleNamedCertObj)
+
+	return hdlr.Validator.Init()
+
 }
 
 func (hdlr *RestV1Handler) NotFound(w http.ResponseWriter, r *http.Request) {
@@ -99,8 +102,7 @@ func (hdlr *RestV1Handler) HandleCAAnonCert(w http.ResponseWriter, r *http.Reque
 			return
 		}
 
-		v := validator.New()
-		err = v.Struct(cinfo)
+		err = hdlr.Validator.ValidateAPIStruct(cinfo)
 		if err != nil {
 			httpError(w, 400, err.Error())
 			return

@@ -12,6 +12,7 @@ const (
 	strAlphanumUnderscoreDashDot = `^[a-zA-Z0-9\._-]*$`
 	strWildcard                  = `^\*$`
 	strFQDNDotAtEnd              = `^([a-zA-Z0-9]{1}[a-zA-Z0-9-]{0,62})(\.[a-zA-Z0-9]{1}[a-zA-Z0-9-]{0,62})*?(\.[a-zA-Z]{1}[a-zA-Z0-9]{0,62})\.$` //RFC 1123
+	strFQDNWildcard              = `^\*\.([a-zA-Z0-9]{1}[a-zA-Z0-9-]{0,62})(\.[a-zA-Z0-9]{1}[a-zA-Z0-9-]{0,62})*?(\.[a-zA-Z]{1}[a-zA-Z0-9]{0,62})$`
 )
 
 var (
@@ -23,6 +24,7 @@ var (
 		{"alphanumUnderscoreDash", regexp.MustCompile(strAlphanumUnderscoreDash)},
 		{"wildcard", regexp.MustCompile(strWildcard)},
 		{"fqdnDotAtEnd", regexp.MustCompile(strFQDNDotAtEnd)},
+		{"fqdnWildcard", regexp.MustCompile(strFQDNWildcard)},
 	}
 )
 
