@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	"github.com/creasty/defaults"
 	"github.com/dta4/dns3l-go/ca"
 	"github.com/dta4/dns3l-go/dns"
 	"github.com/dta4/dns3l-go/state"
@@ -37,11 +38,17 @@ func (c *Config) FromYamlBytes(bytes []byte) error {
 //Must be executed after config struct initialization
 func (c *Config) Initialize() error {
 
+	err := defaults.Set(c)
+	if err != nil {
+		return err
+	}
+
 	log.Debug("Validating config...")
 	validate := validator.New()
 	myvalidation.RegisterDNS3LValidations(validate)
 
-	err := validate.StructFiltered(c, func(ns []byte) bool {
+	err = validate.StructFiltered(c, func(ns []byte) bool {
+		//fmt.Printf("VALIDATION: %s\n", ns)
 		return false
 	})
 	if err != nil {

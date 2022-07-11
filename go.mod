@@ -3,6 +3,7 @@ module github.com/dta4/dns3l-go
 go 1.18
 
 require (
+	github.com/creasty/defaults v1.6.0
 	github.com/go-acme/lego/v4 v4.7.0
 	github.com/go-playground/validator/v10 v10.11.0
 	github.com/gorilla/mux v1.8.0
@@ -12,7 +13,6 @@ require (
 	github.com/miekg/dns v1.1.49
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.4.0
-	gopkg.in/validator.v2 v2.0.1
 	gopkg.in/yaml.v2 v2.4.0
 )
 

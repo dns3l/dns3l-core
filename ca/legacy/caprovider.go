@@ -7,18 +7,18 @@ import (
 )
 
 type CAProvider struct {
-	c *Config
+	C *Config `validate:"required"`
 }
 
 func (p *CAProvider) GetInfo() *types.CAProviderInfo {
 
 	return &types.CAProviderInfo{
-		Name:        p.c.Name,
-		Type:        p.c.CAType,
+		Name:        p.C.Name,
+		Type:        p.C.CAType,
 		Description: "foo <TODO where does this come from?>",
 		LogoPath:    "bar <TODO where does this come from?>",
 		URL:         "",
-		Roots:       p.c.Roots,
+		Roots:       p.C.Roots,
 		IsAcme:      false,
 	}
 

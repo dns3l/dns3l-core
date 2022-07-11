@@ -13,7 +13,7 @@ func (p *DNSProvider) akskOptionsFromConfig() (golangsdk.AKSKAuthOptions, error)
 
 	var nilAKSKOptions = golangsdk.AKSKAuthOptions{}
 
-	c := p.c
+	c := p.C
 
 	authURL := c.Auth.AuthURL
 	ak := c.Auth.AccessKey

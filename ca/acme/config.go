@@ -5,18 +5,17 @@ import (
 )
 
 type Config struct {
-	Type   string `yaml:"type"`
-	Name   string `yaml:"name"`
-	CAType string `yaml:"catype"` //public or private only...
-	URL    string `yaml:"url"`
+	Name   string `yaml:"name" validate:"required"`
+	CAType string `yaml:"catype" validate:"required,alpha"` //public or private only...
+	URL    string `yaml:"url" validate:"required,url"`
 	Auth   struct {
-		User string `yaml:"user"`
+		User string `yaml:"user" validate:"alphanumUnderscoreDashDot"`
 		Pass string `yaml:"pass"`
 	} `yaml:"auth"`
 	Roots                 string `yaml:"roots"`
-	DaysRenewBeforeExpiry int    `yaml:"daysRenewBeforeExpiry" default:"16"`
+	DaysRenewBeforeExpiry int    `yaml:"daysRenewBeforeExpiry" default:"16" validate:"required"`
 }
 
 func (c *Config) NewInstance() (ca_types.CAProvider, error) {
-	return &CAProvider{c: c}, nil
+	return &CAProvider{C: c}, nil
 }

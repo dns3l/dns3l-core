@@ -7,13 +7,13 @@ import (
 )
 
 type DNSProvider struct {
-	c *Config `validate:"required"`
+	C *Config `validate:"required"`
 }
 
 func (p *DNSProvider) GetInfo() *types.DNSProviderInfo {
 
 	return &types.DNSProviderInfo{
-		Name:        p.c.Name,
+		Name:        p.C.Name,
 		Feature:     []string{"A", "TXT"},
 		ZoneNesting: true, //TODO
 	}
@@ -23,18 +23,18 @@ func (p *DNSProvider) GetInfo() *types.DNSProviderInfo {
 func (p *DNSProvider) getIBConnector() (*ibclient.Connector, error) {
 
 	hostConfig := ibclient.HostConfig{
-		Host:     p.c.Host,
-		Version:  p.c.Version,
-		Port:     p.c.Port,
-		Username: p.c.Auth.User,
-		Password: p.c.Auth.Pass,
+		Host:     p.C.Host,
+		Version:  p.C.Version,
+		Port:     p.C.Port,
+		Username: p.C.Auth.User,
+		Password: p.C.Auth.Pass,
 	}
 
-	if p.c.SSLVerify == "" {
-		p.c.SSLVerify = "true"
+	if p.C.SSLVerify == "" {
+		p.C.SSLVerify = "true"
 	}
 
-	transportConfig := ibclient.NewTransportConfig(p.c.SSLVerify, 20, 10)
+	transportConfig := ibclient.NewTransportConfig(p.C.SSLVerify, 20, 10)
 	requestBuilder := &ibclient.WapiRequestBuilder{}
 	requestor := &ibclient.WapiHttpRequestor{}
 	return ibclient.NewConnector(hostConfig, transportConfig, requestBuilder, requestor)

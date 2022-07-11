@@ -52,7 +52,7 @@ func (s *DNSProvider) SetRecordAcmeChallenge(domainName string, challenge string
 		return err
 	}
 
-	client, err := openstack.NewDNSV2(provider, golangsdk.EndpointOpts{Region: s.c.OSRegion})
+	client, err := openstack.NewDNSV2(provider, golangsdk.EndpointOpts{Region: s.C.OSRegion})
 	if err != nil {
 		return fmt.Errorf("error while getting DNS API endpoint: %v", err)
 	}
@@ -92,7 +92,7 @@ func (s *DNSProvider) SetRecordA(domainName string, ttl uint32, addr net.IP) err
 		return err
 	}
 
-	client, err := openstack.NewDNSV2(provider, golangsdk.EndpointOpts{Region: s.c.OSRegion})
+	client, err := openstack.NewDNSV2(provider, golangsdk.EndpointOpts{Region: s.C.OSRegion})
 	if err != nil {
 		return fmt.Errorf("error while getting DNS API endpoint: %v", err)
 	}
@@ -133,7 +133,7 @@ func (s *DNSProvider) DeleteRecordAcmeChallenge(domainName string) error {
 		return err
 	}
 
-	client, err := openstack.NewDNSV2(provider, golangsdk.EndpointOpts{Region: s.c.OSRegion})
+	client, err := openstack.NewDNSV2(provider, golangsdk.EndpointOpts{Region: s.C.OSRegion})
 	if err != nil {
 		return err
 	}
@@ -169,7 +169,7 @@ func (s *DNSProvider) DeleteRecordA(domainName string) error {
 		return err
 	}
 
-	client, err := openstack.NewDNSV2(provider, golangsdk.EndpointOpts{Region: s.c.OSRegion})
+	client, err := openstack.NewDNSV2(provider, golangsdk.EndpointOpts{Region: s.C.OSRegion})
 	if err != nil {
 		return err
 	}

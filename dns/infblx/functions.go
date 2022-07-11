@@ -34,7 +34,7 @@ func (p *DNSProvider) SetRecordAcmeChallenge(domainName string, challenge string
 	// }
 
 	_, err = c.CreateObject(ibclient.NewRecordTXT(ibclient.RecordTXT{
-		View: p.c.DNSView,
+		View: p.C.DNSView,
 		Name: util.GetDomainNoFQDNDot(dName),
 		Text: challenge,
 		Ttl:  360,
@@ -66,7 +66,7 @@ func (p *DNSProvider) SetRecordA(domainName string, ttl uint32, addr net.IP) err
 	// 	return err
 	// }
 
-	_, err = c.CreateObject(ibclient.NewRecordA(p.c.DNSView,
+	_, err = c.CreateObject(ibclient.NewRecordA(p.C.DNSView,
 		"", util.GetDomainNoFQDNDot(domainName), addr.String(), ttl, true, "Created by dns3l", make(ibclient.EA), ""))
 	if err != nil {
 		return err
@@ -94,7 +94,7 @@ func (p *DNSProvider) DeleteRecordAcmeChallenge(domainName string) error {
 	defer c.Logout()
 
 	sf := map[string]string{
-		"view": p.c.DNSView,
+		"view": p.C.DNSView,
 		"name": util.GetDomainNoFQDNDot((dName)),
 	}
 
@@ -131,7 +131,7 @@ func (p *DNSProvider) DeleteRecordA(domainName string) error {
 	defer c.Logout()
 
 	sf := map[string]string{
-		"view": p.c.DNSView,
+		"view": p.C.DNSView,
 		"name": util.GetDomainNoFQDNDot((domainName)),
 	}
 

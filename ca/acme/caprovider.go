@@ -9,18 +9,18 @@ import (
 
 type CAProvider struct {
 	engine *Engine
-	c      *Config
+	C      *Config `validate:"required"`
 }
 
 func (p *CAProvider) GetInfo() *types.CAProviderInfo {
 
 	return &types.CAProviderInfo{
-		Name:        p.c.Name,
-		Type:        p.c.CAType,
+		Name:        p.C.Name,
+		Type:        p.C.CAType,
 		Description: "foo <TODO where does this come from?>",
 		LogoPath:    "bar <TODO where does this come from?>",
-		URL:         p.c.URL,
-		Roots:       p.c.Roots,
+		URL:         p.C.URL,
+		Roots:       p.C.Roots,
 		IsAcme:      true,
 	}
 
@@ -36,7 +36,7 @@ func (p *CAProvider) Init(c types.ProviderConfigurationContext) error {
 
 	p.engine = &Engine{
 		CAID:    c.GetCAID(),
-		Conf:    p.c,
+		Conf:    p.C,
 		Context: c,
 		State:   smgr,
 	}

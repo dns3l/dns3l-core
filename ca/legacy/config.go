@@ -5,10 +5,9 @@ import (
 )
 
 type Config struct {
-	ID     string `yaml:"id"`
-	Name   string `yaml:"name"`
-	CAType string `yaml:"catype"` //public or private only...
-	Roots  string `yaml:"roots"`
+	Name   string `yaml:"name" validate:"required"`
+	CAType string `yaml:"catype" validate:"required,alpha"` //public or private only...
+	Roots  string `yaml:"roots" validate:"required,url"`
 }
 
 func (c *Config) NewInstance() (ca_types.CAProvider, error) {
