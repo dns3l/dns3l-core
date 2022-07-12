@@ -32,6 +32,9 @@ func (hdlr *RestV1Handler) Init(r *mux.Router) error {
 	r.HandleFunc("/ca/{caID:[A-Za-z0-9_-]+}/crt/{crtID:\\*?[A-Za-z0-9\\._-]+}/pem", hdlr.HandleCertObjs)
 	r.HandleFunc("/ca/{caID:[A-Za-z0-9_-]+}/crt/{crtID:\\*?[A-Za-z0-9\\._-]+}/pem/{obj:[a-z_-]+}",
 		hdlr.HandleNamedCertObj)
+	r.HandleFunc("/crt", hdlr.HandleAnonCert)
+	r.HandleFunc("/crt/{crtID:\\*?[A-Za-z0-9\\._-]+}", hdlr.HandleNamedCert)
+	//TODO delete
 
 	return hdlr.Validator.Init()
 
@@ -93,7 +96,18 @@ func (hdlr *RestV1Handler) HandleCAAnonCert(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	if r.Method == http.MethodPost {
+	if r.Method == http.MethodGet {
+		//Get info of all CA's certs
+		certInfos, err := hdlr.Service.GetCertificateInfos(caID, "")
+		if err != nil {
+			httpError(w, 404, err.Error()) //TODO detect Not Found error
+			return
+		}
+
+		w.WriteHeader(200)
+		json.NewEncoder(w).Encode(certInfos)
+		return
+	} else if r.Method == http.MethodPost {
 		//Claim Cert
 		cinfo := &CertClaimInfo{}
 		err := json.NewDecoder(r.Body).Decode(&cinfo)
@@ -113,10 +127,6 @@ func (hdlr *RestV1Handler) HandleCAAnonCert(w http.ResponseWriter, r *http.Reque
 			httpError(w, 500, err.Error())
 			return
 		}
-	} else if r.Method == http.MethodGet {
-		//Get info of all CA's certs
-		httpError(w, 500, "Not yet implemented")
-		return
 	} else {
 		httpError(w, 500, "Wrong method")
 		return
@@ -148,7 +158,14 @@ func (hdlr *RestV1Handler) HandleCANamedCert(w http.ResponseWriter, r *http.Requ
 			return
 		}
 	} else if r.Method == http.MethodGet {
-		httpError(w, 500, "Not yet implemented")
+		//Get info of specific cert
+		certInfo, err := hdlr.Service.GetCertificateInfo(caID, crtID)
+		if err != nil {
+			httpError(w, 404, err.Error()) //TODO detect Not Found error
+			return
+		}
+		w.WriteHeader(200)
+		json.NewEncoder(w).Encode(certInfo)
 		return
 	} else {
 		httpError(w, 500, "Wrong method")
@@ -233,6 +250,52 @@ func (hdlr *RestV1Handler) HandleNamedCertObj(w http.ResponseWriter, r *http.Req
 	}
 	w.Header().Add("Content-Type", "application/json")
 	httpError(w, 500, "Wrong method")
+
+}
+
+func (hdlr *RestV1Handler) HandleAnonCert(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Content-Type", "application/json")
+
+	if r.Method == http.MethodGet {
+		//Get all certs
+		certInfos, err := hdlr.Service.GetCertificateInfos("", "")
+		if err != nil {
+			httpError(w, 404, err.Error()) //TODO detect Not Found error
+			return
+		}
+		w.WriteHeader(200)
+		json.NewEncoder(w).Encode(certInfos)
+		return
+	} else {
+		httpError(w, 500, "Wrong method")
+		return
+	}
+
+}
+
+func (hdlr *RestV1Handler) HandleNamedCert(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Content-Type", "application/json")
+	vars := mux.Vars(r)
+	crtID, idSet := vars["crtID"]
+	if !idSet {
+		httpError(w, 500, "'crtID' not set")
+		return
+	}
+
+	if r.Method == http.MethodGet {
+		//Get info of specific cert
+		certInfos, err := hdlr.Service.GetCertificateInfos("", crtID)
+		if err != nil {
+			httpError(w, 404, err.Error()) //TODO detect Not Found error
+			return
+		}
+		w.WriteHeader(200)
+		json.NewEncoder(w).Encode(certInfos)
+		return
+	} else {
+		httpError(w, 500, "Wrong method")
+		return
+	}
 
 }
 

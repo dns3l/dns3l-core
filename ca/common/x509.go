@@ -29,3 +29,25 @@ func RSAPrivKeyFromStr(privKey string) (*rsa.PrivateKey, error) {
 	block, _ := pem.Decode([]byte(privKey))
 	return x509.ParsePKCS1PrivateKey(block.Bytes)
 }
+
+func ParseCertificatePEM(certificate []byte) ([]*x509.Certificate, error) {
+	result := make([]*x509.Certificate, 0)
+	decodeTodo := certificate
+	for {
+		var block *pem.Block
+		block, decodeTodo = pem.Decode(decodeTodo)
+		if block == nil {
+			break
+		}
+		if block.Type == "CERTIFICATE" {
+			cert, err := x509.ParseCertificate(block.Bytes)
+			if err != nil {
+				return nil, err
+			}
+			result = append(result, cert)
+		}
+	}
+
+	return result, nil
+
+}

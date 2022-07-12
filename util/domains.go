@@ -15,3 +15,7 @@ func GetDomainFQDNDot(d string) string {
 func GetDomainNoFQDNDot(d string) string {
 	return strings.TrimSuffix(d, ".")
 }
+
+func IsWildcard(domain string) bool {
+	return strings.HasPrefix(domain, "*.")
+}

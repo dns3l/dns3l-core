@@ -36,8 +36,8 @@ type CAInfo struct {
 	LogoPath    string   `json:"logo"`
 	URL         string   `json:"url"`
 	Roots       string   `json:"roots"`
-	TotalValid  int      `json:"totalValid"`
-	TotalIssued int      `json:"totalIssued"`
+	TotalValid  uint     `json:"totalValid"`
+	TotalIssued uint     `json:"totalIssued"`
 	Type        string   `json:"type"`
 	IsAcme      bool     `json:"acme"`
 	Rootzones   []string `json:"rtzn"`
@@ -61,4 +61,21 @@ type CertResources struct {
 	Key         string `json:"key"`
 	Chain       string `json:"chain"`
 	FullChain   string `json:"fullchain"`
+}
+
+type CertInfo struct {
+	Name      string `json:"name"`
+	ClaimedBy struct {
+		Name  string `json:"name"`
+		Slug  string `json:"slug"`
+		EMail string `json:"email"`
+	} `json:"claimedBy"`
+	ClaimedOn  string `json:"claimedOn"`
+	ValidTo    string `json:"validTo"`
+	Valid      bool   `json:"valid"`
+	RenewCount uint   `json:"renewCount"`
+	Wildcard   bool   `json:"wildcard"`
+	SubjectCN  string `json:"subjectCN"`
+	IssuerCN   string `json:"issuerCN"`
+	Serial     string `json:"serial"`
 }

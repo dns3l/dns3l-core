@@ -11,6 +11,12 @@ type CAStateManager interface {
 type CAStateManagerSession interface {
 	Close() error
 
+	GetCACertsByCAID(caid string) ([]CACertInfo, error)
+
+	GetCACertsByKeyName(keyName string) ([]CACertInfo, error)
+
+	GetAllCACerts() ([]CACertInfo, error)
+
 	//returns privKey, expiryTime, error
 	GetCACertByID(keyID string, caID string) (*CACertInfo, error)
 
@@ -24,11 +30,15 @@ type CAStateManagerSession interface {
 }
 
 type CACertInfo struct {
+	Name           string
 	PrivKey        string
 	IssuedByUser   string
+	ClaimTime      time.Time
 	RenewTime      time.Time
 	ValidStartTime time.Time
 	ValidEndTime   time.Time
 	Domains        []string
 	ACMEUser       string
+	CertPEM        string
+	RenewCount     uint
 }

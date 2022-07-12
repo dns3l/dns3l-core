@@ -17,8 +17,8 @@ type CAProvider interface {
 	Init(ctx ProviderConfigurationContext) error
 
 	GetInfo() *CAProviderInfo
-	GetTotalValid() int
-	GetTotalIssued() int
+	GetTotalValid() uint
+	GetTotalIssued() uint
 	IsEnabled() bool
 
 	ClaimCertificate(cinfo *CertificateClaimInfo) error

@@ -10,4 +10,6 @@ type ServiceV1 interface {
 	DeleteCertificate(caID, crtID string) error
 	GetCertificateResource(caID, crtID, obj string) (string, string, error)
 	GetAllCertResources(caID, crtID string) (*CertResources, error)
+	GetCertificateInfos(caID string, crtID string) ([]CertInfo, error)
+	GetCertificateInfo(caID string, crtID string) (*CertInfo, error)
 }

@@ -19,8 +19,8 @@ type Config struct {
 }
 
 type ProviderInfo struct {
-	Type      string           `yaml:"type" validate:"required,alphanum"`
-	Prov      types.CAProvider `validate:"intf"`
+	Type      string `yaml:"type" validate:"required,alphanum"`
+	Prov      types.CAProvider
 	RootZones dns.RootZones
 }
 

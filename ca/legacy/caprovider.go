@@ -24,13 +24,13 @@ func (p *CAProvider) GetInfo() *types.CAProviderInfo {
 
 }
 
-func (p *CAProvider) GetTotalValid() int {
+func (p *CAProvider) GetTotalValid() uint {
 
 	return 23 //TODO
 
 }
 
-func (p *CAProvider) GetTotalIssued() int {
+func (p *CAProvider) GetTotalIssued() uint {
 
 	return 34 //TODO
 

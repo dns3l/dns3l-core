@@ -1,6 +1,7 @@
 package ca
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/dta4/dns3l-go/ca/common"
@@ -24,7 +25,7 @@ func (h *CAFunctionHandler) ClaimCertificate(caID string, cinfo *types.Certifica
 		return fmt.Errorf("no CA provider with name '%s' exists", caID)
 	}
 
-	for _, san := range cinfo.SubjectAltNames {
+	for _, san := range cinfo.Domains {
 		if !prov.DomainIsInAllowedRootZone(util.GetDomainFQDNDot(san)) {
 			return fmt.Errorf("subject alt name '%s' is not in the allowed root zones of CA provider '%s'",
 				san, caID)
@@ -60,21 +61,6 @@ func (h *CAFunctionHandler) DeleteCertificate(caID, keyID string) error {
 	defer sess.Close()
 
 	return sess.DelCACertByID(keyID, caID)
-
-}
-
-func (h *CAFunctionHandler) GetCertificateInfo(name string,
-	subjectAltNames []string) error {
-
-	return fmt.Errorf("GetCertificateInfo(...) not implemented yet")
-
-}
-
-//if caID is "", list for all CAs
-func (h *CAFunctionHandler) ListCertificates(caID string, rootZonesFilter []string) error {
-	//TODO pagination?
-
-	return fmt.Errorf("ListCertificates(...) not implemented yet")
 
 }
 
@@ -166,5 +152,37 @@ func (h *CAFunctionHandler) getResourceNoUpd(keyID, caID, objectType string) (st
 		return res[0] + "\n" + res[1], "application/x-pem-file", err
 	}
 	return "", "", &cmn.NotFoundError{RequestedResource: keyID}
+
+}
+
+func (h *CAFunctionHandler) GetCertificateInfos(caID string, keyID string) ([]types.CACertInfo, error) {
+
+	sess, err := h.State.NewSession()
+	if err != nil {
+		return nil, err
+	}
+	defer sess.Close()
+
+	if caID == "" && keyID == "" {
+		return sess.GetAllCACerts()
+	} else if caID == "" {
+		return sess.GetCACertsByKeyName(keyID)
+	} else if keyID == "" {
+		return sess.GetCACertsByCAID(caID)
+	} else {
+		return nil, errors.New("cannot filter for keyID and caID")
+	}
+
+}
+
+func (h *CAFunctionHandler) GetCertificateInfo(caID string, keyID string) (*types.CACertInfo, error) {
+
+	sess, err := h.State.NewSession()
+	if err != nil {
+		return nil, err
+	}
+	defer sess.Close()
+
+	return sess.GetCACertByID(keyID, caID)
 
 }

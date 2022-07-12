@@ -4,7 +4,6 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
-	"encoding/pem"
 	"errors"
 	"strings"
 	"time"
@@ -161,7 +160,7 @@ func (e *Engine) TriggerUpdate(acmeuser string, keyname string, domains []string
 		return err
 	}
 
-	cert, err := parseCertificatePEM(certificates.Certificate)
+	cert, err := common.ParseCertificatePEM(certificates.Certificate)
 	if err != nil {
 		return err
 	}
@@ -251,26 +250,4 @@ func generateRSAPrivateKey() (*rsa.PrivateKey, error) {
 		return nil, err
 	}
 	return k, nil
-}
-
-func parseCertificatePEM(certificate []byte) ([]*x509.Certificate, error) {
-	result := make([]*x509.Certificate, 0)
-	decodeTodo := certificate
-	for {
-		var block *pem.Block
-		block, decodeTodo = pem.Decode(decodeTodo)
-		if block == nil {
-			break
-		}
-		if block.Type == "CERTIFICATE" {
-			cert, err := x509.ParseCertificate(block.Bytes)
-			if err != nil {
-				return nil, err
-			}
-			result = append(result, cert)
-		}
-	}
-
-	return result, nil
-
 }

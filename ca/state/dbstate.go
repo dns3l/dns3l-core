@@ -1,6 +1,7 @@
 package state
 
 import (
+	"database/sql"
 	sqlraw "database/sql"
 	"fmt"
 	"strings"
@@ -32,42 +33,132 @@ func (s *CAStateManagerSQLSession) Close() error {
 	return s.db.Close()
 }
 
+const caCertsQueryElements = `key_name,
+priv_key,
+acme_user,
+issued_by,
+domains,
+claim_time,
+renew_time,
+valid_start_time,
+valid_end_time,
+cert`
+
 func (s *CAStateManagerSQLSession) GetCACertByID(keyname string, caid string) (*types.CACertInfo, error) {
-	row := s.db.QueryRow("SELECT priv_key, acme_user, issued_by, domains, renew_time, valid_start_time, valid_end_time "+
-		"FROM "+s.prov.Prov.DBName("keycerts")+" WHERE key_name=$1 AND ca_id=$2 LIMIT 1;", keyname,
-		caid)
+	rows, err := s.db.Query(`SELECT `+caCertsQueryElements+`
+	FROM `+s.prov.Prov.DBName("keycerts")+` 
+	WHERE key_name=$1 AND ca_id=$2 LIMIT 1;`,
+		keyname, caid)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
 	info := &types.CACertInfo{}
-	var renewTimeStr string
-	var validStartTimeStr string
-	var validEndTimeStr string
-	var domainsStr string
-	err := row.Scan(&info.PrivKey, &info.ACMEUser, &info.IssuedByUser,
-		&domainsStr, &renewTimeStr, &validStartTimeStr, &validEndTimeStr)
-	if err == sqlraw.ErrNoRows {
+	if !rows.Next() {
+		return nil, nil
+	}
+	err = s.rowToCACertInfo(rows, info)
+	if err == sql.ErrNoRows {
 		return nil, nil
 	} else if err != nil {
 		return nil, err
 	}
+	return info, nil
+
+}
+
+func (s *CAStateManagerSQLSession) GetCACertsByCAID(caid string) ([]types.CACertInfo, error) {
+
+	return s.getCACertsCustomQuery(func() (*sql.Rows, error) {
+		return s.db.Query(`SELECT `+caCertsQueryElements+`
+	FROM `+s.prov.Prov.DBName("keycerts")+` 
+	WHERE ca_id=$1;`,
+			caid)
+	})
+
+}
+
+func (s *CAStateManagerSQLSession) GetCACertsByKeyName(keyName string) ([]types.CACertInfo, error) {
+
+	return s.getCACertsCustomQuery(func() (*sql.Rows, error) {
+		return s.db.Query(`SELECT `+caCertsQueryElements+`
+	FROM `+s.prov.Prov.DBName("keycerts")+` 
+	WHERE key_name=$1;`,
+			keyName)
+	})
+
+}
+
+func (s *CAStateManagerSQLSession) GetAllCACerts() ([]types.CACertInfo, error) {
+
+	return s.getCACertsCustomQuery(func() (*sql.Rows, error) {
+		return s.db.Query(`SELECT ` + caCertsQueryElements + `
+	FROM ` + s.prov.Prov.DBName("keycerts") + `;`)
+	})
+
+}
+
+func (s *CAStateManagerSQLSession) getCACertsCustomQuery(cq func() (*sql.Rows, error)) ([]types.CACertInfo, error) {
+	rows, err := cq()
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	res := make([]types.CACertInfo, 0, 100)
+
+	for rows.Next() {
+		res = append(res, types.CACertInfo{})
+		err = s.rowToCACertInfo(rows, &res[len(res)-1])
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	err = rows.Err()
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
+
+}
+
+func (s *CAStateManagerSQLSession) rowToCACertInfo(rows *sql.Rows, info *types.CACertInfo) error {
+	var claimTimeStr string
+	var renewTimeStr string
+	var validStartTimeStr string
+	var validEndTimeStr string
+	var domainsStr string
+	err := rows.Scan(&info.Name, &info.PrivKey, &info.ACMEUser, &info.IssuedByUser,
+		&domainsStr, &claimTimeStr, &renewTimeStr, &validStartTimeStr, &validEndTimeStr, &info.CertPEM)
+	if err != nil {
+		return err
+	}
+
+	info.ClaimTime, err = state.DBStrToTime(claimTimeStr)
+	if err != nil {
+		return err
+	}
 
 	info.RenewTime, err = state.DBStrToTime(renewTimeStr)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	info.ValidStartTime, err = state.DBStrToTime(validStartTimeStr)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	info.ValidEndTime, err = state.DBStrToTime(validEndTimeStr)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	info.Domains = strings.Split(domainsStr, ",")
 
-	return info, nil
-
+	return nil
 }
 
 func (s *CAStateManagerSQLSession) DelCACertByID(keyID string, caID string) error {

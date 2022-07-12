@@ -62,13 +62,13 @@ func (p *CAProvider) AddAllowedRootZone() int {
 
 }
 
-func (p *CAProvider) GetTotalValid() int {
+func (p *CAProvider) GetTotalValid() uint {
 
 	return 42 //TODO
 
 }
 
-func (p *CAProvider) GetTotalIssued() int {
+func (p *CAProvider) GetTotalIssued() uint {
 
 	return 68 //TODO
 
@@ -84,7 +84,7 @@ func (p *CAProvider) ClaimCertificate(cinfo *types.CertificateClaimInfo) error {
 
 	acmeuser := "acme-" + cinfo.Name
 
-	return p.engine.TriggerUpdate(acmeuser, cinfo.Name, cinfo.SubjectAltNames,
+	return p.engine.TriggerUpdate(acmeuser, cinfo.Name, cinfo.Domains,
 		"leo@nobach.net", //TODO: clarify where to get this from.
 		"anonymous")      //TODO: fix when auth is ready.
 
