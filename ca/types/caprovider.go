@@ -22,6 +22,8 @@ type CAProvider interface {
 	IsEnabled() bool
 
 	ClaimCertificate(cinfo *CertificateClaimInfo) error
+
+	//May be called even if CAProvider does not manage key, should return nil then
 	CleanupBeforeDeletion(keyID string) error
 }
 

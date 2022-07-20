@@ -31,7 +31,7 @@ type Engine struct {
 //is authenticated and authorized for the requested domain.
 //It will look up the current state of the user and the key/certificate and ensures that the user and
 //the requested key/cert is present.
-func (e *Engine) TriggerUpdate(acmeuser string, keyname string, domains []string, email, issuedBy string) error {
+func (e *Engine) TriggerUpdate(acmeuser string, keyname string, keyrz string, domains []string, email, issuedBy string) error {
 
 	keyMustExist := acmeuser == "" || len(domains) <= 0
 
@@ -177,7 +177,7 @@ func (e *Engine) TriggerUpdate(acmeuser string, keyname string, domains []string
 	}
 	issuerCertStr := string(certificates.IssuerCertificate)
 
-	return castate.PutCACertData(!noKey, keyname, e.CAID, info,
+	return castate.PutCACertData(!noKey, keyname, keyrz, e.CAID, info,
 		certStr, issuerCertStr, info.RenewTime)
 
 }
@@ -251,3 +251,20 @@ func generateRSAPrivateKey() (*rsa.PrivateKey, error) {
 	}
 	return k, nil
 }
+
+/*
+//TODO implement
+func (e *Engine) DeleteACMEUser(acmeuser string) error {
+
+	state, err := e.State.NewSession()
+	if err != nil {
+		return err
+	}
+	defer state.Close()
+
+	state.DeleteACMEUser(acmeuser string) {
+
+	}
+
+}
+*/

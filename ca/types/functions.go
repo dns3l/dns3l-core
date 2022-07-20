@@ -6,6 +6,7 @@ import (
 )
 
 type CertificateResources struct {
+	Domains     []string
 	Certificate string
 	Key         string
 	Chain       string
@@ -14,6 +15,7 @@ type CertificateResources struct {
 
 type CertificateClaimInfo struct {
 	Name    string
+	NameRZ  string
 	Domains []string
 	//TODO implement hints
 }

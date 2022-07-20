@@ -103,18 +103,17 @@ func TestWithLEStaging() {
 	email := "leo@nobach.net"
 	issuedBy := "testuser1"
 	acmeuser := "testacmeuser1"
-	keyid := "testkey1"
 
-	domainName1, err := dnscommon.MakeNewDomainName4Test(c.DNSTest.TestableZones[dnsProvider].Zones)
+	domainName1, zone1, err := dnscommon.MakeNewDomainName4Test(c.DNSTest.TestableZones[dnsProvider].Zones)
 	if err != nil {
 		panic(err)
 	}
-	domainName2, err := dnscommon.MakeNewDomainName4Test(c.DNSTest.TestableZones[dnsProvider].Zones)
+	domainName2, _, err := dnscommon.MakeNewDomainName4Test(c.DNSTest.TestableZones[dnsProvider].Zones)
 	if err != nil {
 		panic(err)
 	}
 
-	err = e.TriggerUpdate(acmeuser, keyid, []string{domainName1, domainName2},
+	err = e.TriggerUpdate(acmeuser, domainName1, zone1, []string{domainName1, domainName2},
 		email, issuedBy)
 	if err != nil {
 		var norenew *acme.NoRenewalDueError
@@ -127,7 +126,7 @@ func TestWithLEStaging() {
 	}
 
 	//this should trigger updating the existing key while getting details from database
-	err = e.TriggerUpdate("", keyid, nil, email, "")
+	err = e.TriggerUpdate("", domainName1, "", nil, email, "")
 	if err != nil {
 		var norenew *acme.NoRenewalDueError
 		if errors.As(err, &norenew) {
@@ -138,7 +137,7 @@ func TestWithLEStaging() {
 		}
 	}
 
-	key, ctype, err := h.GetCertificateResource(keyid, caID, "key")
+	key, err := h.GetCertificateResource(domainName1, caID, "key")
 	if err != nil {
 		panic(err)
 	}
@@ -147,24 +146,24 @@ func TestWithLEStaging() {
 	if err != nil {
 		panic(err)
 	}
-	err = writeToFile(tmpDir, "key.pem", ctype, key)
+	err = writeToFile(tmpDir, "key.pem", key.ContentType, key.PEMData)
 	if err != nil {
 		panic(err)
 	}
 
-	crt, ctype, err := h.GetCertificateResource(keyid, caID, "crt")
+	crt, err := h.GetCertificateResource(domainName1, caID, "crt")
 	if err != nil {
 		panic(err)
 	}
-	err = writeToFile(tmpDir, "crt.pem", ctype, crt)
+	err = writeToFile(tmpDir, "crt.pem", crt.ContentType, crt.PEMData)
 	if err != nil {
 		panic(err)
 	}
-	fullchain, ctype, err := h.GetCertificateResource(keyid, caID, "fullchain")
+	fullchain, err := h.GetCertificateResource(domainName1, caID, "fullchain")
 	if err != nil {
 		panic(err)
 	}
-	err = writeToFile(tmpDir, "fullchain.pem", ctype, fullchain)
+	err = writeToFile(tmpDir, "fullchain.pem", fullchain.ContentType, fullchain.PEMData)
 	if err != nil {
 		panic(err)
 	}

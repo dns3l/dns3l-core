@@ -7,9 +7,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Masterminds/squirrel"
 	"github.com/dta4/dns3l-go/ca/types"
 	"github.com/dta4/dns3l-go/common"
 	"github.com/dta4/dns3l-go/state"
+	"github.com/dta4/dns3l-go/util"
 )
 
 type CAStateManagerSQL struct {
@@ -44,6 +46,19 @@ valid_start_time,
 valid_end_time,
 cert`
 
+var caCertsQueryColumns = []string{
+	"key_name",
+	"priv_key",
+	"acme_user",
+	"issued_by",
+	"domains",
+	"claim_time",
+	"renew_time",
+	"valid_start_time",
+	"valid_end_time",
+	"cert",
+}
+
 func (s *CAStateManagerSQLSession) GetCACertByID(keyname string, caid string) (*types.CACertInfo, error) {
 	rows, err := s.db.Query(`SELECT `+caCertsQueryElements+`
 	FROM `+s.prov.Prov.DBName("keycerts")+` 
@@ -68,39 +83,25 @@ func (s *CAStateManagerSQLSession) GetCACertByID(keyname string, caid string) (*
 
 }
 
-func (s *CAStateManagerSQLSession) GetCACertsByCAID(caid string) ([]types.CACertInfo, error) {
+func (s *CAStateManagerSQLSession) ListCACerts(keyName string, caid string, rzFilter []string,
+	pginfo *util.PaginationInfo) ([]types.CACertInfo, error) {
+	q := squirrel.Select(caCertsQueryColumns...).From(s.prov.Prov.DBName("keycerts"))
+	filters := make(squirrel.Eq, 0)
+	if keyName != "" {
+		filters["key_name"] = keyName
+	}
+	if caid != "" {
+		filters["ca_id"] = caid
+	}
+	if len(rzFilter) > 0 {
+		filters["key_rz"] = rzFilter
+	}
+	q = q.Where(filters)
+	if pginfo != nil {
+		q = q.Limit(pginfo.Limit).Offset(pginfo.Offset)
+	}
 
-	return s.getCACertsCustomQuery(func() (*sql.Rows, error) {
-		return s.db.Query(`SELECT `+caCertsQueryElements+`
-	FROM `+s.prov.Prov.DBName("keycerts")+` 
-	WHERE ca_id=$1;`,
-			caid)
-	})
-
-}
-
-func (s *CAStateManagerSQLSession) GetCACertsByKeyName(keyName string) ([]types.CACertInfo, error) {
-
-	return s.getCACertsCustomQuery(func() (*sql.Rows, error) {
-		return s.db.Query(`SELECT `+caCertsQueryElements+`
-	FROM `+s.prov.Prov.DBName("keycerts")+` 
-	WHERE key_name=$1;`,
-			keyName)
-	})
-
-}
-
-func (s *CAStateManagerSQLSession) GetAllCACerts() ([]types.CACertInfo, error) {
-
-	return s.getCACertsCustomQuery(func() (*sql.Rows, error) {
-		return s.db.Query(`SELECT ` + caCertsQueryElements + `
-	FROM ` + s.prov.Prov.DBName("keycerts") + `;`)
-	})
-
-}
-
-func (s *CAStateManagerSQLSession) getCACertsCustomQuery(cq func() (*sql.Rows, error)) ([]types.CACertInfo, error) {
-	rows, err := cq()
+	rows, err := q.RunWith(s.db).Query()
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +122,6 @@ func (s *CAStateManagerSQLSession) getCACertsCustomQuery(cq func() (*sql.Rows, e
 		return nil, err
 	}
 	return res, nil
-
 }
 
 func (s *CAStateManagerSQLSession) rowToCACertInfo(rows *sql.Rows, info *types.CACertInfo) error {
@@ -180,7 +180,7 @@ func (s *CAStateManagerSQLSession) DelCACertByID(keyID string, caID string) erro
 
 }
 
-func (s *CAStateManagerSQLSession) PutCACertData(update bool, keyname string, caid string, info *types.CACertInfo,
+func (s *CAStateManagerSQLSession) PutCACertData(update bool, keyname string, keyrz string, caid string, info *types.CACertInfo,
 	certStr, issuerCertStr string, claimTime time.Time) error {
 	validStartTimeStr := state.TimeToDBStr(info.ValidStartTime)
 	validEndTimeStr := state.TimeToDBStr(info.ValidEndTime)
@@ -205,11 +205,11 @@ func (s *CAStateManagerSQLSession) PutCACertData(update bool, keyname string, ca
 	claimTimeStr := state.TimeToDBStr(claimTime)
 	log.Debugf("Storing new cert/key pair '%s' for user '%s' in database",
 		keyname, info.ACMEUser)
-	_, err := s.db.Exec(`INSERT INTO `+s.prov.Prov.DBName("keycerts")+` (key_name, ca_id,`+
+	_, err := s.db.Exec(`INSERT INTO `+s.prov.Prov.DBName("keycerts")+` (key_name, key_rz, ca_id,`+
 		`acme_user, issued_by, priv_key, cert, issuer_cert, domains, claim_time,
 		renew_time, valid_start_time, valid_end_time, renew_count) `+
-		`values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 0);`,
-		keyname, caid, info.ACMEUser, info.IssuedByUser, info.PrivKey, certStr,
+		`values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 0);`,
+		keyname, keyrz, caid, info.ACMEUser, info.IssuedByUser, info.PrivKey, certStr,
 		issuerCertStr, domainsStr, claimTimeStr, renewTimeStr, validStartTimeStr, validEndTimeStr)
 	if err != nil {
 		return fmt.Errorf("problem while storing new key and cert in database: %v", err)
@@ -219,40 +219,63 @@ func (s *CAStateManagerSQLSession) PutCACertData(update bool, keyname string, ca
 
 }
 
-func (s *CAStateManagerSQLSession) GetResource(keyName, caid, resourceName string) (string, error) {
+func (s *CAStateManagerSQLSession) GetResource(keyName, caid, resourceName string) (string, []string, error) {
 
-	returns, err := s.GetResources(keyName, caid, resourceName)
+	returns, domains, err := s.GetResources(keyName, caid, resourceName)
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 	if returns == nil {
-		return "", nil
+		return "", nil, nil
 	}
-	return returns[0], nil
+	return returns[0], domains, nil
 
 }
 
-func (s *CAStateManagerSQLSession) GetResources(keyName, caid string, resourceNames ...string) ([]string, error) {
+func (s *CAStateManagerSQLSession) GetResources(keyName, caid string, resourceNames ...string) ([]string, []string, error) {
+
+	var domainsStr string
 
 	returns := make([]string, len(resourceNames))
-	returnsPtr := make([]interface{}, len(resourceNames))
+	returnsPtr := make([]interface{}, len(resourceNames)+1)
 	for i := range returnsPtr {
 		//hackity hack
-		returnsPtr[i] = &returns[i]
+		if i == 0 {
+			returnsPtr[0] = &domainsStr
+		} else {
+			returnsPtr[i] = &returns[i-1]
+		}
 	}
 
 	// TODO: validate -> just to be sure it is not wrongly used in the future.
 	// #nosec G202 (dbFieldName is never user input!)
-	row := s.db.QueryRow(`SELECT `+strings.Join(resourceNames, ",")+` FROM `+s.prov.Prov.DBName("keycerts")+` WHERE key_name=$1 `+
-		`LIMIT 1`, keyName)
+	row := s.db.QueryRow(`SELECT domains,`+strings.Join(resourceNames, ",")+` FROM `+s.prov.Prov.DBName("keycerts")+` WHERE key_name=$1 
+	AND ca_id=$2 LIMIT 1`, keyName, caid)
 
 	err := row.Scan(returnsPtr...)
 	if err == sqlraw.ErrNoRows {
-		return nil, &common.NotFoundError{RequestedResource: keyName}
+		return nil, nil, &common.NotFoundError{RequestedResource: keyName}
 	}
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return returns, nil
+	return returns, strings.Split(domainsStr, ","), nil
+}
+
+func (s *CAStateManagerSQLSession) DeleteCertAllCA(keyID string) error {
+	res, err := s.db.Exec("DELETE FROM "+s.prov.Prov.DBName("keycerts")+" WHERE key_name=$1;",
+		keyID)
+
+	if err == nil {
+		count, err := res.RowsAffected()
+		if err != nil {
+			return err
+		}
+		if count <= 0 {
+			return &common.NotFoundError{RequestedResource: keyID}
+		}
+	}
+
+	return err
 }

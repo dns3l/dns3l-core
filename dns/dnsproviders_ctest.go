@@ -40,7 +40,7 @@ func TestAllProvidersFromConfig() {
 
 		log.WithField("provider", id).Info("Testing A record behavior")
 
-		domainName, err := common.MakeNewDomainName4Test(testableZones.Zones)
+		domainName, _, err := common.MakeNewDomainName4Test(testableZones.Zones)
 		if err != nil {
 			panic(err)
 		}
@@ -75,7 +75,7 @@ func TestAllProvidersFromConfig() {
 
 		log.WithField("provider", id).Info("Testing acme-challenge TXT record behavior")
 
-		domainName, err = common.MakeNewDomainName4Test(testableZones.Zones)
+		domainName, _, err = common.MakeNewDomainName4Test(testableZones.Zones)
 		if err != nil {
 			panic(err)
 		}

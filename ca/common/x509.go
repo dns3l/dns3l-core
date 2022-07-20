@@ -51,3 +51,9 @@ func ParseCertificatePEM(certificate []byte) ([]*x509.Certificate, error) {
 	return result, nil
 
 }
+
+type PEMResource struct {
+	PEMData     string
+	ContentType string
+	Domains     []string
+}

@@ -16,3 +16,19 @@ func (e *NotFoundError) Error() string {
 	return fmt.Sprintf("Requested resource '%s' not found", e.RequestedResource)
 
 }
+
+type NotAuthnedError struct {
+	Msg string
+}
+
+func (e *NotAuthnedError) Error() string {
+	return e.Msg
+}
+
+type UnauthzedError struct {
+	Msg string
+}
+
+func (e *UnauthzedError) Error() string {
+	return e.Msg
+}

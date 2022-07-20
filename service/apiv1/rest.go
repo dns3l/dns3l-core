@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/dta4/dns3l-go/common"
+	"github.com/dta4/dns3l-go/service/auth"
 	"github.com/gorilla/mux"
 )
 
@@ -12,6 +14,9 @@ var Version = "1.0" //this is the API version, not the one of the daemon
 type RestV1Handler struct {
 	Service   ServiceV1
 	Validator Validator
+
+	//Must be inited externally PRIOR to Rest API execution
+	Auth auth.RESTAPIAuthProvider
 }
 
 type ErrorMsg struct {
@@ -34,7 +39,6 @@ func (hdlr *RestV1Handler) Init(r *mux.Router) error {
 		hdlr.HandleNamedCertObj)
 	r.HandleFunc("/crt", hdlr.HandleAnonCert)
 	r.HandleFunc("/crt/{crtID:\\*?[A-Za-z0-9\\._-]+}", hdlr.HandleNamedCert)
-	//TODO delete
 
 	return hdlr.Validator.Init()
 
@@ -96,9 +100,16 @@ func (hdlr *RestV1Handler) HandleCAAnonCert(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	authz, err := hdlr.Auth.AuthnGetAuthzInfo(r)
+	if err != nil {
+		httpErrorFromErr(w, err)
+		return
+	}
+
 	if r.Method == http.MethodGet {
 		//Get info of all CA's certs
-		certInfos, err := hdlr.Service.GetCertificateInfos(caID, "")
+		certInfos, err := hdlr.Service.GetCertificateInfos(caID, "", authz, nil)
+		//TODO pagination
 		if err != nil {
 			httpError(w, 404, err.Error()) //TODO detect Not Found error
 			return
@@ -122,7 +133,7 @@ func (hdlr *RestV1Handler) HandleCAAnonCert(w http.ResponseWriter, r *http.Reque
 			return
 		}
 
-		err = hdlr.Service.ClaimCertificate(caID, cinfo)
+		err = hdlr.Service.ClaimCertificate(caID, cinfo, authz)
 		if err != nil {
 			httpError(w, 500, err.Error())
 			return
@@ -149,19 +160,25 @@ func (hdlr *RestV1Handler) HandleCANamedCert(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	authz, err := hdlr.Auth.AuthnGetAuthzInfo(r)
+	if err != nil {
+		httpErrorFromErr(w, err)
+		return
+	}
+
 	if r.Method == http.MethodDelete {
 		//Delete cert
 
-		err := hdlr.Service.DeleteCertificate(caID, crtID)
+		err := hdlr.Service.DeleteCertificate(caID, crtID, authz)
 		if err != nil {
-			httpError(w, 500, err.Error())
+			httpErrorFromErr(w, err)
 			return
 		}
 	} else if r.Method == http.MethodGet {
 		//Get info of specific cert
-		certInfo, err := hdlr.Service.GetCertificateInfo(caID, crtID)
+		certInfo, err := hdlr.Service.GetCertificateInfo(caID, crtID, authz)
 		if err != nil {
-			httpError(w, 404, err.Error()) //TODO detect Not Found error
+			httpErrorFromErr(w, err)
 			return
 		}
 		w.WriteHeader(200)
@@ -189,10 +206,16 @@ func (hdlr *RestV1Handler) HandleCertObjs(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	authz, err := hdlr.Auth.AuthnGetAuthzInfo(r)
+	if err != nil {
+		httpErrorFromErr(w, err)
+		return
+	}
+
 	if r.Method == http.MethodGet {
 		//Get all cert PEM infos
 
-		obj, err := hdlr.Service.GetAllCertResources(caID, crtID)
+		obj, err := hdlr.Service.GetAllCertResources(caID, crtID, authz)
 		if err != nil {
 			httpError(w, 500, err.Error())
 			return
@@ -234,9 +257,15 @@ func (hdlr *RestV1Handler) HandleNamedCertObj(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	authz, err := hdlr.Auth.AuthnGetAuthzInfo(r)
+	if err != nil {
+		httpErrorFromErr(w, err)
+		return
+	}
+
 	if r.Method == http.MethodGet {
 
-		res, ctype, err := hdlr.Service.GetCertificateResource(caID, crtID, obj)
+		res, ctype, err := hdlr.Service.GetCertificateResource(caID, crtID, obj, authz)
 		if err != nil {
 			w.Header().Add("Content-Type", "application/json")
 			httpError(w, 500, err.Error())
@@ -256,11 +285,18 @@ func (hdlr *RestV1Handler) HandleNamedCertObj(w http.ResponseWriter, r *http.Req
 func (hdlr *RestV1Handler) HandleAnonCert(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
 
+	authz, err := hdlr.Auth.AuthnGetAuthzInfo(r)
+	if err != nil {
+		httpErrorFromErr(w, err)
+		return
+	}
+
 	if r.Method == http.MethodGet {
 		//Get all certs
-		certInfos, err := hdlr.Service.GetCertificateInfos("", "")
+		certInfos, err := hdlr.Service.GetCertificateInfos("", "", authz, nil)
+		//TODO pagination
 		if err != nil {
-			httpError(w, 404, err.Error()) //TODO detect Not Found error
+			httpErrorFromErr(w, err)
 			return
 		}
 		w.WriteHeader(200)
@@ -282,19 +318,46 @@ func (hdlr *RestV1Handler) HandleNamedCert(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	authz, err := hdlr.Auth.AuthnGetAuthzInfo(r)
+	if err != nil {
+		httpErrorFromErr(w, err)
+		return
+	}
+
 	if r.Method == http.MethodGet {
 		//Get info of specific cert
-		certInfos, err := hdlr.Service.GetCertificateInfos("", crtID)
+		certInfos, err := hdlr.Service.GetCertificateInfos("", crtID, authz, nil)
+		//TODO pagination
 		if err != nil {
-			httpError(w, 404, err.Error()) //TODO detect Not Found error
+			httpErrorFromErr(w, err)
 			return
 		}
 		w.WriteHeader(200)
 		json.NewEncoder(w).Encode(certInfos)
 		return
+	} else if r.Method == http.MethodDelete {
+		//Delete info of specific cert
+		err := hdlr.Service.DeleteCertificatesAllCA(crtID, authz)
+		if err != nil {
+			httpErrorFromErr(w, err)
+			return
+		}
+		w.WriteHeader(200)
+		return
 	} else {
 		httpError(w, 500, "Wrong method")
 		return
+	}
+
+}
+
+func httpErrorFromErr(w http.ResponseWriter, e error) {
+
+	switch e.(type) {
+	case *common.NotFoundError:
+		httpError(w, 404, e.Error())
+	default:
+		httpError(w, 500, e.Error())
 	}
 
 }

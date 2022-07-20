@@ -20,6 +20,17 @@ info:
       "message": "Server error" }
     ```
 
+	"github.com/dta4/dns3l-go/service/auth"
+
+	//Must be inited externally PRIOR to Rest API execution
+	Auth auth.RESTAPIAuthProvider
+}
+
+	authz, err := hdlr.Auth.AuthnGetAuthzInfo(r)
+	if err != nil {
+		httpError(w, 404, err.Error()) //TODO detect Not Found error
+	}
+
     # Versioning
 
     The API usually changes, so API calls are versioned to ensure that clients don't break.

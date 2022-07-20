@@ -2,6 +2,8 @@ package types
 
 import (
 	"time"
+
+	"github.com/dta4/dns3l-go/util"
 )
 
 type CAStateManager interface {
@@ -11,22 +13,21 @@ type CAStateManager interface {
 type CAStateManagerSession interface {
 	Close() error
 
-	GetCACertsByCAID(caid string) ([]CACertInfo, error)
-
-	GetCACertsByKeyName(keyName string) ([]CACertInfo, error)
-
-	GetAllCACerts() ([]CACertInfo, error)
+	ListCACerts(keyName string, caid string, rzFilter []string,
+		pginfo *util.PaginationInfo) ([]CACertInfo, error)
 
 	//returns privKey, expiryTime, error
 	GetCACertByID(keyID string, caID string) (*CACertInfo, error)
 
 	DelCACertByID(keyID string, caID string) error
 
-	PutCACertData(update bool, keyname string, caid string, info *CACertInfo, certStr, issuerCertStr string, claimTime time.Time) error
+	PutCACertData(update bool, keyname string, keyrz string, caid string, info *CACertInfo, certStr, issuerCertStr string, claimTime time.Time) error
 
-	GetResource(keyID string, caid string, resourceName string) (string, error)
+	GetResource(keyID string, caid string, resourceName string) (string, []string, error)
 
-	GetResources(keyID string, caid string, resourceNames ...string) ([]string, error)
+	GetResources(keyID string, caid string, resourceNames ...string) ([]string, []string, error)
+
+	DeleteCertAllCA(keyID string) error
 }
 
 type CACertInfo struct {

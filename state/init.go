@@ -12,7 +12,10 @@ CREATE TABLE IF NOT EXISTS ` + dbProv.DBName("acmeusers") + ` (
 	PRIMARY KEY (user_id, ca_id)
 	);
 CREATE TABLE IF NOT EXISTS ` + dbProv.DBName("keycerts") + ` (
-	key_name TEXT, ca_id TEXT, acme_user TEXT,
+	key_name TEXT,
+	key_rz TEXT,
+	ca_id TEXT, 
+	acme_user TEXT,
 	issued_by TEXT,
 	priv_key TEXT,
 	cert TEXT,

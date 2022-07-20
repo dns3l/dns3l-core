@@ -1,15 +1,21 @@
 package apiv1
 
+import (
+	"github.com/dta4/dns3l-go/service/auth"
+	"github.com/dta4/dns3l-go/util"
+)
+
 type ServiceV1 interface {
 	GetServerInfo() *ServerInfo
 	GetDNSHandlers() []DNSHandlerInfo
 	GetDNSRootzones() []DNSRootzoneInfo
 	GetCAs() []*CAInfo
 	GetCA(caID string) (*CAInfo, error)
-	ClaimCertificate(caID string, cinfo *CertClaimInfo) error
-	DeleteCertificate(caID, crtID string) error
-	GetCertificateResource(caID, crtID, obj string) (string, string, error)
-	GetAllCertResources(caID, crtID string) (*CertResources, error)
-	GetCertificateInfos(caID string, crtID string) ([]CertInfo, error)
-	GetCertificateInfo(caID string, crtID string) (*CertInfo, error)
+	ClaimCertificate(caID string, cinfo *CertClaimInfo, authz *auth.AuthorizationInfo) error
+	DeleteCertificate(caID, crtID string, authz *auth.AuthorizationInfo) error
+	GetCertificateResource(caID, crtID, obj string, authz *auth.AuthorizationInfo) (string, string, error)
+	GetAllCertResources(caID, crtID string, authz *auth.AuthorizationInfo) (*CertResources, error)
+	GetCertificateInfos(caID string, crtID string, authz *auth.AuthorizationInfo, pginfo *util.PaginationInfo) ([]CertInfo, error)
+	GetCertificateInfo(caID string, crtID string, authz *auth.AuthorizationInfo) (*CertInfo, error)
+	DeleteCertificatesAllCA(crtID string, authz *auth.AuthorizationInfo) error
 }

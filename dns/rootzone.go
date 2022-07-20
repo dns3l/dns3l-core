@@ -32,7 +32,7 @@ func (rz RootZones) GetLowestRZForDomain(domainName string) (*RootZone, error) {
 	}
 
 	if longestZone == nil {
-		return nil, fmt.Errorf("no appropriate zone could be found for domain name %s", domainName)
+		return nil, fmt.Errorf("no appropriate zone is configured for domain name %s", domainName)
 	}
 
 	return longestZone, nil

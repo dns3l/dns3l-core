@@ -2,7 +2,6 @@ package main
 
 import (
 	acmetest "github.com/dta4/dns3l-go/ca/acme/test"
-	"github.com/dta4/dns3l-go/dns"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -11,7 +10,7 @@ import (
 func main() {
 
 	log.SetLevel(log.DebugLevel)
-	dns.TestAllProvidersFromConfig()
+	//dns.TestAllProvidersFromConfig()
 	acmetest.TestWithLEStaging()
 
 }

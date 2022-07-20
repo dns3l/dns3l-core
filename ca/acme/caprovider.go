@@ -84,7 +84,7 @@ func (p *CAProvider) ClaimCertificate(cinfo *types.CertificateClaimInfo) error {
 
 	acmeuser := "acme-" + cinfo.Name
 
-	return p.engine.TriggerUpdate(acmeuser, cinfo.Name, cinfo.Domains,
+	return p.engine.TriggerUpdate(acmeuser, cinfo.Name, cinfo.NameRZ, cinfo.Domains,
 		"leo@nobach.net", //TODO: clarify where to get this from.
 		"anonymous")      //TODO: fix when auth is ready.
 
@@ -92,7 +92,9 @@ func (p *CAProvider) ClaimCertificate(cinfo *types.CertificateClaimInfo) error {
 
 func (p *CAProvider) CleanupBeforeDeletion(keyID string) error {
 
-	//TODO maybe clean up orphaned ACME keys here
-	return nil
+	//acmeuser := "acme-" + keyID
+
+	//return p.engine.DeleteACMEUser(acmeuser)
+	return errors.New("Not implemented yet.")
 
 }

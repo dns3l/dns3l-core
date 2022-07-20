@@ -1,7 +1,6 @@
 package ca
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/dta4/dns3l-go/ca/common"
@@ -72,7 +71,7 @@ func (h *CAFunctionHandler) GetCertificateResources(keyID, caID string) (*types.
 
 }
 
-func (h *CAFunctionHandler) GetCertificateResource(keyID, caID, objectType string) (string, string, error) {
+func (h *CAFunctionHandler) GetCertificateResource(keyID, caID, objectType string) (*common.PEMResource, error) {
 
 	log.WithFields(logrus.Fields{
 		"keyID":      keyID,
@@ -102,13 +101,14 @@ func (h *CAFunctionHandler) getResourcesNoUpd(keyID, caID string) (*types.Certif
 	}
 	defer sess.Close()
 
-	res, err := sess.GetResources(keyID, caID, "priv_key", "cert", "issuer_cert")
+	res, domains, err := sess.GetResources(keyID, caID, "priv_key", "cert", "issuer_cert")
 
 	if err != nil {
 		return nil, err
 	}
 
 	return &types.CertificateResources{
+		Domains:     domains,
 		Certificate: res[1],
 		Key:         res[0],
 		Chain:       res[2],
@@ -120,11 +120,11 @@ func (h *CAFunctionHandler) getResourcesNoUpd(keyID, caID string) (*types.Certif
 // GetResource returns an autokey-obtained resource (key, cert, issuer etc..) to the user
 // of the autokey service. The GetUpdate function must be called first, otherwise
 // GetObject will return NotFoundError because the resources are not yet present.
-func (h *CAFunctionHandler) getResourceNoUpd(keyID, caID, objectType string) (string, string, error) {
+func (h *CAFunctionHandler) getResourceNoUpd(keyID, caID, objectType string) (*common.PEMResource, error) {
 
 	err := common.ValidateKeyName(keyID)
 	if err != nil {
-		return "", "", err
+		return nil, err
 	}
 
 	log.Debugf("Request for resource '%s' belonging to key ID '%s'",
@@ -132,30 +132,59 @@ func (h *CAFunctionHandler) getResourceNoUpd(keyID, caID, objectType string) (st
 
 	sess, err := h.State.NewSession()
 	if err != nil {
-		return "", "", err
+		return nil, err
 	}
 	defer sess.Close()
 
 	switch objectType {
 	case "key":
 		//"resourceName" of sess.GetResource must never be user input > not validated!
-		res, err := sess.GetResource(keyID, caID, "priv_key")
-		return res, "application/x-pem-file", err
+		res, domains, err := sess.GetResource(keyID, caID, "priv_key")
+		if err != nil {
+			return nil, err
+		}
+		return &common.PEMResource{
+			PEMData:     res,
+			ContentType: "application/x-pem-file",
+			Domains:     domains,
+		}, nil
 	case "crt":
-		res, err := sess.GetResource(keyID, caID, "cert")
-		return res, "application/x-pem-file", err
+		res, domains, err := sess.GetResource(keyID, caID, "cert")
+		if err != nil {
+			return nil, err
+		}
+		return &common.PEMResource{
+			PEMData:     res,
+			ContentType: "application/x-pem-file",
+			Domains:     domains,
+		}, nil
 	case "issuer-cert":
-		res, err := sess.GetResource(keyID, caID, "issuer_cert")
-		return res, "application/x-pem-file", err
+		res, domains, err := sess.GetResource(keyID, caID, "issuer_cert")
+		if err != nil {
+			return nil, err
+		}
+		return &common.PEMResource{
+			PEMData:     res,
+			ContentType: "application/x-pem-file",
+			Domains:     domains,
+		}, nil
 	case "fullchain":
-		res, err := sess.GetResources(keyID, caID, "cert", "issuer_cert")
-		return res[0] + "\n" + res[1], "application/x-pem-file", err
+		res, domains, err := sess.GetResources(keyID, caID, "cert", "issuer_cert")
+		if err != nil {
+			return nil, err
+		}
+		return &common.PEMResource{
+			PEMData:     res[0] + "\n" + res[1],
+			ContentType: "application/x-pem-file",
+			Domains:     domains,
+		}, nil
 	}
-	return "", "", &cmn.NotFoundError{RequestedResource: keyID}
+	return nil, &cmn.NotFoundError{RequestedResource: keyID}
 
 }
 
-func (h *CAFunctionHandler) GetCertificateInfos(caID string, keyID string) ([]types.CACertInfo, error) {
+func (h *CAFunctionHandler) GetCertificateInfos(caID string, keyID string,
+	rzFilter []string, pginfo *util.PaginationInfo) ([]types.CACertInfo, error) {
 
 	sess, err := h.State.NewSession()
 	if err != nil {
@@ -163,15 +192,7 @@ func (h *CAFunctionHandler) GetCertificateInfos(caID string, keyID string) ([]ty
 	}
 	defer sess.Close()
 
-	if caID == "" && keyID == "" {
-		return sess.GetAllCACerts()
-	} else if caID == "" {
-		return sess.GetCACertsByKeyName(keyID)
-	} else if keyID == "" {
-		return sess.GetCACertsByCAID(caID)
-	} else {
-		return nil, errors.New("cannot filter for keyID and caID")
-	}
+	return sess.ListCACerts(keyID, caID, rzFilter, pginfo)
 
 }
 
@@ -184,5 +205,30 @@ func (h *CAFunctionHandler) GetCertificateInfo(caID string, keyID string) (*type
 	defer sess.Close()
 
 	return sess.GetCACertByID(keyID, caID)
+
+}
+
+func (h *CAFunctionHandler) DeleteCertificatesAllCA(keyID string) error {
+
+	err := common.ValidateKeyName(keyID)
+	if err != nil {
+		return err
+	}
+
+	for id, prov := range h.Config.Providers {
+		err = prov.Prov.CleanupBeforeDeletion(keyID)
+		if err != nil {
+			log.WithError(err).Errorf("Problems cleaning up for provider '%s' before deletion"+
+				"of key '%s', continuing nevertheless...", id, keyID)
+		}
+	}
+
+	sess, err := h.State.NewSession()
+	if err != nil {
+		return err
+	}
+	defer sess.Close()
+
+	return sess.DeleteCertAllCA(keyID)
 
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/creasty/defaults"
 	"github.com/dta4/dns3l-go/ca"
 	"github.com/dta4/dns3l-go/dns"
+	"github.com/dta4/dns3l-go/service/auth"
 	"github.com/dta4/dns3l-go/state"
 	myvalidation "github.com/dta4/dns3l-go/util/validation"
 	"github.com/go-playground/validator/v10"
@@ -17,7 +18,8 @@ type Config struct {
 	DNS       *dns.Config                 `yaml:"dns" validate:"required"`
 	CA        *ca.Config                  `yaml:"ca" validate:"required"`
 	RootZones dns.RootZones               `yaml:"rtzn" validate:"required,dive"`
-	DB        *state.SQLDBProviderDefault `yaml:"db" validate:"required"` //SQL hard-coded (only here)
+	DB        *state.SQLDBProviderDefault `yaml:"db" validate:"required"`   //SQL hard-coded (only here)
+	Auth      *auth.OIDCHandler           `yaml:"auth" validate:"required"` //OIDC hard-coded (only here)
 
 	//RootZoneAllowedCA map[string] //maybe we need this later...
 	//CAAllowedRootZones map[string][]dns.RootZone

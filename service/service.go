@@ -24,6 +24,7 @@ func (s *Service) Run() error {
 
 	v1hdlr := &apiv1.RestV1Handler{
 		Service: s.GetV1(),
+		Auth:    s.Config.Auth,
 	}
 	err := v1hdlr.Init(r.PathPrefix("/api/v1").Subrouter())
 	if err != nil {
