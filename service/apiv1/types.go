@@ -49,11 +49,11 @@ type AutoDNSInfo struct {
 }
 
 type CertClaimInfo struct {
-	Name            string      `json:"name" validate:"required,fqdn"`
-	Wildcard        bool        `json:"wildcard"`
-	SubjectAltNames []string    `json:"san" validate:"dive,required,fqdn|fqdnWildcard"`
-	AutoDNS         AutoDNSInfo `json:"autodns"`
-	Hints           interface{} `json:"hints"`
+	Name            string       `json:"name" validate:"required,fqdn"`
+	Wildcard        bool         `json:"wildcard"`
+	SubjectAltNames []string     `json:"san" validate:"dive,required,fqdn|fqdnWildcard"`
+	AutoDNS         *AutoDNSInfo `json:"autodns"`
+	Hints           interface{}  `json:"hints"`
 }
 
 type CertResources struct {

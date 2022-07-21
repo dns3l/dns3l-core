@@ -32,3 +32,11 @@ type UnauthzedError struct {
 func (e *UnauthzedError) Error() string {
 	return e.Msg
 }
+
+type InvalidInputError struct {
+	Msg string
+}
+
+func (e *InvalidInputError) Error() string {
+	return e.Msg
+}

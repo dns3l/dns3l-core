@@ -2,21 +2,23 @@ package service
 
 import (
 	"errors"
+	"fmt"
+	"net"
 	"time"
 
 	cacommon "github.com/dta4/dns3l-go/ca/common"
 	"github.com/dta4/dns3l-go/ca/types"
 	"github.com/dta4/dns3l-go/common"
 	"github.com/dta4/dns3l-go/dns"
+	dnstypes "github.com/dta4/dns3l-go/dns/types"
 	"github.com/dta4/dns3l-go/service/apiv1"
 	"github.com/dta4/dns3l-go/service/auth"
 	"github.com/dta4/dns3l-go/util"
+	"github.com/sirupsen/logrus"
 )
 
 func (s *V1) ClaimCertificate(caID string, cinfo *apiv1.CertClaimInfo, authz *auth.AuthorizationInfo) error {
 	fu := s.Service.Config.CA.Functions
-
-	//TODO: Autodns here
 
 	var firstDomain string
 	if cinfo.Wildcard {
@@ -37,11 +39,65 @@ func (s *V1) ClaimCertificate(caID string, cinfo *apiv1.CertClaimInfo, authz *au
 		return err
 	}
 
-	return fu.ClaimCertificate(caID, &types.CertificateClaimInfo{
+	var autodnsV4 net.IP
+	autodnsProvs := make(map[string]dnstypes.DNSProvider)
+	if cinfo.AutoDNS != nil {
+		autodnsV4 = net.ParseIP(cinfo.AutoDNS.IPv4)
+		if autodnsV4 == nil {
+			return &common.InvalidInputError{Msg: "Net address for AutoDNS not parseable"}
+		}
+		autodnsV4 = autodnsV4.To4()
+		if autodnsV4 == nil {
+			return &common.InvalidInputError{Msg: "Net address for AutoDNS not of v4 format"}
+		}
+
+		for _, domain := range domains {
+
+			if util.IsWildcard(domain) {
+				log.WithField("domain", domain).Debug("Ignoring wildcard domain for AutoDNS")
+				continue
+			}
+
+			rz, err := s.Service.Config.RootZones.GetLowestRZForDomain(domain)
+			if err != nil {
+				return err
+			}
+			if rz.DNSProvAutoDNS == "" {
+				return &common.InvalidInputError{Msg: fmt.Sprintf(
+					"AutoDNS provider for root zone '%s' not configured", rz.Root)}
+			}
+			autodnsProv, exists := s.Service.Config.DNS.Providers[rz.DNSProvAutoDNS]
+			if !exists {
+				return &common.InvalidInputError{Msg: fmt.Sprintf(
+					"AutoDNS provider '%s' configured for root zone '%s' not found", rz.DNSProvAutoDNS, rz.Root)}
+			}
+			autodnsProvs[domain] = autodnsProv.Prov
+		}
+
+	}
+
+	err = fu.ClaimCertificate(caID, &types.CertificateClaimInfo{
 		Name:    cinfo.Name,
 		NameRZ:  namerz.Root,
 		Domains: domains,
 	})
+
+	if err != nil {
+		return err
+	}
+
+	if cinfo.AutoDNS != nil {
+		for domain, prov := range autodnsProvs {
+			log.WithFields(logrus.Fields{"domain": domain, "prov": prov, "addr": autodnsV4}).Info(
+				"Setting AutoDNS entry")
+			err := prov.SetRecordA(domain, 300, autodnsV4) //TODO TTL to config
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 
 }
 
