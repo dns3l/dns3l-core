@@ -80,6 +80,6 @@ rtzn:
     acmedns: dns3l
     ca: ['*']
 db:
-  type: sqlite3
-  url: database.db
-  dbprefix: dns3l.
+  type: mysql
+  url: user:password@tcp(192.168.0.1)/dns3ld?parseTime=true
+  dbprefix: dns3l

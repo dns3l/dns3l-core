@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	_ "github.com/mattn/go-sqlite3"
+	//_ "github.com/mattn/go-sqlite3"
+	_ "github.com/go-sql-driver/mysql"
 )
 
 // DBProvider provides new sql.DB connections on request. On GetNewDBConn()
@@ -15,6 +16,7 @@ type SQLDBProvider interface {
 	GetNewDBConn() (*sql.DB, error)
 	SetDBPreExec(func(*sql.DB) error)
 	DBName(name string) string
+	GetType() string
 }
 
 // DBProviderDefault is the default database provider. Type and URL must be given,
@@ -24,6 +26,10 @@ type SQLDBProviderDefault struct {
 	URL         string `yaml:"url" validate:"required"`
 	PreExecFunc func(*sql.DB) error
 	DBPrefix    string `yaml:"dbprefix" validate:"alphanumUnderscoreDashDot"`
+}
+
+func (c *SQLDBProviderDefault) GetType() string {
+	return c.Type
 }
 
 // SetDBPreExec sets a function which is executed every time a new database connection is created.

@@ -171,6 +171,7 @@ func (e *Engine) TriggerUpdate(acmeuser string, keyname string, keyrz string, do
 	info.ValidStartTime = cert[0].NotBefore
 	info.ValidEndTime = cert[0].NotAfter
 	info.RenewTime = time.Now()
+	info.ClaimTime = info.RenewTime
 	certStr, err := common.ConvertCertBundleToPEMStr([]*x509.Certificate{cert[0]})
 	if err != nil {
 		return err
@@ -178,7 +179,7 @@ func (e *Engine) TriggerUpdate(acmeuser string, keyname string, keyrz string, do
 	issuerCertStr := string(certificates.IssuerCertificate)
 
 	return castate.PutCACertData(!noKey, keyname, keyrz, e.CAID, info,
-		certStr, issuerCertStr, info.RenewTime)
+		certStr, issuerCertStr)
 
 }
 

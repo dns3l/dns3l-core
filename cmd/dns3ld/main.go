@@ -23,7 +23,7 @@ func main() {
 var rootCmd = &cobra.Command{
 	Use:   "dns3ld",
 	Short: "dns3l backend daemon",
-	Long:  `Foo bar, fill me, version ` + context.Version,
+	Long:  `DNS3LD backend daemon, version ` + context.Version,
 	Run: func(cmd *cobra.Command, args []string) {
 
 		confPath, err := cmd.PersistentFlags().GetString("config")
@@ -53,8 +53,9 @@ var rootCmd = &cobra.Command{
 
 var dbCreateCmd = &cobra.Command{
 	Use:   "dbcreate",
-	Short: "dns3l backend daemon",
-	Long:  `Foo bar, fill me, version ` + context.Version,
+	Short: "Create database structure",
+	Long: `Creates the database structure given the database driver and DB
+	connection information in the config file`,
 	Run: func(cmd *cobra.Command, args []string) {
 
 		confPath, err := cmd.Parent().PersistentFlags().GetString("config")
@@ -67,7 +68,10 @@ var dbCreateCmd = &cobra.Command{
 			panic(err)
 		}
 
-		state.CreateSQLDB(conf.DB)
+		err = state.CreateSQLDB(conf.DB)
+		if err != nil {
+			panic(err)
+		}
 	},
 }
 

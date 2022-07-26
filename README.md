@@ -11,13 +11,14 @@ Implemented:
 - Code skeleton
 - Config
 - REST API returns config
+- DNS handlers
+- ACME handlers
+- State, DB connection
+- Auth
 
 Not yet implemented:
 
-- DNS handlers
-- ACME/Legacy handlers
-- State, DB connection
-- Auth
+- Legacy CA handlers
 
 # Build
 
@@ -39,16 +40,23 @@ docker build -t <tag-name> -f docker/Dockerfile-dns3ld .
 
 ```
 $./dns3ld --help
-
-Foo bar, fill me, version 1.0.0
+DNS3LD backend daemon, version 1.0.0
 
 Usage:
   dns3ld [flags]
+  dns3ld [command]
+
+Available Commands:
+  completion  Generate the autocompletion script for the specified shell
+  dbcreate    Create database structure
+  help        Help about any command
 
 Flags:
   -c, --config string   YAML-formatted configuration for dns3ld. (default "config.yaml")
   -h, --help            help for dns3ld
   -s, --socket string   L4 socket on which the service should listen. (default ":80")
+
+Use "dns3ld [command] --help" for more information about a command.
 ```
 
 Example

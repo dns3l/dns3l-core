@@ -9,10 +9,10 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-acme/lego/v4 v4.7.0
 	github.com/go-playground/validator/v10 v10.11.0
+	github.com/go-sql-driver/mysql v1.6.0
 	github.com/gorilla/mux v1.8.0
 	github.com/huaweicloud/golangsdk v0.0.0-20210831081626-d823fe11ceba
 	github.com/infobloxopen/infoblox-go-client/v2 v2.1.1
-	github.com/mattn/go-sqlite3 v1.14.13
 	github.com/miekg/dns v1.1.49
 	github.com/mitchellh/mapstructure v1.4.1
 	github.com/sirupsen/logrus v1.8.1

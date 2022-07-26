@@ -33,7 +33,7 @@ func (s *ACMEStateManagerSQLSession) Close() error {
 func (s *ACMEStateManagerSQLSession) GetACMEUserPrivkeyByID(userid string) (string, string, error) {
 
 	row := s.db.QueryRow(`select privatekey, registration from `+s.prov.Prov.DBName("acmeusers")+
-		` where user_id = $1 AND ca_id = $2 limit 1;`, userid, s.prov.CAID)
+		` where user_id = ? AND ca_id = ? limit 1;`, userid, s.prov.CAID)
 
 	var keyStr string
 	var registrationStr string
@@ -52,8 +52,8 @@ func (s *ACMEStateManagerSQLSession) PutACMEUser(userid, privatekey,
 	registrationStr string, registrationDate time.Time) error {
 
 	_, err := s.db.Exec(`INSERT INTO `+s.prov.Prov.DBName("acmeusers")+
-		` (user_id, ca_id, privatekey, registration, registration_date) values ($1, $2, $3, $4, $5);`,
-		userid, s.prov.CAID, privatekey, registrationStr, state.TimeToDBStr(registrationDate))
+		` (user_id, ca_id, privatekey, registration, registration_date) values (?, ?, ?, ?, ?);`,
+		userid, s.prov.CAID, privatekey, registrationStr, registrationDate.UTC())
 
 	if err != nil {
 		return fmt.Errorf("problem while obtaining certificate: %v", err)

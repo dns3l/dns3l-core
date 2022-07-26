@@ -21,7 +21,7 @@ type CAStateManagerSession interface {
 
 	DelCACertByID(keyID string, caID string) error
 
-	PutCACertData(update bool, keyname string, keyrz string, caid string, info *CACertInfo, certStr, issuerCertStr string, claimTime time.Time) error
+	PutCACertData(update bool, keyname string, keyrz string, caid string, info *CACertInfo, certStr, issuerCertStr string) error
 
 	GetResource(keyID string, caid string, resourceName string) (string, []string, error)
 
