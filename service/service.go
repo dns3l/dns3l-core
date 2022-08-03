@@ -22,11 +22,16 @@ func (s *Service) Run() error {
 
 	r := mux.NewRouter().StrictSlash(true)
 
+	err := s.Config.Auth.Init()
+	if err != nil {
+		return err
+	}
+
 	v1hdlr := &apiv1.RestV1Handler{
 		Service: s.GetV1(),
 		Auth:    s.Config.Auth,
 	}
-	err := v1hdlr.Init(r.PathPrefix("/api/v1").Subrouter())
+	err = v1hdlr.Init(r.PathPrefix("/api/v1").Subrouter())
 	if err != nil {
 		return err
 	}

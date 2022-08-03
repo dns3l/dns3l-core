@@ -8,6 +8,7 @@ import (
 
 // Authorization info for a specific user, along with some personal data
 type AuthorizationInfo struct {
+	FullName              string
 	Username              string
 	Email                 string
 	RootzonesAllowed      map[string]bool

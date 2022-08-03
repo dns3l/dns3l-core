@@ -3,6 +3,7 @@ package service
 import (
 	"github.com/dta4/dns3l-go/context"
 	"github.com/dta4/dns3l-go/service/apiv1"
+	"github.com/dta4/dns3l-go/service/auth"
 )
 
 type V1 struct {
@@ -41,3 +42,12 @@ func (s *V1) GetServerInfo() *apiv1.ServerInfo {
   /crt:
   /crt/{crtName}:
 */
+
+func (s *V1) logAction(authz *auth.AuthorizationInfo, action string) {
+
+	u := "anonymous"
+	if authz != nil && authz.Username != "" {
+		u = authz.Username
+	}
+	log.WithField("username", u).Infof("API call for %s", action)
+}

@@ -20,6 +20,8 @@ import (
 func (s *V1) ClaimCertificate(caID string, cinfo *apiv1.CertClaimInfo, authz *auth.AuthorizationInfo) error {
 	fu := s.Service.Config.CA.Functions
 
+	s.logAction(authz, fmt.Sprintf("ClaimCertificate %s", caID))
+
 	var firstDomain string
 	if cinfo.Wildcard {
 		firstDomain = "*." + cinfo.Name
@@ -102,6 +104,9 @@ func (s *V1) ClaimCertificate(caID string, cinfo *apiv1.CertClaimInfo, authz *au
 }
 
 func (s *V1) DeleteCertificate(caID, crtID string, authz *auth.AuthorizationInfo) error {
+
+	s.logAction(authz, fmt.Sprintf("DeleteCertificate %s %s", caID, crtID))
+
 	fu := s.Service.Config.CA.Functions
 
 	// SANs are not checked for deletion permission at the moment...
@@ -115,6 +120,9 @@ func (s *V1) DeleteCertificate(caID, crtID string, authz *auth.AuthorizationInfo
 }
 
 func (s *V1) GetCertificateResource(caID, crtID, obj string, authz *auth.AuthorizationInfo) (string, string, error) {
+
+	s.logAction(authz, fmt.Sprintf("GetCertificateResource %s %s %s", caID, crtID, obj))
+
 	fu := s.Service.Config.CA.Functions
 	res, err := fu.GetCertificateResource(crtID, caID, obj)
 	if err != nil {
@@ -132,6 +140,9 @@ func (s *V1) GetCertificateResource(caID, crtID, obj string, authz *auth.Authori
 }
 
 func (s *V1) GetAllCertResources(caID, crtID string, authz *auth.AuthorizationInfo) (*apiv1.CertResources, error) {
+
+	s.logAction(authz, fmt.Sprintf("GetAllCertResources %s %s", caID, crtID))
+
 	fu := s.Service.Config.CA.Functions
 
 	r, err := fu.GetCertificateResources(crtID, caID)
@@ -157,6 +168,8 @@ func (s *V1) GetAllCertResources(caID, crtID string, authz *auth.AuthorizationIn
 //if caID and/or crtID is "", infos will not be filtered on that value.
 // Cannot filter for both
 func (s *V1) GetCertificateInfos(caID string, crtID string, authz *auth.AuthorizationInfo, pginfo *util.PaginationInfo) ([]apiv1.CertInfo, error) {
+
+	s.logAction(authz, fmt.Sprintf("GetCertificateInfos %s %s", caID, crtID))
 
 	//TODO pagination
 
@@ -186,6 +199,8 @@ func (s *V1) GetCertificateInfos(caID string, crtID string, authz *auth.Authoriz
 
 func (s *V1) GetCertificateInfo(caID string, crtID string, authz *auth.AuthorizationInfo) (*apiv1.CertInfo, error) {
 
+	s.logAction(authz, fmt.Sprintf("GetCertificateInfo %s %s", caID, crtID))
+
 	fu := s.Service.Config.CA.Functions
 
 	//GetCertificateResources does not modify anything, so check permissions after request...
@@ -209,6 +224,9 @@ func (s *V1) GetCertificateInfo(caID string, crtID string, authz *auth.Authoriza
 }
 
 func (s *V1) DeleteCertificatesAllCA(crtID string, authz *auth.AuthorizationInfo) error {
+
+	s.logAction(authz, fmt.Sprintf("DeleteCertificatesAllCA %s", crtID))
+
 	fu := s.Service.Config.CA.Functions
 
 	//GetCertificateResources does not modify anything, so check permissions after request...

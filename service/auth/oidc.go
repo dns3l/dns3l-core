@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"net/http"
 	"strings"
@@ -10,14 +11,16 @@ import (
 	"github.com/dta4/dns3l-go/common"
 	myvalidation "github.com/dta4/dns3l-go/util/validation"
 	"github.com/go-playground/validator/v10"
-	"github.com/mitchellh/mapstructure"
 )
 
 type OIDCHandler struct {
-	Issuer        string `yaml:"issuer" validate:"url,required"`
-	ClientID      string `yaml:"client_id" validate:"required"`
-	AuthnDisabled bool   `yaml:"authn_disabled"`
-	AuthzDisabled bool   `yaml:"authz_disabled"`
+	Issuer                 string              `yaml:"issuer" validate:"url,required"`
+	ClientID               string              `yaml:"client_id" validate:"required"`
+	AuthnDisabled          bool                `yaml:"authn_disabled"`
+	AuthzDisabled          bool                `yaml:"authz_disabled"`
+	HTTPInsecureSkipVerify bool                `yaml:"http_insecure_skip_verify"`
+	DebugClaims            bool                `yaml:"debug_claims"`
+	InjectGroups           map[string][]string `yaml:"inject_groups"`
 
 	ctx      context.Context
 	provider *oidc.Provider
@@ -26,10 +29,10 @@ type OIDCHandler struct {
 }
 
 type ClaimsInfo struct {
-	Username      string   `mapstructure:"username" validate:"required,alphanum"`
-	Email         string   `json:"email" validate:"required,alphanum"`
-	EmailVerified bool     `json:"email_verified"`
-	Groups        []string `mapstructure:"groups"`
+	Name          string `validate:"required"`
+	Email         string `json:"email" validate:"required,email"`
+	EmailVerified bool   `json:"email_verified"`
+	Groups        []string
 }
 
 func (h *OIDCHandler) Init() error {
@@ -39,9 +42,14 @@ func (h *OIDCHandler) Init() error {
 		return nil
 	}
 
-	h.ctx = context.Background()
+	myClient := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: h.HTTPInsecureSkipVerify},
+		},
+	}
+	ctx := oidc.ClientContext(context.Background(), myClient)
 
-	h.provider, err = oidc.NewProvider(h.ctx, h.Issuer)
+	h.provider, err = oidc.NewProvider(ctx, h.Issuer)
 	if err != nil {
 		return err
 	}
@@ -75,11 +83,21 @@ func (h *OIDCHandler) AuthnGetAuthzInfo(r *http.Request) (*AuthorizationInfo, er
 
 	idToken, err := h.verifier.Verify(r.Context(), tkn)
 	if err != nil {
-		return nil, &common.NotAuthnedError{Msg: "unable to verify OIDC token"}
+		return nil, err
+	}
+
+	claimsDebug := make(map[string]interface{})
+	err = idToken.Claims(&claimsDebug)
+	if err != nil {
+		return nil, err
+	}
+	if h.DebugClaims {
+		log.WithField("claims", claimsDebug).Info("Claims Debug")
 	}
 
 	var cinfo ClaimsInfo
-	err = mapstructure.Decode(idToken.Claims, &cinfo)
+
+	err = idToken.Claims(&cinfo)
 	if err != nil {
 		return nil, err
 	}
@@ -92,12 +110,25 @@ func (h *OIDCHandler) AuthnGetAuthzInfo(r *http.Request) (*AuthorizationInfo, er
 		return nil, err
 	}
 
+	username := cinfo.Email //yes, we don't have more than that...
+
+	if len(h.InjectGroups) > 0 {
+		//This is a quirks mode for OIDC environments not offering
+		//groups, e.g. test beds. Normally not used.
+		groups, exists := h.InjectGroups[username]
+		if exists {
+			cinfo.Groups = append(cinfo.Groups, groups...)
+			log.WithField("groups", groups).WithField("username", username).Debug("Injected groups for authorization (quirks)")
+		}
+	}
+
 	authzinfo := &AuthorizationInfo{
 		RootzonesAllowed:      make(map[string]bool, 100),
 		AuthorizationDisabled: h.AuthzDisabled,
 		ReadAllowed:           false,
 		WriteAllowed:          false,
-		Username:              cinfo.Username,
+		FullName:              cinfo.Name,
+		Username:              username,
 		Email:                 cinfo.Email,
 	}
 
