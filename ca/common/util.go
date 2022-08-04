@@ -5,7 +5,7 @@ import (
 	"regexp"
 )
 
-var keyNameRe = regexp.MustCompile(`^[A-Za-z0-9\._-]{1,32}$`)
+var keyNameRe = regexp.MustCompile(`^[A-Za-z0-9\._-]{1,255}$`)
 
 func ValidateKeyName(key string) error {
 	if keyNameRe.MatchString(key) {

@@ -14,6 +14,7 @@ import (
 	dnscommon "github.com/dta4/dns3l-go/dns/common"
 	"github.com/dta4/dns3l-go/util"
 	"github.com/go-acme/lego/v4/certificate"
+	"github.com/go-acme/lego/v4/challenge/dns01"
 	legodns01 "github.com/go-acme/lego/v4/challenge/dns01"
 )
 
@@ -143,7 +144,15 @@ func (e *Engine) TriggerUpdate(acmeuser string, keyname string, keyrz string, do
 		return err
 	}
 
-	err = u.GetClient().Challenge.SetDNS01Provider(e.NewDNSProviderDNS3L(e.Context))
+	dnsprov := e.NewDNSProviderDNS3L(e.Context)
+
+	if len(e.Conf.CheckNameservers) > 0 {
+		err = u.GetClient().Challenge.SetDNS01Provider(dnsprov,
+			dns01.AddRecursiveNameservers(e.Conf.CheckNameservers))
+	} else {
+		err = u.GetClient().Challenge.SetDNS01Provider(dnsprov)
+	}
+
 	if err != nil {
 		return err
 	}

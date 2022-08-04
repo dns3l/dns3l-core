@@ -29,7 +29,6 @@ func (p *CAProvider) GetInfo() *types.CAProviderInfo {
 func (p *CAProvider) Init(c types.ProviderConfigurationContext) error {
 
 	smgr, err := makeACMEStateManager(c)
-
 	if err != nil {
 		return err
 	}

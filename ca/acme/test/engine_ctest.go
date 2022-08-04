@@ -1,7 +1,6 @@
 package test
 
 import (
-	sqlraw "database/sql"
 	"errors"
 	"os"
 	"path/filepath"
@@ -55,13 +54,15 @@ func TestWithLEStaging() {
 		panic(err)
 	}
 
+	dbstr := os.Getenv("DNS3L_MYSQL_ADDR")
+	if dbstr == "" {
+		panic("no MySQL address set")
+	}
+
 	var dbprov state.SQLDBProvider = &state.SQLDBProviderDefault{
-		Type:     "sqlite3",
-		DBPrefix: "dns3l.test",
-		PreExecFunc: func(db *sqlraw.DB) error {
-			_, err := db.Exec(`ATTACH DATABASE './test-sqlite.db' AS dns3l;`)
-			return err
-		},
+		Type:     "mysql",
+		URL:      dbstr,
+		DBPrefix: "test",
 	}
 
 	var casm types.CAStateManager = &castate.CAStateManagerSQL{
@@ -78,6 +79,7 @@ func TestWithLEStaging() {
 			URL:                   "https://acme-staging-v02.api.letsencrypt.org/directory",
 			Roots:                 "",
 			DaysRenewBeforeExpiry: 100, //this is to test immediale renewal
+			CheckNameservers:      []string{"80.158.48.19:53", "93.188.242.252:53"},
 		},
 		State: &acme.ACMEStateManagerSQL{
 			CAID: caID,

@@ -12,8 +12,9 @@ type Config struct {
 		User string `yaml:"user" validate:"alphanumUnderscoreDashDot"`
 		Pass string `yaml:"pass"`
 	} `yaml:"auth"`
-	Roots                 string `yaml:"roots"`
-	DaysRenewBeforeExpiry int    `yaml:"daysRenewBeforeExpiry" default:"16" validate:"required"`
+	Roots                 string   `yaml:"roots"`
+	DaysRenewBeforeExpiry int      `yaml:"daysRenewBeforeExpiry" default:"16" validate:"required"`
+	CheckNameservers      []string `yaml:"checkNameservers"`
 }
 
 func (c *Config) NewInstance() (ca_types.CAProvider, error) {
