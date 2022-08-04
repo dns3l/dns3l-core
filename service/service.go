@@ -31,7 +31,10 @@ func (s *Service) Run() error {
 		Service: s.GetV1(),
 		Auth:    s.Config.Auth,
 	}
-	err = v1hdlr.Init(r.PathPrefix("/api/v1").Subrouter())
+	v1hdlr.RegisterHandle(r.PathPrefix("/api/v1").Subrouter())
+	v1hdlr.RegisterHandle(r.PathPrefix("/api").Subrouter())
+
+	err = v1hdlr.Init()
 	if err != nil {
 		return err
 	}

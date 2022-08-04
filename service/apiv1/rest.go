@@ -24,7 +24,7 @@ type ErrorMsg struct {
 	Message string `json:"message"`
 }
 
-func (hdlr *RestV1Handler) Init(r *mux.Router) error {
+func (hdlr *RestV1Handler) RegisterHandle(r *mux.Router) {
 
 	r.NotFoundHandler = http.HandlerFunc(hdlr.NotFound)
 	r.HandleFunc("/info", hdlr.GetServerInfo)
@@ -39,9 +39,10 @@ func (hdlr *RestV1Handler) Init(r *mux.Router) error {
 		hdlr.HandleNamedCertObj)
 	r.HandleFunc("/crt", hdlr.HandleAnonCert)
 	r.HandleFunc("/crt/{crtID:\\*?[A-Za-z0-9\\._-]+}", hdlr.HandleNamedCert)
+}
 
+func (hdlr *RestV1Handler) Init() error {
 	return hdlr.Validator.Init()
-
 }
 
 func (hdlr *RestV1Handler) NotFound(w http.ResponseWriter, r *http.Request) {
