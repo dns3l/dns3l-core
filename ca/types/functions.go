@@ -14,9 +14,10 @@ type CertificateResources struct {
 }
 
 type CertificateClaimInfo struct {
-	Name    string
-	NameRZ  string
-	Domains []string
+	Name     string
+	NameRZ   string
+	Domains  []string
+	IssuedBy string
 	//TODO implement hints
 }
 

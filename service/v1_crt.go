@@ -79,9 +79,10 @@ func (s *V1) ClaimCertificate(caID string, cinfo *apiv1.CertClaimInfo, authz *au
 	}
 
 	err = fu.ClaimCertificate(caID, &types.CertificateClaimInfo{
-		Name:    cinfo.Name,
-		NameRZ:  namerz.Root,
-		Domains: domains,
+		Name:     cinfo.Name,
+		NameRZ:   namerz.Root,
+		Domains:  domains,
+		IssuedBy: authz.Username,
 	})
 
 	if err != nil {
@@ -261,6 +262,7 @@ func apiCertInfoFromCACertInfo(source *types.CACertInfo, target *apiv1.CertInfo)
 	target.IssuerCN = cert.Issuer.CommonName
 	target.Serial = cert.SerialNumber.String()
 	target.ClaimedBy.Slug = source.IssuedByUser //TODO what about e-mail and name?
+	target.ClaimedBy.EMail = source.IssuedByUser
 
 	return nil
 }

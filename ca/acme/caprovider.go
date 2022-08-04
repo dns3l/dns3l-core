@@ -85,7 +85,7 @@ func (p *CAProvider) ClaimCertificate(cinfo *types.CertificateClaimInfo) error {
 
 	return p.engine.TriggerUpdate(acmeuser, cinfo.Name, cinfo.NameRZ, cinfo.Domains,
 		"leo@nobach.net", //TODO: clarify where to get this from.
-		"anonymous")      //TODO: fix when auth is ready.
+		cinfo.IssuedBy)
 
 }
 
