@@ -200,10 +200,11 @@ func getManagingZone(client *golangsdk.ServiceClient, domainName string) (*zones
 		return nil, err
 	}
 	var longestZone *zones.Zone
-	for _, zone := range allZones {
+	for i := range allZones {
+		zone := &allZones[i]
 		if strings.HasSuffix(domainName, zone.Name) {
 			if longestZone == nil || len(longestZone.Name) < len(zone.Name) {
-				longestZone = &zone
+				longestZone = zone
 			}
 		}
 	}
@@ -211,6 +212,8 @@ func getManagingZone(client *golangsdk.ServiceClient, domainName string) (*zones
 	if longestZone == nil {
 		return nil, fmt.Errorf("no appropriate zone could be found for domain name %s", domainName)
 	}
+
+	log.WithField("zoneName", longestZone.Name).WithField("domain", domainName).Debug("Selected zone.")
 
 	return longestZone, nil
 }
