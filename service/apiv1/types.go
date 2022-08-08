@@ -41,7 +41,7 @@ type CAInfo struct {
 	Type        string   `json:"type"`
 	IsAcme      bool     `json:"acme"`
 	Rootzones   []string `json:"rtzn"`
-	Enabled     bool
+	Enabled     bool     `json:"enabled"`
 }
 
 type AutoDNSInfo struct {

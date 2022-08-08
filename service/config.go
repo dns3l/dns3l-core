@@ -15,11 +15,13 @@ import (
 )
 
 type Config struct {
-	DNS       *dns.Config                 `yaml:"dns" validate:"required"`
-	CA        *ca.Config                  `yaml:"ca" validate:"required"`
-	RootZones dns.RootZones               `yaml:"rtzn" validate:"required,dive"`
-	DB        *state.SQLDBProviderDefault `yaml:"db" validate:"required"`   //SQL hard-coded (only here)
-	Auth      *auth.OIDCHandler           `yaml:"auth" validate:"required"` //OIDC hard-coded (only here)
+	DNS        *dns.Config                 `yaml:"dns" validate:"required"`
+	CA         *ca.Config                  `yaml:"ca" validate:"required"`
+	RootZones  dns.RootZones               `yaml:"rtzn" validate:"required,dive"`
+	DB         *state.SQLDBProviderDefault `yaml:"db" validate:"required"`   //SQL hard-coded (only here)
+	Auth       *auth.OIDCHandler           `yaml:"auth" validate:"required"` //OIDC hard-coded (only here)
+	URL        string                      `yaml:"url" validate:"required,url"`
+	AdminEMail []string                    `yaml:"adminemail" validate:"required,dive,email"`
 
 	//RootZoneAllowedCA map[string] //maybe we need this later...
 	//CAAllowedRootZones map[string][]dns.RootZone

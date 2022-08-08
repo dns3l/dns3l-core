@@ -1,3 +1,7 @@
+url: https://foobar.example.com
+adminemail:
+  - admin1@example.com
+  - admin2@example.net
 dns: # DNS service providers
   providers:
     infblxA: # Infoblox NIOS over WAPI
@@ -40,6 +44,8 @@ ca: #ACME and none ACME CA
       catype: public
       url: https://acme-v02.api.letsencrypt.org/directory
       roots: https://letsencrypt.org/certificates/
+      description: "Let's Encrypt Official"
+      logopath: "https://foo.bar/logo.png"
     tsec-staging:
       type: acme
       name: T-Sec Trust Center ACME Staging
@@ -50,17 +56,23 @@ ca: #ACME and none ACME CA
         key: EAB KeyId
         hmac: EAB HMAC
       roots: https://www.telesec.de/en/root-program/root-program/overview/
+      description: "Telesec Trust Center ACME Staging"
+      logopath: "https://bar.foo/logo.png"
     step:
       type: acme
       name: ACME RA for Smallstep CM
       catype: private
       url: https://acme.example.com/acme/acme/directory
       roots: null
+      description: "ACME RA for Smallstep CM. Lorem Ipsum."
+      logopath: "https://foo.bar/logo.png"
     tsec:
       type: legacy
       name: T-Sec Trust Center
       catype: public
       roots: https://www.telesec.de/en/root-program/root-program/overview/
+      description:  "Telesec Trust Center. Lorem Ipsum."
+      logopath: "https://foo.baz/logo.png"
 #AutoDNS & DNS-01 validation
 #DNS provider implementations shall support zone nesting
 #For legacy CA a CSR template can be assigned to each rtzn implicitly by convention

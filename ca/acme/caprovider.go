@@ -17,8 +17,8 @@ func (p *CAProvider) GetInfo() *types.CAProviderInfo {
 	return &types.CAProviderInfo{
 		Name:        p.C.Name,
 		Type:        p.C.CAType,
-		Description: "foo <TODO where does this come from?>",
-		LogoPath:    "bar <TODO where does this come from?>",
+		Description: p.C.Description,
+		LogoPath:    p.C.LogoPath,
 		URL:         p.C.URL,
 		Roots:       p.C.Roots,
 		IsAcme:      true,

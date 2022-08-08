@@ -17,11 +17,8 @@ func (s *V1) GetServerInfo() *apiv1.ServerInfo {
 			API:    apiv1.Version,
 		},
 		Contact: &apiv1.ServerInfoContact{
-			URL: "https://dns3l.example.com/ <TODO where does this come from?>",
-			EMail: []string{
-				"leonhard.nobach@telekom.de <TODO where does this come from?>",
-				"andreas.schulze02@telekom.de <TODO where does this come from?>",
-			},
+			URL:   s.Service.Config.URL,
+			EMail: s.Service.Config.AdminEMail,
 		},
 	}
 }
