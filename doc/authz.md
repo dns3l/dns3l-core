@@ -4,7 +4,7 @@
 | Authz Enabled | `write` set* | Identification Constraints | Behavior | Note |
 |---|---|---|---|---|
 | yes  | no | Must be set in OIDC token claims: `email` or `name`  | Allowed for read** access only to the root zones defined in `groups` array of OIDC token claims | An implicit `read` permission is assumed, even if not explicitily set in OIDC token claims |
-| yes  | yes | Must be set in OIDC token claims: `email` | Allowed for read** and write** access, permitted root zones defined in `groups` array of OIDC token claims  |   |
+| yes  | yes | Must be set in OIDC token claims: `email` or `name` (read operation), `email` (write operation) | Allowed for read** and write** access, permitted root zones defined in `groups` array of OIDC token claims  |   |
 | no | * | Must be set in OIDC token claims: `email` or `name` (read operation), `email` (write operation) | Allowed for read** and write** access, permitted root zones are **all** root zones defined in daemon config | |
 
 
