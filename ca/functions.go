@@ -2,6 +2,7 @@ package ca
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/dta4/dns3l-go/ca/common"
 	"github.com/dta4/dns3l-go/ca/types"
@@ -31,7 +32,15 @@ func (h *CAFunctionHandler) ClaimCertificate(caID string, cinfo *types.Certifica
 		}
 	}
 
-	return prov.Prov.ClaimCertificate(cinfo)
+	err := prov.Prov.ClaimCertificate(cinfo)
+	if err != nil {
+		return err
+	}
+
+	h.Config.Providers[caID].TotalValid.Invalidate()
+	h.Config.Providers[caID].TotalIssued.Invalidate()
+
+	return nil
 
 }
 
@@ -59,7 +68,14 @@ func (h *CAFunctionHandler) DeleteCertificate(caID, keyID string) error {
 	}
 	defer sess.Close()
 
-	return sess.DelCACertByID(keyID, caID)
+	err = sess.DelCACertByID(keyID, caID)
+	if err != nil {
+		return err
+	}
+	h.Config.Providers[caID].TotalValid.Invalidate()
+	h.Config.Providers[caID].TotalIssued.Invalidate()
+
+	return nil
 
 }
 
@@ -229,6 +245,39 @@ func (h *CAFunctionHandler) DeleteCertificatesAllCA(keyID string) error {
 	}
 	defer sess.Close()
 
-	return sess.DeleteCertAllCA(keyID)
+	err = sess.DeleteCertAllCA(keyID)
+	if err != nil {
+		return err
+	}
 
+	for _, prov := range h.Config.Providers {
+		prov.TotalValid.Invalidate()
+		prov.TotalIssued.Invalidate()
+	}
+
+	return nil
+
+}
+
+func (h *CAFunctionHandler) GetTotalValid(caID string) (uint, error) {
+	return h.Config.Providers[caID].TotalValid.GetCached(func() (uint, error) {
+
+		sess, err := h.State.NewSession()
+		if err != nil {
+			return 0, err
+		}
+
+		return sess.GetNumberOfCerts(caID, true, time.Now())
+	})
+}
+
+func (h *CAFunctionHandler) GetTotalIssued(caID string) (uint, error) {
+	return h.Config.Providers[caID].TotalIssued.GetCached(func() (uint, error) {
+		sess, err := h.State.NewSession()
+		if err != nil {
+			return 0, err
+		}
+
+		return sess.GetNumberOfCerts(caID, false, time.Time{})
+	})
 }

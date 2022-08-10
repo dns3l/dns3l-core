@@ -27,6 +27,8 @@ type CAStateManagerSession interface {
 
 	GetResources(keyID string, caid string, resourceNames ...string) ([]string, []string, error)
 
+	GetNumberOfCerts(caID string, validonly bool, currentTime time.Time) (uint, error)
+
 	DeleteCertAllCA(keyID string) error
 }
 

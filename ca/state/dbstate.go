@@ -5,6 +5,7 @@ import (
 	sqlraw "database/sql"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/Masterminds/squirrel"
 	"github.com/dta4/dns3l-go/ca/types"
@@ -248,4 +249,26 @@ func (s *CAStateManagerSQLSession) DeleteCertAllCA(keyID string) error {
 	}
 
 	return err
+}
+
+func (s *CAStateManagerSQLSession) GetNumberOfCerts(caID string,
+	validonly bool, currentTime time.Time) (uint, error) {
+	q := squirrel.Select("count(*)").From(s.prov.Prov.DBName("keycerts"))
+	if caID != "" {
+		q = q.Where(squirrel.Eq{"ca_id": caID})
+	}
+	if validonly {
+		q = q.Where(squirrel.Lt{"valid_start_time": currentTime}).
+			Where(squirrel.Gt{"valid_end_time": currentTime})
+	}
+
+	rs := q.RunWith(s.db).QueryRow()
+
+	var numrows uint
+	err := rs.Scan(&numrows)
+	if err != nil {
+		return 0, err
+	}
+
+	return numrows, nil
 }

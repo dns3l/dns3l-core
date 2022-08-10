@@ -9,7 +9,7 @@ type ServiceV1 interface {
 	GetServerInfo() *ServerInfo
 	GetDNSHandlers() []DNSHandlerInfo
 	GetDNSRootzones() []DNSRootzoneInfo
-	GetCAs() []*CAInfo
+	GetCAs() ([]*CAInfo, error)
 	GetCA(caID string) (*CAInfo, error)
 	ClaimCertificate(caID string, cinfo *CertClaimInfo, authz *auth.AuthorizationInfo) error
 	DeleteCertificate(caID, crtID string, authz *auth.AuthorizationInfo) error

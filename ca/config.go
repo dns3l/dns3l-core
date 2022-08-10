@@ -3,11 +3,13 @@ package ca
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	castate "github.com/dta4/dns3l-go/ca/state"
 	"github.com/dta4/dns3l-go/ca/types"
 	"github.com/dta4/dns3l-go/dns"
 	dnstypes "github.com/dta4/dns3l-go/dns/types"
+	"github.com/dta4/dns3l-go/util"
 
 	"github.com/dta4/dns3l-go/state"
 	"gopkg.in/yaml.v2"
@@ -19,9 +21,11 @@ type Config struct {
 }
 
 type ProviderInfo struct {
-	Type      string `yaml:"type" validate:"required,alphanum"`
-	Prov      types.CAProvider
-	RootZones dns.RootZones
+	Type        string `yaml:"type" validate:"required,alphanum"`
+	Prov        types.CAProvider
+	RootZones   dns.RootZones
+	TotalValid  util.SingleValCache[uint]
+	TotalIssued util.SingleValCache[uint]
 }
 
 type ProviderConfigurationContextImpl struct {
@@ -54,6 +58,8 @@ func (c *Config) Init(ctx types.CAConfigurationContext) error {
 	}
 
 	for k, v := range c.Providers {
+		v.TotalValid = util.SingleValCache[uint]{Timeout: 30 * time.Second}
+		v.TotalIssued = util.SingleValCache[uint]{Timeout: 30 * time.Second}
 		err := v.Prov.Init(&ProviderConfigurationContextImpl{
 			provKey:  k,
 			stateMgr: sm,

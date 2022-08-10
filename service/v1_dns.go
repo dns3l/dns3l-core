@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/dta4/dns3l-go/ca"
+	"github.com/dta4/dns3l-go/common"
 	"github.com/dta4/dns3l-go/service/apiv1"
 )
 
@@ -42,9 +43,20 @@ func (s *V1) GetDNSRootzones() []apiv1.DNSRootzoneInfo {
 	return res
 }
 
-func caInfoFromProvider(id string, prov *ca.ProviderInfo) *apiv1.CAInfo {
+func caInfoFromProvider(fu *ca.CAFunctionHandler, id string, prov *ca.ProviderInfo) (*apiv1.CAInfo, error) {
 
 	pinfo := prov.Prov.GetInfo()
+
+	totalvalid, err := fu.GetTotalValid(id)
+	if err != nil {
+		return nil, err
+	}
+
+	totalissued, err := fu.GetTotalIssued(id)
+	if err != nil {
+		return nil, err
+	}
+
 	return &apiv1.CAInfo{
 		ID:          id,
 		Name:        pinfo.Name,
@@ -52,35 +64,48 @@ func caInfoFromProvider(id string, prov *ca.ProviderInfo) *apiv1.CAInfo {
 		LogoPath:    pinfo.LogoPath,
 		URL:         pinfo.URL,
 		Roots:       pinfo.Roots,
-		TotalValid:  prov.Prov.GetTotalValid(),
-		TotalIssued: prov.Prov.GetTotalIssued(),
+		TotalValid:  totalvalid,
+		TotalIssued: totalissued,
 		Type:        pinfo.Type,
 		IsAcme:      pinfo.IsAcme,
 		Rootzones:   prov.GetRootZonesAsString(),
 		Enabled:     prov.Prov.IsEnabled(),
-	}
+	}, nil
 }
 
-func (s *V1) GetCAs() []*apiv1.CAInfo {
+func (s *V1) GetCAs() ([]*apiv1.CAInfo, error) {
 
 	s.logAction(nil, "GetCAs")
 
+	fu := s.Service.Config.CA.Functions
+
 	res := make([]*apiv1.CAInfo, 0, 10)
 	for id, prov := range s.Service.Config.CA.Providers {
-		res = append(res, caInfoFromProvider(id, prov))
+		cainfo, err := caInfoFromProvider(fu, id, prov)
+		if err != nil {
+			return nil, err
+		}
+		res = append(res, cainfo)
 
 	}
-	return res
+	return res, nil
 }
 
 func (s *V1) GetCA(id string) (*apiv1.CAInfo, error) {
 
 	s.logAction(nil, fmt.Sprintf("GetCA %s", id))
 
+	fu := s.Service.Config.CA.Functions
+
 	prov, exists := s.Service.Config.CA.Providers[id]
 	if !exists {
-		return nil, fmt.Errorf("not found")
+		return nil, &common.NotFoundError{id}
 	}
 
-	return caInfoFromProvider(id, prov), nil
+	res, err := caInfoFromProvider(fu, id, prov)
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
 }

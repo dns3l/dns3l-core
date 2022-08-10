@@ -69,8 +69,15 @@ func (hdlr *RestV1Handler) GetDNSRootzones(w http.ResponseWriter, r *http.Reques
 
 func (hdlr *RestV1Handler) GetCAs(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
+
+	cas, err := hdlr.Service.GetCAs()
+	if err != nil {
+		httpErrorFromErr(w, r, err)
+		return
+	}
+
 	w.WriteHeader(200)
-	json.NewEncoder(w).Encode(hdlr.Service.GetCAs())
+	json.NewEncoder(w).Encode(cas)
 }
 
 func (hdlr *RestV1Handler) GetCA(w http.ResponseWriter, r *http.Request) {
