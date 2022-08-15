@@ -67,7 +67,6 @@ type CertInfo struct {
 	Name      string `json:"name"`
 	ClaimedBy struct {
 		Name  string `json:"name"`
-		Slug  string `json:"slug"`
 		EMail string `json:"email"`
 	} `json:"claimedBy"`
 	ClaimedOn  string `json:"claimedOn"`

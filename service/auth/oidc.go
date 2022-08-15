@@ -29,8 +29,8 @@ type OIDCHandler struct {
 }
 
 type ClaimsInfo struct {
-	Name          string `validate:"required"`
-	Email         string `json:"email" validate:"required,email"`
+	Name          string `json:"name"`
+	Email         string `json:"email" validate:"email"`
 	EmailVerified bool   `json:"email_verified"`
 	Groups        []string
 }
@@ -110,7 +110,14 @@ func (h *OIDCHandler) AuthnGetAuthzInfo(r *http.Request) (*AuthorizationInfo, er
 		return nil, err
 	}
 
-	username := cinfo.Email //yes, we don't have more than that...
+	var username string
+	if cinfo.Email != "" {
+		username = cinfo.Email
+	} else if cinfo.Name != "" {
+		username = cinfo.Name
+	} else {
+		return nil, &common.NotAuthnedError{Msg: "neither 'user' nor 'email' has been provided in OIDC token claims"}
+	}
 
 	if len(h.InjectGroups) > 0 {
 		//This is a quirks mode for OIDC environments not offering
@@ -127,7 +134,7 @@ func (h *OIDCHandler) AuthnGetAuthzInfo(r *http.Request) (*AuthorizationInfo, er
 		AuthorizationDisabled: h.AuthzDisabled,
 		ReadAllowed:           false,
 		WriteAllowed:          false,
-		FullName:              cinfo.Name,
+		Name:                  cinfo.Name,
 		Username:              username,
 		Email:                 cinfo.Email,
 	}
@@ -135,6 +142,7 @@ func (h *OIDCHandler) AuthnGetAuthzInfo(r *http.Request) (*AuthorizationInfo, er
 	for _, grp := range cinfo.Groups {
 		if strings.EqualFold(grp, "write") {
 			authzinfo.WriteAllowed = true
+			authzinfo.ReadAllowed = true
 			continue
 		}
 		if strings.EqualFold(grp, "read") {

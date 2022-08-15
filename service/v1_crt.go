@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"strings"
 	"time"
 
 	cacommon "github.com/dta4/dns3l-go/ca/common"
@@ -78,11 +79,16 @@ func (s *V1) ClaimCertificate(caID string, cinfo *apiv1.CertClaimInfo, authz *au
 
 	}
 
+	if strings.TrimSpace(authz.Email) == "" {
+		return &common.UnauthzedError{Msg: "the user's email address has not been provided by the auth provider, required for claiming certificate"}
+	}
+
 	err = fu.ClaimCertificate(caID, &types.CertificateClaimInfo{
-		Name:     cinfo.Name,
-		NameRZ:   namerz.Root,
-		Domains:  domains,
-		IssuedBy: authz.Username,
+		Name:          cinfo.Name,
+		NameRZ:        namerz.Root,
+		Domains:       domains,
+		IssuedBy:      authz.Username,
+		IssuedByEmail: authz.Email,
 	})
 
 	if err != nil {
@@ -261,8 +267,8 @@ func apiCertInfoFromCACertInfo(source *types.CACertInfo, target *apiv1.CertInfo)
 	target.SubjectCN = cert.Subject.CommonName
 	target.IssuerCN = cert.Issuer.CommonName
 	target.Serial = cert.SerialNumber.String()
-	target.ClaimedBy.Slug = source.IssuedByUser //TODO what about e-mail and name?
-	target.ClaimedBy.EMail = source.IssuedByUser
+	target.ClaimedBy.Name = source.IssuedByUser
+	target.ClaimedBy.EMail = source.IssuedByEmail
 
 	return nil
 }

@@ -164,9 +164,9 @@ func (s *CAStateManagerSQLSession) PutCACertData(update bool, keyname string, ke
 		log.Debugf("Updating certificate data for key '%s' in database",
 			keyname)
 		_, err := s.db.Exec(`UPDATE `+s.prov.Prov.DBName("keycerts")+` SET cert=?, issuer_cert=?, `+
-			`acme_user=?, issued_by=?, domains=?, renew_time=?, valid_start_time=?,
+			`acme_user=?, issued_by=?, issued_by_email=?, domains=?, renew_time=?, valid_start_time=?,
 			valid_end_time=?, renew_count = renew_count + 1 WHERE key_name=? AND ca_id=?;`,
-			certStr, issuerCertStr, info.ACMEUser, info.IssuedByUser, domainsStr,
+			certStr, issuerCertStr, info.ACMEUser, info.IssuedByUser, info.IssuedByEmail,
 			info.RenewTime.UTC(), info.ValidStartTime.UTC(), info.ValidEndTime.UTC(), keyname, caid)
 		if err != nil {
 			return fmt.Errorf("problem while storing new cert for existing key in database: %v",
@@ -178,10 +178,10 @@ func (s *CAStateManagerSQLSession) PutCACertData(update bool, keyname string, ke
 	log.Debugf("Storing new cert/key pair '%s' for user '%s' in database",
 		keyname, info.ACMEUser)
 	_, err := s.db.Exec(`INSERT INTO `+s.prov.Prov.DBName("keycerts")+` (key_name, key_rz, ca_id,`+
-		`acme_user, issued_by, priv_key, cert, issuer_cert, domains, claim_time,
+		`acme_user, issued_by, issued_by_email, priv_key, cert, issuer_cert, domains, claim_time,
 		renew_time, valid_start_time, valid_end_time, renew_count) `+
-		`values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0);`,
-		keyname, keyrz, caid, info.ACMEUser, info.IssuedByUser, info.PrivKey, certStr,
+		`values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0);`,
+		keyname, keyrz, caid, info.ACMEUser, info.IssuedByUser, info.IssuedByEmail, info.PrivKey, certStr,
 		issuerCertStr, domainsStr, info.ClaimTime.UTC(), info.RenewTime.UTC(), info.ValidStartTime.UTC(), info.ValidEndTime.UTC())
 	if err != nil {
 		return fmt.Errorf("problem while storing new key and cert in database: %v", err)

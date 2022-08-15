@@ -36,6 +36,7 @@ type CACertInfo struct {
 	Name           string
 	PrivKey        string
 	IssuedByUser   string
+	IssuedByEmail  string
 	ClaimTime      time.Time
 	RenewTime      time.Time
 	ValidStartTime time.Time

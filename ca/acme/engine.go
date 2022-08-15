@@ -32,7 +32,7 @@ type Engine struct {
 //is authenticated and authorized for the requested domain.
 //It will look up the current state of the user and the key/certificate and ensures that the user and
 //the requested key/cert is present.
-func (e *Engine) TriggerUpdate(acmeuser string, keyname string, keyrz string, domains []string, email, issuedBy string) error {
+func (e *Engine) TriggerUpdate(acmeuser string, keyname string, keyrz string, domains []string, issuedBy, issuedByEmail string) error {
 
 	keyMustExist := acmeuser == "" || len(domains) <= 0
 
@@ -97,6 +97,10 @@ func (e *Engine) TriggerUpdate(acmeuser string, keyname string, keyrz string, do
 			log.Infof("Issued-by-user for key %s has changed from %s to %s")
 			info.IssuedByUser = issuedBy
 		}
+		if issuedByEmail != "" && info.IssuedByEmail != issuedByEmail {
+			log.Infof("Issued-by-email for key %s has changed from %s to %s")
+			info.IssuedByEmail = issuedByEmail
+		}
 
 		now := time.Now()
 		if !forceUpdate {
@@ -115,9 +119,10 @@ func (e *Engine) TriggerUpdate(acmeuser string, keyname string, keyrz string, do
 			return &cmn.NotFoundError{RequestedResource: keyname}
 		}
 		info = &types.CACertInfo{
-			ACMEUser:     acmeuser,
-			Domains:      domainsSanitized,
-			IssuedByUser: issuedBy,
+			ACMEUser:      acmeuser,
+			Domains:       domainsSanitized,
+			IssuedByUser:  issuedBy,
+			IssuedByEmail: issuedByEmail,
 		}
 		log.Infof("Generating new RSA private key '%s' issued by user '%s'", keyname, acmeuser)
 		privKey, err = generateRSAPrivateKey()
@@ -136,7 +141,7 @@ func (e *Engine) TriggerUpdate(acmeuser string, keyname string, keyrz string, do
 		Config: e.Conf,
 		State:  state,
 		UID:    info.ACMEUser,
-		Email:  email,
+		Email:  info.IssuedByEmail,
 	}
 
 	err = u.InitUser()
