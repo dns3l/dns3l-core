@@ -87,7 +87,7 @@ func (s *V1) ClaimCertificate(caID string, cinfo *apiv1.CertClaimInfo, authz *au
 		Name:          cinfo.Name,
 		NameRZ:        namerz.Root,
 		Domains:       domains,
-		IssuedBy:      authz.Username,
+		IssuedBy:      authz.Name,
 		IssuedByEmail: authz.Email,
 	})
 

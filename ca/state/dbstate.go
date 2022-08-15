@@ -39,6 +39,7 @@ const caCertsQueryElements = `key_name,
 priv_key,
 acme_user,
 issued_by,
+issued_by_email,
 domains,
 claim_time,
 renew_time,
@@ -51,6 +52,7 @@ var caCertsQueryColumns = []string{
 	"priv_key",
 	"acme_user",
 	"issued_by",
+	"issued_by_email",
 	"domains",
 	"claim_time",
 	"renew_time",
@@ -126,7 +128,7 @@ func (s *CAStateManagerSQLSession) ListCACerts(keyName string, caid string, rzFi
 
 func (s *CAStateManagerSQLSession) rowToCACertInfo(rows *sql.Rows, info *types.CACertInfo) error {
 	var domainsStr string
-	err := rows.Scan(&info.Name, &info.PrivKey, &info.ACMEUser, &info.IssuedByUser,
+	err := rows.Scan(&info.Name, &info.PrivKey, &info.ACMEUser, &info.IssuedByUser, &info.IssuedByEmail,
 		&domainsStr, &info.ClaimTime, &info.RenewTime, &info.ValidStartTime, &info.ValidEndTime, &info.CertPEM)
 	if err != nil {
 		return err
