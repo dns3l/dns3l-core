@@ -2,14 +2,17 @@ package acme
 
 import (
 	"errors"
+	"fmt"
 
 	castate "github.com/dta4/dns3l-go/ca/state"
 	"github.com/dta4/dns3l-go/ca/types"
+	"github.com/dta4/dns3l-go/common"
 )
 
 type CAProvider struct {
 	engine *Engine
 	C      *Config `validate:"required"`
+	ID     string
 }
 
 func (p *CAProvider) GetInfo() *types.CAProviderInfo {
@@ -28,13 +31,15 @@ func (p *CAProvider) GetInfo() *types.CAProviderInfo {
 
 func (p *CAProvider) Init(c types.ProviderConfigurationContext) error {
 
+	p.ID = c.GetCAID()
+
 	smgr, err := makeACMEStateManager(c)
 	if err != nil {
 		return err
 	}
 
 	p.engine = &Engine{
-		CAID:    c.GetCAID(),
+		CAID:    p.ID,
 		Conf:    p.C,
 		Context: c,
 		State:   smgr,
@@ -88,11 +93,22 @@ func (p *CAProvider) ClaimCertificate(cinfo *types.CertificateClaimInfo) error {
 
 }
 
+func (p *CAProvider) RenewCertificate(cinfo *types.CertificateRenewInfo) error {
+
+	if p.ID != cinfo.CAID {
+		return &common.InvalidInputError{Msg: fmt.Sprintf(
+			"Certificate to renew (caID '%s') does not belong to CA provider '%s'", cinfo.CAID, p.ID)}
+	}
+
+	return p.engine.TriggerUpdate("", cinfo.CertKey, "", nil, "", "")
+
+}
+
 func (p *CAProvider) CleanupBeforeDeletion(keyID string) error {
 
 	//acmeuser := "acme-" + keyID
 
 	//return p.engine.DeleteACMEUser(acmeuser)
-	return errors.New("Not implemented yet.")
+	return errors.New("not implemented yet")
 
 }

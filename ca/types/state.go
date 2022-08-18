@@ -30,19 +30,24 @@ type CAStateManagerSession interface {
 	GetNumberOfCerts(caID string, validonly bool, currentTime time.Time) (uint, error)
 
 	DeleteCertAllCA(keyID string) error
+
+	ListExpired(atTime time.Time, limit uint) ([]CertificateRenewInfo, error)
+
+	ListToRenew(atTime time.Time, limit uint) ([]CertificateRenewInfo, error)
 }
 
 type CACertInfo struct {
-	Name           string
-	PrivKey        string
-	IssuedByUser   string
-	IssuedByEmail  string
-	ClaimTime      time.Time
-	RenewTime      time.Time
-	ValidStartTime time.Time
-	ValidEndTime   time.Time
-	Domains        []string
-	ACMEUser       string
-	CertPEM        string
-	RenewCount     uint
+	Name            string
+	PrivKey         string
+	IssuedByUser    string
+	IssuedByEmail   string
+	ClaimTime       time.Time
+	RenewedTime     time.Time
+	NextRenewalTime time.Time
+	ValidStartTime  time.Time
+	ValidEndTime    time.Time
+	Domains         []string
+	ACMEUser        string
+	CertPEM         string
+	RenewCount      uint
 }

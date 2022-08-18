@@ -320,10 +320,8 @@ func (hdlr *RestV1Handler) HandleAnonCert(w http.ResponseWriter, r *http.Request
 		json.NewEncoder(w).Encode(certInfos)
 		success(w, r)
 		return
-	} else {
-		httpError(w, r, 500, "Wrong method")
-		return
 	}
+	httpError(w, r, 500, "Wrong method")
 
 }
 

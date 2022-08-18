@@ -46,6 +46,10 @@ ca: #ACME and none ACME CA
       roots: https://letsencrypt.org/certificates/
       description: "Let's Encrypt Official"
       logopath: "https://foo.bar/logo.png"
+      checkNameservers:
+       - 80.158.48.19:53
+       - 93.188.242.252:53
+      daysRenewBeforeExpiry: 30
     tsec-staging:
       type: acme
       name: T-Sec Trust Center ACME Staging
@@ -58,6 +62,7 @@ ca: #ACME and none ACME CA
       roots: https://www.telesec.de/en/root-program/root-program/overview/
       description: "Telesec Trust Center ACME Staging"
       logopath: "https://bar.foo/logo.png"
+      daysRenewBeforeExpiry: 30
     step:
       type: acme
       name: ACME RA for Smallstep CM
@@ -66,6 +71,7 @@ ca: #ACME and none ACME CA
       roots: null
       description: "ACME RA for Smallstep CM. Lorem Ipsum."
       logopath: "https://foo.bar/logo.png"
+      daysRenewBeforeExpiry: 30
     tsec:
       type: legacy
       name: T-Sec Trust Center
@@ -95,3 +101,23 @@ db:
   type: mysql
   url: user:password@tcp(192.168.0.1)/dns3ld?parseTime=true
   dbprefix: dns3l
+auth:
+  issuer: https://token.issuer.url.de/auth
+  client_id: cli-app
+  authn_disabled: false
+  authz_disabled: false
+  http_insecure_skip_verify: true
+  claims_debug: true
+  authn_disabled_email: foo@telekom.de
+  inject_groups:
+    kilgore@kilgore.trout:
+      - read
+      #- write
+      - foo
+      - test.otc.dta4.de.
+renew:
+  jobStartTime: 01:00
+  maxDuration: 6h
+  limitPerDay: 2048
+  daysWarnBeforeExpiry: 120
+

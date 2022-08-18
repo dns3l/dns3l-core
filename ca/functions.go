@@ -44,6 +44,22 @@ func (h *CAFunctionHandler) ClaimCertificate(caID string, cinfo *types.Certifica
 
 }
 
+func (h *CAFunctionHandler) RenewCertificate(cinfo *types.CertificateRenewInfo) error {
+
+	prov, exists := h.Config.Providers[cinfo.CAID]
+	if !exists {
+		return fmt.Errorf("no CA provider with name '%s' exists", cinfo.CAID)
+	}
+
+	err := prov.Prov.RenewCertificate(cinfo)
+	if err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
 //if caID is "", list for all CAs
 func (h *CAFunctionHandler) DeleteCertificate(caID, keyID string) error {
 
@@ -221,6 +237,30 @@ func (h *CAFunctionHandler) GetCertificateInfo(caID string, keyID string) (*type
 	defer sess.Close()
 
 	return sess.GetCACertByID(keyID, caID)
+
+}
+
+func (h *CAFunctionHandler) ListExpiring(expiredAt time.Time, limit uint) ([]types.CertificateRenewInfo, error) {
+
+	sess, err := h.State.NewSession()
+	if err != nil {
+		return nil, err
+	}
+	defer sess.Close()
+
+	return sess.ListExpired(expiredAt, limit)
+
+}
+
+func (h *CAFunctionHandler) ListCertsToRenew(limit uint) ([]types.CertificateRenewInfo, error) {
+
+	sess, err := h.State.NewSession()
+	if err != nil {
+		return nil, err
+	}
+	defer sess.Close()
+
+	return sess.ListToRenew(time.Now(), limit)
 
 }
 

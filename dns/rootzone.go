@@ -17,7 +17,10 @@ type RootZone struct {
 type RootZones []*RootZone
 
 func (rz *RootZone) DomainIsInZone(domainName string) bool {
-	return strings.HasSuffix(util.GetDomainFQDNDot(domainName), rz.Root)
+	domainSanitized := util.GetDomainFQDNDot(domainName)
+	zoneSuffix := ensurePrependDot(rz.Root)
+	return len(domainSanitized) > len(zoneSuffix) &&
+		strings.HasSuffix(domainSanitized, zoneSuffix)
 }
 
 func (rz RootZones) GetLowestRZForDomain(domainName string) (*RootZone, error) {
@@ -36,4 +39,11 @@ func (rz RootZones) GetLowestRZForDomain(domainName string) (*RootZone, error) {
 	}
 
 	return longestZone, nil
+}
+
+func ensurePrependDot(zoneroot string) string {
+	if strings.HasPrefix(zoneroot, ".") {
+		return zoneroot
+	}
+	return fmt.Sprintf(".%s", zoneroot)
 }

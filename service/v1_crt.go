@@ -220,6 +220,11 @@ func (s *V1) GetCertificateInfo(caID string, crtID string, authz *auth.Authoriza
 	if err != nil {
 		return nil, err
 	}
+
+	if cinfo == nil {
+		return nil, &common.NotFoundError{RequestedResource: crtID}
+	}
+
 	res := &apiv1.CertInfo{}
 	err = apiCertInfoFromCACertInfo(cinfo, res)
 	if err != nil {

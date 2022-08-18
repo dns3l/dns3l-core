@@ -21,6 +21,8 @@ type CAProvider interface {
 
 	ClaimCertificate(cinfo *CertificateClaimInfo) error
 
+	RenewCertificate(cinfo *CertificateRenewInfo) error
+
 	//May be called even if CAProvider does not manage key, should return nil then
 	CleanupBeforeDeletion(keyID string) error
 }

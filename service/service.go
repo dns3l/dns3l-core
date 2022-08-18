@@ -8,8 +8,9 @@ import (
 )
 
 type Service struct {
-	Config *Config
-	Socket string
+	Config  *Config
+	Socket  string
+	NoRenew bool
 }
 
 func (s *Service) GetV1() *V1 {
@@ -18,7 +19,18 @@ func (s *Service) GetV1() *V1 {
 
 func (s *Service) Run() error {
 
-	log.Printf("Service is running...")
+	if s.NoRenew {
+		log.Info("Disabling automatic cert renewal as per user request.")
+	} else if s.Config.Renew != nil {
+		err := s.startRenewer()
+		if err != nil {
+			return err
+		}
+		log.Info("Started automatic renewal job.")
+	} else {
+		log.Warn("Renewer is not active (renew section is missing in config). " +
+			"Certificates might become expired without warning.")
+	}
 
 	r := mux.NewRouter().StrictSlash(true)
 
@@ -39,6 +51,20 @@ func (s *Service) Run() error {
 		return err
 	}
 
+	log.Info("Service starting...")
+
 	return http.ListenAndServe(s.Socket, r)
 
+}
+
+func (s *Service) startRenewer() error {
+	r := &Renewer{
+		Service: s,
+		Config:  s.Config.Renew,
+	}
+	err := r.Init()
+	if err != nil {
+		return err
+	}
+	return r.StartAsync()
 }

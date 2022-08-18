@@ -17,12 +17,12 @@ type OIDCHandler struct {
 	Issuer                 string              `yaml:"issuer" validate:"url,required"`
 	ClientID               string              `yaml:"client_id" validate:"required"`
 	AuthnDisabled          bool                `yaml:"authn_disabled"`
+	AuthnDisabledEmail     string              `yaml:"authn_disabled_email" validate:"email"`
 	AuthzDisabled          bool                `yaml:"authz_disabled"`
 	HTTPInsecureSkipVerify bool                `yaml:"http_insecure_skip_verify"`
 	DebugClaims            bool                `yaml:"debug_claims"`
 	InjectGroups           map[string][]string `yaml:"inject_groups"`
 
-	ctx      context.Context
 	provider *oidc.Provider
 	verifier *oidc.IDTokenVerifier
 	validate *validator.Validate
@@ -70,6 +70,7 @@ func (h *OIDCHandler) AuthnGetAuthzInfo(r *http.Request) (*AuthorizationInfo, er
 	if h.AuthnDisabled {
 		return &AuthorizationInfo{
 			AuthorizationDisabled: true,
+			Email:                 h.AuthnDisabledEmail,
 		}, nil
 	}
 

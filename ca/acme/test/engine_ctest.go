@@ -102,9 +102,9 @@ func TestWithLEStaging() {
 	}
 
 	dnsProvider := "otc"
-	email := "leo@nobach.net"
 	issuedBy := "testuser1"
 	acmeuser := "testacmeuser1"
+	issuedByEmail := "leo@nobach.net"
 
 	domainName1, zone1, err := dnscommon.MakeNewDomainName4Test(c.DNSTest.TestableZones[dnsProvider].Zones)
 	if err != nil {
@@ -116,7 +116,7 @@ func TestWithLEStaging() {
 	}
 
 	err = e.TriggerUpdate(acmeuser, domainName1, zone1, []string{domainName1, domainName2},
-		email, issuedBy)
+		issuedBy, issuedByEmail)
 	if err != nil {
 		var norenew *acme.NoRenewalDueError
 		if errors.As(err, &norenew) {
@@ -128,7 +128,7 @@ func TestWithLEStaging() {
 	}
 
 	//this should trigger updating the existing key while getting details from database
-	err = e.TriggerUpdate("", domainName1, "", nil, email, "")
+	err = e.TriggerUpdate("", domainName1, "", nil, "", "")
 	if err != nil {
 		var norenew *acme.NoRenewalDueError
 		if errors.As(err, &norenew) {

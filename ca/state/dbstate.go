@@ -42,7 +42,7 @@ issued_by,
 issued_by_email,
 domains,
 claim_time,
-renew_time,
+renewed_time,
 valid_start_time,
 valid_end_time,
 cert`
@@ -55,7 +55,7 @@ var caCertsQueryColumns = []string{
 	"issued_by_email",
 	"domains",
 	"claim_time",
-	"renew_time",
+	"renewed_time",
 	"valid_start_time",
 	"valid_end_time",
 	"cert",
@@ -129,7 +129,7 @@ func (s *CAStateManagerSQLSession) ListCACerts(keyName string, caid string, rzFi
 func (s *CAStateManagerSQLSession) rowToCACertInfo(rows *sql.Rows, info *types.CACertInfo) error {
 	var domainsStr string
 	err := rows.Scan(&info.Name, &info.PrivKey, &info.ACMEUser, &info.IssuedByUser, &info.IssuedByEmail,
-		&domainsStr, &info.ClaimTime, &info.RenewTime, &info.ValidStartTime, &info.ValidEndTime, &info.CertPEM)
+		&domainsStr, &info.ClaimTime, &info.RenewedTime, &info.ValidStartTime, &info.ValidEndTime, &info.CertPEM)
 	if err != nil {
 		return err
 	}
@@ -166,10 +166,11 @@ func (s *CAStateManagerSQLSession) PutCACertData(update bool, keyname string, ke
 		log.Debugf("Updating certificate data for key '%s' in database",
 			keyname)
 		_, err := s.db.Exec(`UPDATE `+s.prov.Prov.DBName("keycerts")+` SET cert=?, issuer_cert=?, `+
-			`acme_user=?, issued_by=?, issued_by_email=?, domains=?, renew_time=?, valid_start_time=?,
+			`acme_user=?, issued_by=?, issued_by_email=?, domains=?, renewed_time=?, next_renewal_time=?, valid_start_time=?,
 			valid_end_time=?, renew_count = renew_count + 1 WHERE key_name=? AND ca_id=?;`,
-			certStr, issuerCertStr, info.ACMEUser, info.IssuedByUser, info.IssuedByEmail,
-			info.RenewTime.UTC(), info.ValidStartTime.UTC(), info.ValidEndTime.UTC(), keyname, caid)
+			certStr, issuerCertStr, info.ACMEUser, info.IssuedByUser, info.IssuedByEmail, domainsStr,
+			info.RenewedTime.UTC(), info.NextRenewalTime.UTC(), info.ValidStartTime.UTC(),
+			info.ValidEndTime.UTC(), keyname, caid)
 		if err != nil {
 			return fmt.Errorf("problem while storing new cert for existing key in database: %v",
 				err)
@@ -181,10 +182,12 @@ func (s *CAStateManagerSQLSession) PutCACertData(update bool, keyname string, ke
 		keyname, info.ACMEUser)
 	_, err := s.db.Exec(`INSERT INTO `+s.prov.Prov.DBName("keycerts")+` (key_name, key_rz, ca_id,`+
 		`acme_user, issued_by, issued_by_email, priv_key, cert, issuer_cert, domains, claim_time,
-		renew_time, valid_start_time, valid_end_time, renew_count) `+
-		`values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0);`,
-		keyname, keyrz, caid, info.ACMEUser, info.IssuedByUser, info.IssuedByEmail, info.PrivKey, certStr,
-		issuerCertStr, domainsStr, info.ClaimTime.UTC(), info.RenewTime.UTC(), info.ValidStartTime.UTC(), info.ValidEndTime.UTC())
+		renewed_time, next_renewal_time, valid_start_time, valid_end_time, renew_count) `+
+		`values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0);`,
+		keyname, keyrz, caid, info.ACMEUser, info.IssuedByUser, info.IssuedByEmail,
+		info.PrivKey, certStr,
+		issuerCertStr, domainsStr, info.ClaimTime.UTC(), info.RenewedTime.UTC(),
+		info.NextRenewalTime.UTC(), info.ValidStartTime.UTC(), info.ValidEndTime.UTC())
 	if err != nil {
 		return fmt.Errorf("problem while storing new key and cert in database: %v", err)
 	}
@@ -273,4 +276,46 @@ func (s *CAStateManagerSQLSession) GetNumberOfCerts(caID string,
 	}
 
 	return numrows, nil
+}
+
+func (s *CAStateManagerSQLSession) ListExpired(atTime time.Time,
+	limit uint) ([]types.CertificateRenewInfo, error) {
+	return s.listTimeExpired(atTime, limit, "valid_end_time")
+}
+
+func (s *CAStateManagerSQLSession) ListToRenew(atTime time.Time,
+	limit uint) ([]types.CertificateRenewInfo, error) {
+	return s.listTimeExpired(atTime, limit, "next_renewal_time")
+}
+
+func (s *CAStateManagerSQLSession) listTimeExpired(atTime time.Time, limit uint,
+	field string) ([]types.CertificateRenewInfo, error) {
+	q := squirrel.Select("key_name", "ca_id", "valid_end_time", "next_renewal_time").From(
+		s.prov.Prov.DBName("keycerts")).Where(squirrel.Lt{field: atTime})
+
+	rows, err := q.RunWith(s.db).Query()
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	res := make([]types.CertificateRenewInfo, 0, 1024)
+
+	i := 0
+	for rows.Next() {
+		res = append(res, types.CertificateRenewInfo{})
+		info := &res[i]
+		err := rows.Scan(&info.CertKey, &info.CAID, &info.ExpiresAt, &info.NextRenewal)
+		if err != nil {
+			return nil, err
+		}
+
+		i++
+	}
+
+	err = rows.Err()
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
 }

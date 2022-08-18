@@ -43,7 +43,11 @@ var rootCmd = &cobra.Command{
 		if err != nil {
 			panic(err)
 		}
-		svc := service.Service{Config: &conf, Socket: socket}
+		renew, err := cmd.PersistentFlags().GetBool("renew")
+		if err != nil {
+			panic(err)
+		}
+		svc := service.Service{Config: &conf, Socket: socket, NoRenew: !renew}
 		err = svc.Run()
 		if err != nil {
 			panic(err)
@@ -80,6 +84,9 @@ func Execute() error {
 		`YAML-formatted configuration for dns3ld.`)
 	rootCmd.PersistentFlags().StringP("socket", "s", ":80",
 		`L4 socket on which the service should listen.`)
+	rootCmd.PersistentFlags().BoolP("renew", "r", true,
+		`Whether automatic cert renewal jobs should run. Useful if multiple instances run on the
+		same DB and you want to disable renewal for the replicas, which is not yet thread-safe.`)
 	rootCmd.AddCommand(dbCreateCmd)
 	return rootCmd.Execute()
 }

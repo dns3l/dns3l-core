@@ -184,8 +184,10 @@ func (e *Engine) TriggerUpdate(acmeuser string, keyname string, keyrz string, do
 
 	info.ValidStartTime = cert[0].NotBefore
 	info.ValidEndTime = cert[0].NotAfter
-	info.RenewTime = time.Now()
-	info.ClaimTime = info.RenewTime
+	info.NextRenewalTime = info.ValidEndTime.Add(
+		time.Duration(-e.Conf.DaysRenewBeforeExpiry*24) * time.Hour)
+	info.RenewedTime = time.Now()
+	info.ClaimTime = info.RenewedTime
 	certStr, err := common.ConvertCertBundleToPEMStr([]*x509.Certificate{cert[0]})
 	if err != nil {
 		return err
