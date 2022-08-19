@@ -39,10 +39,11 @@ func (p *CAProvider) Init(c types.ProviderConfigurationContext) error {
 	}
 
 	p.engine = &Engine{
-		CAID:    p.ID,
-		Conf:    p.C,
-		Context: c,
-		State:   smgr,
+		CAID:              p.ID,
+		Conf:              p.C,
+		Context:           c,
+		State:             smgr,
+		RecalcRenewalDate: false,
 	}
 
 	log.Debugf("ACME CA provider initialized.")

@@ -26,6 +26,9 @@ type Engine struct {
 	Conf    *Config
 	Context types.ProviderConfigurationContext
 	State   ACMEStateManager
+
+	//if the engine should not trust the previously set planned renewal date in the database
+	RecalcRenewalDate bool
 }
 
 //TriggerUpdate ensures that a key/certificate pair of the given line is available. It expects that the user
@@ -104,7 +107,12 @@ func (e *Engine) TriggerUpdate(acmeuser string, keyname string, keyrz string, do
 
 		now := time.Now()
 		if !forceUpdate {
-			renewalDate := info.ValidEndTime.AddDate(0, 0, -e.Conf.DaysRenewBeforeExpiry)
+			var renewalDate time.Time
+			if e.RecalcRenewalDate {
+				renewalDate = info.ValidEndTime.AddDate(0, 0, -e.Conf.DaysRenewBeforeExpiry)
+			} else {
+				renewalDate = info.NextRenewalTime
+			}
 			if now.Before(renewalDate) {
 				//Not yet due for renewal
 				return &NoRenewalDueError{RenewalDate: renewalDate}
