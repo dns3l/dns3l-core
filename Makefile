@@ -1,7 +1,8 @@
 .PHONY : test
 
 GOARCH = amd64
-GO_LDFLAGS := "-X 'github.com/dta4/dns3l-go/context.Version=1.0.0' -extldflags '-static' -w -s"
+DNS3LD_VERSION = 1.0.0
+GO_LDFLAGS := "-X 'github.com/dta4/dns3l-go/context.Version=$(DNS3LD_VERSION)' -extldflags '-static' -w -s"
 GOENV := GOARCH=$(GOARCH) GOOS=linux
 GODIRS := ./acme/... ./cmd/... ./dns/... ./service/... ./util/... ./context/...
 
@@ -11,3 +12,6 @@ build:
 test:
 	$(GOENV) go test $(GODIRS) -coverprofile coverage.out
 	$(GOENV) go tool cover -func=coverage.out
+
+comptest:
+	$(GOENV) go run ./test/.

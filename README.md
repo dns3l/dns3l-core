@@ -67,10 +67,20 @@ Example
 
 # Test
 
-dns3ld will test with real (maybe non-production but staging) endpoints.
-Therefore, credentials must be given in the `config-example.yaml` format.
+## Unit tests
 
 ```
 export DNS3L_TEST_CONFIG=/my/secret/folder/dns3l-config4test.yaml
 go test ./...
+```
+
+## Component tests
+
+Component tests will test with real (maybe non-production but staging) endpoints without
+using the Golang unit test framework. Therefore, credentials must be given in a config 
+derived from the `config-example.yaml` format.
+
+```
+export DNS3L_TEST_CONFIG=/my/secret/folder/dns3l-config4test.yaml
+make comptest
 ```
