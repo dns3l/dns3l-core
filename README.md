@@ -1,6 +1,6 @@
-# dns3l-go
+# dns3l-core
 
-Go parts of dns3l:
+Core parts of dns3l written in Go:
 - Backend daemon for [DNS3L](https://github.com/dta4/dns3l)
 - API/Libraries for DNS3L functionality
 
@@ -20,7 +20,9 @@ Not yet implemented:
 
 - Legacy CA handlers
 
-# Build
+# dns3ld (backend daemon)
+
+## Build
 
 Run
 
@@ -36,7 +38,7 @@ To obtain a Docker image, run
 docker build -t <tag-name> -f docker/Dockerfile-dns3ld .
 ```
 
-# Usage
+## Usage
 
 ```
 $./dns3ld --help
@@ -65,16 +67,16 @@ Example
 ./dns3ld --config config-example.yaml --socket 127.0.0.1:8080
 ```
 
-# Test
+## Test
 
-## Unit tests
+### Unit tests
 
 ```
 export DNS3L_TEST_CONFIG=/my/secret/folder/dns3l-config4test.yaml
 go test ./...
 ```
 
-## Component tests
+### Component tests
 
 Component tests will test with real (maybe non-production but staging) endpoints without
 using the Golang unit test framework. Therefore, credentials must be given in a config 
