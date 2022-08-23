@@ -1,5 +1,9 @@
 # dns3l-core
 
+[![golangci-lint](https://github.com/dns3l/dns3l-core/actions/workflows/golint.yaml/badge.svg)](https://github.com/dns3l/dns3l-core/actions/workflows/golint.yaml)
+[![docker-dns3ld](https://github.com/dns3l/dns3l-core/actions/workflows/docker-dns3ld.yaml/badge.svg)](https://github.com/dns3l/dns3l-core/actions/workflows/docker-dns3ld.yaml)
+
+
 Core parts of dns3l written in Go:
 - Backend daemon for [DNS3L](https://github.com/dta4/dns3l)
 - API/Libraries for DNS3L functionality
