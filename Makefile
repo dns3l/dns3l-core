@@ -1,13 +1,17 @@
-.PHONY : test
+.PHONY : test cli service
+
 
 GOARCH = amd64
-DNS3LD_VERSION = 1.0.0
-GO_LDFLAGS := "-X 'github.com/dta4/dns3l-go/context.Version=$(DNS3LD_VERSION)' -extldflags '-static' -w -s"
+# GO_LDFLAGS := "-X 'github.com/dta4/dns3l-go/context.Version=1.0.0' -extldflags '-static' -w -s"
+GO_LDFLAGS := "-X 'github.com/markusBayerbach/dns3l-go/context.Version=1.0.0' -extldflags '-static' -w -s"
 GOENV := GOARCH=$(GOARCH) GOOS=linux
-GODIRS := ./acme/... ./cmd/... ./dns/... ./service/... ./util/... ./context/...
+GODIRS := ./acme/... ./ca/... ./commands/... ./cmd/... ./context/...  ./dns/... ./service/... ./util/... ./cli/...
 
-build:
+service:
 	$(GOENV) go build -v -ldflags $(GO_LDFLAGS) -o dns3ld ./cmd/dns3ld/.
+
+cli:
+	$(GOENV) go build -v -ldflags $(GO_LDFLAGS) -o dns3lcli ./cmd/dns3lcli/.	
 
 test:
 	$(GOENV) go test $(GODIRS) -coverprofile coverage.out

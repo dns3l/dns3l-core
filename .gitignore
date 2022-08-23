@@ -1,0 +1,6 @@
+*.log
+*.txt
+go.mod
+go.sum
+**.vscode
+
