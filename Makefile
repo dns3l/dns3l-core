@@ -2,8 +2,12 @@
 
 
 GOARCH = amd64
-DNS3LD_VERSION = 1.0.0
-GO_LDFLAGS := "-X 'github.com/dns3l/dns3l-core/context.ServiceVersion=$(DNS3LD_VERSION)' -extldflags '-static' -w -s"
+DNS3LD_VERSION = $(shell awk -v FS="dns3ld=" 'NF>1{print $$2}' VERSIONS)
+DNS3LCLI_VERSION = $(shell awk -v FS="dns3lcli=" 'NF>1{print $$2}' VERSIONS)
+GO_LDFLAGS := "\
+	-X 'github.com/dns3l/dns3l-core/context.ServiceVersion=$(DNS3LD_VERSION)' \
+	-X 'github.com/dns3l/dns3l-core/context.CLIVersion=$(DNS3LCLI_VERSION)' \
+	-extldflags '-static' -w -s"
 GOENV := GOARCH=$(GOARCH) GOOS=linux
 GODIRS := ./acme/... ./ca/... ./commands/... ./cmd/... ./context/...  ./dns/... ./service/... ./util/... ./cli/... ./renew/...
 
