@@ -109,7 +109,7 @@ func (p *DNSProvider) DeleteRecordAcmeChallenge(domainName string) error {
 	} else if len(res) <= 0 {
 		log.WithField("domainName", dName).Warn("No TXT record could be found, ignoring deletion request.")
 	} else if len(res) > 1 {
-		log.WithField("domainName", domainName).Warn("Query resulted in more than one TXT record (%d records), not deleting anything for safety.", len(res))
+		log.WithField("domainName", domainName).Warnf("Query resulted in more than one TXT record (%d records), not deleting anything for safety.", len(res))
 	}
 
 	_, err = c.DeleteObject(res[0].Ref)
@@ -146,7 +146,7 @@ func (p *DNSProvider) DeleteRecordA(domainName string) error {
 	} else if len(res) <= 0 {
 		log.WithField("domainName", domainName).Warn("No A record could be found, ignoring deletion request.")
 	} else if len(res) > 1 {
-		log.WithField("domainName", domainName).Warn("Query resulted in more than one A record (%d records), not deleting anything for safety.", len(res))
+		log.WithField("domainName", domainName).Warnf("Query resulted in more than one A record (%d records), not deleting anything for safety.", len(res))
 	}
 
 	_, err = c.DeleteObject(res[0].Ref)
@@ -155,6 +155,8 @@ func (p *DNSProvider) DeleteRecordA(domainName string) error {
 
 }
 
+// Will probably be used in the future
+// nolint:unused
 func (p *DNSProvider) getHighestPrefixZoneFor(c ibclient.IBConnector, dnsView,
 	domainName string) (*ibclient.ZoneAuth, error) {
 

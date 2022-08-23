@@ -291,7 +291,8 @@ func (hdlr *RestV1Handler) HandleNamedCertObj(w http.ResponseWriter, r *http.Req
 
 		w.Header().Add("Content-Type", ctype)
 		w.WriteHeader(200)
-		w.Write([]byte(res))
+		_, err = w.Write([]byte(res))
+		util.LogDefer(log, err)
 		success(w, r)
 		return
 	}

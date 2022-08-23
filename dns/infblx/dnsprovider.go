@@ -41,6 +41,8 @@ func (p *DNSProvider) getIBConnector() (*ibclient.Connector, error) {
 
 }
 
+// Will probably be used in the future
+// nolint:unused
 func (p *DNSProvider) getIBObjectManager(conn ibclient.IBConnector) ibclient.IBObjectManager {
 	return ibclient.NewObjectManager(conn, "myclient", "")
 }

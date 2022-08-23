@@ -32,7 +32,10 @@ func TestAllProvidersFromConfig() {
 	}
 
 	rt := common.ResolveTester{}
-	rt.ConfigureFromEnv()
+	err = rt.ConfigureFromEnv()
+	if err != nil {
+		panic(err)
+	}
 
 	for id, p := range c.DNS.Providers {
 

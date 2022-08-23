@@ -97,11 +97,13 @@ func (e *Engine) TriggerUpdate(acmeuser string, keyname string, keyrz string, do
 			forceUpdate = true
 		}
 		if issuedBy != "" && info.IssuedByUser != issuedBy {
-			log.Infof("Issued-by-user for key %s has changed from %s to %s")
+			log.Infof("Issued-by-user for key %s has changed from %s to %s",
+				keyname, info.IssuedByUser, issuedBy)
 			info.IssuedByUser = issuedBy
 		}
 		if issuedByEmail != "" && info.IssuedByEmail != issuedByEmail {
-			log.Infof("Issued-by-email for key %s has changed from %s to %s")
+			log.Infof("Issued-by-email for key %s has changed from %s to %s",
+				keyname, info.IssuedByEmail, issuedByEmail)
 			info.IssuedByEmail = issuedByEmail
 		}
 

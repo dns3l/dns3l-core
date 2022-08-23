@@ -99,7 +99,7 @@ func (s *V1) GetCA(id string) (*apiv1.CAInfo, error) {
 
 	prov, exists := s.Service.Config.CA.Providers[id]
 	if !exists {
-		return nil, &common.NotFoundError{id}
+		return nil, &common.NotFoundError{RequestedResource: id}
 	}
 
 	res, err := caInfoFromProvider(fu, id, prov)
