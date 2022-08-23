@@ -30,10 +30,10 @@ var (
 	}
 )
 
-func RegisterDNS3LValidations(val *validator.Validate) {
+func RegisterDNS3LValidations(val *validator.Validate) error {
 	for i := range reVals {
 		reVal := &reVals[i] //otherwise we don't get pointers and run in segfault...
-		val.RegisterValidation(reVal.name, func(fl validator.FieldLevel) bool {
+		err := val.RegisterValidation(reVal.name, func(fl validator.FieldLevel) bool {
 			res := reVal.re.MatchString(fl.Field().String())
 			log.WithFields(logrus.Fields{
 				"validationType": reVal.name,
@@ -42,6 +42,10 @@ func RegisterDNS3LValidations(val *validator.Validate) {
 			}).Debugf("Input field validation success: %t", res)
 			return res
 		})
+		if err != nil {
+			return err
+		}
 	}
+	return nil
 
 }

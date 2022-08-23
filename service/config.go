@@ -50,7 +50,10 @@ func (c *Config) Initialize() error {
 
 	log.Debug("Validating config...")
 	validate := validator.New()
-	myvalidation.RegisterDNS3LValidations(validate)
+	err = myvalidation.RegisterDNS3LValidations(validate)
+	if err != nil {
+		return err
+	}
 
 	err = validate.StructFiltered(c, func(ns []byte) bool {
 		//fmt.Printf("VALIDATION: %s\n", ns)

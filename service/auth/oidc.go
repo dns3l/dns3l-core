@@ -59,7 +59,10 @@ func (h *OIDCHandler) Init() error {
 	h.verifier = h.provider.Verifier(oidcConfig)
 
 	h.validate = validator.New()
-	myvalidation.RegisterDNS3LValidations(h.validate)
+	err = myvalidation.RegisterDNS3LValidations(h.validate)
+	if err != nil {
+		return err
+	}
 
 	return nil
 
