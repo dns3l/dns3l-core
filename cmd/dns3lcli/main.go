@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/dta4/dns3l-go/cli"
+	"github.com/dns3l/dns3l-core/cli"
 	"github.com/spf13/viper"
 )
 

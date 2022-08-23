@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/dta4/dns3l-go/cli/clitypes"
+	"github.com/dns3l/dns3l-core/cli/clitypes"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"

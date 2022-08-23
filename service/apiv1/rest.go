@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/dta4/dns3l-go/common"
-	"github.com/dta4/dns3l-go/service/auth"
+	"github.com/dns3l/dns3l-core/common"
+	"github.com/dns3l/dns3l-core/service/auth"
 	"github.com/gorilla/mux"
 )
 

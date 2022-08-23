@@ -3,8 +3,8 @@ package service
 import (
 	"time"
 
-	catypes "github.com/dta4/dns3l-go/ca/types"
-	"github.com/dta4/dns3l-go/renew"
+	catypes "github.com/dns3l/dns3l-core/ca/types"
+	"github.com/dns3l/dns3l-core/renew"
 )
 
 type RenewConfig struct {

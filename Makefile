@@ -2,10 +2,12 @@
 
 
 GOARCH = amd64
-# GO_LDFLAGS := "-X 'github.com/dta4/dns3l-go/context.Version=1.0.0' -extldflags '-static' -w -s"
-GO_LDFLAGS := "-X 'github.com/markusBayerbach/dns3l-go/context.Version=1.0.0' -extldflags '-static' -w -s"
+DNS3LD_VERSION = 1.0.0
+GO_LDFLAGS := "-X 'github.com/dns3l/dns3l-core/context.ServiceVersion=$(DNS3LD_VERSION)' -extldflags '-static' -w -s"
 GOENV := GOARCH=$(GOARCH) GOOS=linux
-GODIRS := ./acme/... ./ca/... ./commands/... ./cmd/... ./context/...  ./dns/... ./service/... ./util/... ./cli/...
+GODIRS := ./acme/... ./ca/... ./commands/... ./cmd/... ./context/...  ./dns/... ./service/... ./util/... ./cli/... ./renew/...
+
+all: service cli
 
 service:
 	$(GOENV) go build -v -ldflags $(GO_LDFLAGS) -o dns3ld ./cmd/dns3ld/.

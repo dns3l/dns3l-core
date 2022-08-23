@@ -6,15 +6,15 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/dta4/dns3l-go/ca"
-	"github.com/dta4/dns3l-go/ca/acme"
-	castate "github.com/dta4/dns3l-go/ca/state"
-	"github.com/dta4/dns3l-go/ca/types"
-	dns "github.com/dta4/dns3l-go/dns"
-	dnscommon "github.com/dta4/dns3l-go/dns/common"
-	dnstypes "github.com/dta4/dns3l-go/dns/types"
-	"github.com/dta4/dns3l-go/state"
-	"github.com/dta4/dns3l-go/util"
+	"github.com/dns3l/dns3l-core/ca"
+	"github.com/dns3l/dns3l-core/ca/acme"
+	castate "github.com/dns3l/dns3l-core/ca/state"
+	"github.com/dns3l/dns3l-core/ca/types"
+	dns "github.com/dns3l/dns3l-core/dns"
+	dnscommon "github.com/dns3l/dns3l-core/dns/common"
+	dnstypes "github.com/dns3l/dns3l-core/dns/types"
+	"github.com/dns3l/dns3l-core/state"
+	"github.com/dns3l/dns3l-core/util"
 )
 
 type RootConfig struct {

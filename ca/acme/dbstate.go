@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/dta4/dns3l-go/state"
+	"github.com/dns3l/dns3l-core/state"
 )
 
 type ACMEStateManagerSQL struct {

@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	"github.com/coreos/go-oidc"
-	"github.com/dta4/dns3l-go/common"
-	myvalidation "github.com/dta4/dns3l-go/util/validation"
+	"github.com/dns3l/dns3l-core/common"
+	myvalidation "github.com/dns3l/dns3l-core/util/validation"
 	"github.com/go-playground/validator/v10"
 )
 

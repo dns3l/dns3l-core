@@ -1,7 +1,7 @@
 package apiv1
 
 import (
-	myvalidation "github.com/dta4/dns3l-go/util/validation"
+	myvalidation "github.com/dns3l/dns3l-core/util/validation"
 	"github.com/go-playground/validator/v10"
 )
 

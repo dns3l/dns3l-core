@@ -5,11 +5,11 @@ import (
 	"io/ioutil"
 
 	"github.com/creasty/defaults"
-	"github.com/dta4/dns3l-go/ca"
-	"github.com/dta4/dns3l-go/dns"
-	"github.com/dta4/dns3l-go/service/auth"
-	"github.com/dta4/dns3l-go/state"
-	myvalidation "github.com/dta4/dns3l-go/util/validation"
+	"github.com/dns3l/dns3l-core/ca"
+	"github.com/dns3l/dns3l-core/dns"
+	"github.com/dns3l/dns3l-core/service/auth"
+	"github.com/dns3l/dns3l-core/state"
+	myvalidation "github.com/dns3l/dns3l-core/util/validation"
 	"github.com/go-playground/validator/v10"
 	"gopkg.in/yaml.v2"
 )

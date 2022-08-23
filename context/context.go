@@ -1,3 +1,3 @@
 package context
 
-var Version string = "0.0.0"
+var ServiceVersion string = "0.0.0"

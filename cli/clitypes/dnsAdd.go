@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strconv"
 
-	// "github.com/dta4/dns3l-go/dns/otc"
+	// "github.com/dns3l/dns3l-core/dns/otc"
 
-	"github.com/dta4/dns3l-go/dns/types"
+	"github.com/dns3l/dns3l-core/dns/types"
 )
 
 /*DNSAddType ---------------------------------------------------------------------------------

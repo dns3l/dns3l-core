@@ -1,6 +1,6 @@
 package types
 
-import dnstypes "github.com/dta4/dns3l-go/dns/types"
+import dnstypes "github.com/dns3l/dns3l-core/dns/types"
 
 type CAProviderInfo struct {
 	Name        string

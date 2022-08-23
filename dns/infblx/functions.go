@@ -5,8 +5,8 @@ import (
 	"net"
 	"strings"
 
-	"github.com/dta4/dns3l-go/dns/common"
-	"github.com/dta4/dns3l-go/util"
+	"github.com/dns3l/dns3l-core/dns/common"
+	"github.com/dns3l/dns3l-core/util"
 	ibclient "github.com/infobloxopen/infoblox-go-client/v2"
 )
 

@@ -1,7 +1,7 @@
 package legacy
 
 import (
-	ca_types "github.com/dta4/dns3l-go/ca/types"
+	ca_types "github.com/dns3l/dns3l-core/ca/types"
 )
 
 type Config struct {

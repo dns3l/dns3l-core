@@ -1,7 +1,7 @@
 package infblx
 
 import (
-	"github.com/dta4/dns3l-go/dns/types"
+	"github.com/dns3l/dns3l-core/dns/types"
 
 	ibclient "github.com/infobloxopen/infoblox-go-client/v2"
 )

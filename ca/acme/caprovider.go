@@ -4,9 +4,9 @@ import (
 	"errors"
 	"fmt"
 
-	castate "github.com/dta4/dns3l-go/ca/state"
-	"github.com/dta4/dns3l-go/ca/types"
-	"github.com/dta4/dns3l-go/common"
+	castate "github.com/dns3l/dns3l-core/ca/state"
+	"github.com/dns3l/dns3l-core/ca/types"
+	"github.com/dns3l/dns3l-core/common"
 )
 
 type CAProvider struct {

@@ -5,8 +5,8 @@ import (
 	"net"
 	"strings"
 
-	"github.com/dta4/dns3l-go/dns/common"
-	"github.com/dta4/dns3l-go/util"
+	"github.com/dns3l/dns3l-core/dns/common"
+	"github.com/dns3l/dns3l-core/util"
 	"github.com/huaweicloud/golangsdk"
 	"github.com/huaweicloud/golangsdk/openstack"
 	"github.com/huaweicloud/golangsdk/openstack/dns/v2/recordsets"
