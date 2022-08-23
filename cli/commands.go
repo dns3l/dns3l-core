@@ -159,20 +159,21 @@ func initViperConfig() {
 	viper.SetDefault("config", "dns3l")
 	viper.SetDefault("debug", "false")
 	viper.SetDefault("json", "false")
-	viper.BindEnv("config", viperShellPrefix+"_CONFIG")
-	viper.BindEnv("debug", viperShellPrefix+"_DEBUG")
-	viper.BindEnv("json", viperShellPrefix+"_JSON")
+	// the error of BindEnv means you did not provide any key (looked at sourcecode)
+	viper.BindEnv("config", viperShellPrefix+"_CONFIG") //nolint:errcheck
+	viper.BindEnv("debug", viperShellPrefix+"_DEBUG")   //nolint:errcheck
+	viper.BindEnv("json", viperShellPrefix+"_JSON")     //nolint:errcheck
 	// DNS and cert
 	viper.SetDefault("force", "false")
-	viper.BindEnv("force", viperShellPrefix+"_FORCE")
+	viper.BindEnv("force", viperShellPrefix+"_FORCE") //nolint:errcheck
 	// printViperConfigRoot()
 	// DNS part
 	viper.SetDefault("dns.backend", "InfoblxNIC")
 	viper.SetDefault("dns.id", "user")
 	viper.SetDefault("dns.secret", "pass")
-	viper.BindEnv("dns.backend", viperShellPrefix+"_DNS_BACKEND")
-	viper.BindEnv("dns.id", viperShellPrefix+"_DNS_ID")
-	viper.BindEnv("dns.secret", viperShellPrefix+"_DNS_SECRET")
+	viper.BindEnv("dns.backend", viperShellPrefix+"_DNS_BACKEND") //nolint:errcheck
+	viper.BindEnv("dns.id", viperShellPrefix+"_DNS_ID")           //nolint:errcheck
+	viper.BindEnv("dns.secret", viperShellPrefix+"_DNS_SECRET")   //nolint:errcheck
 	// CERT part
 	// not done
 	viper.SetDefault("cert.ca", "ViDef_CA")
@@ -180,11 +181,11 @@ func initViperConfig() {
 	viper.SetDefault("cert.autodns", "false")
 	viper.SetDefault("cert.modeFull", "false")
 	viper.SetDefault("cert.api", "ViDef_cert_api")
-	viper.BindEnv("cert.ca", viperShellPrefix+"_CERT_CA")
-	viper.BindEnv("cert.wildcard", viperShellPrefix+"_CERT_WILDCARD")
-	viper.BindEnv("cert.autodns", viperShellPrefix+"_CERT_AUTODNS")
-	viper.BindEnv("cert.modeFull", viperShellPrefix+"_CERT_MODE")
-	viper.BindEnv("cert.api", viperShellPrefix+"_CERT__API")
+	viper.BindEnv("cert.ca", viperShellPrefix+"_CERT_CA")             //nolint:errcheck
+	viper.BindEnv("cert.wildcard", viperShellPrefix+"_CERT_WILDCARD") //nolint:errcheck
+	viper.BindEnv("cert.autodns", viperShellPrefix+"_CERT_AUTODNS")   //nolint:errcheck
+	viper.BindEnv("cert.modeFull", viperShellPrefix+"_CERT_MODE")     //nolint:errcheck
+	viper.BindEnv("cert.api", viperShellPrefix+"_CERT__API")          //nolint:errcheck
 
 	// if in the commandline was no --config
 	if Config == "" {
@@ -196,8 +197,8 @@ func initViperConfig() {
 	if err != nil {             // Handle errors reading the config file
 		fmt.Printf("fatal error config file:%v \n Using config file: %s\n", err, viper.ConfigFileUsed())
 		// os.Exit(1)
-	} else {
-		// fmt.Printf("Viper Configuration sucessfully read: %s\n", viper.ConfigFileUsed())
+	} else if Verbose {
+		fmt.Printf("Viper Configuration sucessfully read: %s\n", viper.ConfigFileUsed())
 		// printViperConfigRoot()
 	}
 }
@@ -224,13 +225,4 @@ func parseCommandLineForConfig() (string, bool) {
 		}
 	}
 	return string(""), false
-}
-
-func printViperConfigRoot() {
-	// Provider = viper.GetString("provider")
-	//BackendAPIEndPoint = viper.GetString("api")
-	vip := viper.GetViper()
-	fmt.Printf("VIPER debug flag 	'%s' \n", vip.GetString("debug"))
-	fmt.Printf("VIPER json output 	'%s' \n", vip.GetString("json"))
-
 }

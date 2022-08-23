@@ -111,10 +111,12 @@ func certCaCmdCb(ccmd *cobra.Command, args []string) {
 		fmt.Printf(" CERT CA requires 0 Arguments but found %d \n", len(args))
 		return
 	}
-	var certCa = clitypes.CertCaType{Verbose, JSONOutput, CertAPIEndPoint}
+	var certCa = clitypes.CertCaType{Verbose: Verbose, JSONOutput: JSONOutput, APIEndPoint: CertAPIEndPoint}
 	certCa.PrintParams()
 	if !certCa.CheckParams() {
-		ccmd.Usage()
+		if nil != ccmd.Usage() {
+			println("Internal Error")
+		}
 		return
 	}
 }
@@ -135,10 +137,12 @@ func certListCmdCb(ccmd *cobra.Command, args []string) {
 		fmt.Printf("CERT LIST requires 0 Arguments but found %d \n", len(args))
 		return
 	}
-	var CertList = clitypes.CertListType{Verbose, JSONOutput, CertAPIEndPoint, CertCA}
+	var CertList = clitypes.CertListType{Verbose: Verbose, JSONOutput: JSONOutput, APIEndPoint: CertAPIEndPoint, CA: CertCA}
 	CertList.PrintParams()
 	if !CertList.CheckParams() {
-		ccmd.Usage()
+		if nil != ccmd.Usage() {
+			println("Internal Error")
+		}
 		return
 	}
 }
@@ -160,10 +164,14 @@ func certClaimCmdCb(ccmd *cobra.Command, args []string) {
 		fmt.Printf("CERT CLAIM requires 2 or more Arguments but found %d \n", len(args))
 		return
 	}
-	var CertClaim = clitypes.CertClaimType{Verbose, JSONOutput, CertAPIEndPoint, CertCA, CertWildcard, CertAutoDNS, args[0], args[1:]}
+	var CertClaim = clitypes.CertClaimType{Verbose: Verbose,
+		JSONOutput: JSONOutput, APIEndPoint: CertAPIEndPoint, CA: CertCA,
+		Wildcard: CertWildcard, AutoDNS: CertAutoDNS, FQDN: args[0], SAN: args[1:]}
 	CertClaim.PrintParams()
 	if !CertClaim.CheckParams() {
-		ccmd.Usage()
+		if nil != ccmd.Usage() {
+			println("Internal Error")
+		}
 		return
 	}
 }
@@ -184,10 +192,13 @@ func certGetCmdCb(ccmd *cobra.Command, args []string) {
 		fmt.Printf(" CERT GET requires 1 Arguments but found %d \n", len(args))
 		return
 	}
-	var CertGet = clitypes.CertGetType{Verbose, JSONOutput, CertAPIEndPoint, CertCA, CertModeFull, args[0]}
+	var CertGet = clitypes.CertGetType{Verbose: Verbose, JSONOutput: JSONOutput,
+		APIEndPoint: CertAPIEndPoint, CA: CertCA, Mode: CertModeFull, FQDN: args[0]}
 	CertGet.PrintParams()
 	if !CertGet.CheckParams() {
-		ccmd.Usage()
+		if nil != ccmd.Usage() {
+			println("Internal Error")
+		}
 		return
 	}
 }
@@ -208,10 +219,12 @@ func certDelCmdCb(ccmd *cobra.Command, args []string) {
 		fmt.Printf("CERT DEL requires 1 Arguments but found %d \n", len(args))
 		return
 	}
-	var CertDel = clitypes.CertDelType{Verbose, JSONOutput, CertAPIEndPoint, CertCA, args[0]}
+	var CertDel = clitypes.CertDelType{Verbose: Verbose, JSONOutput: JSONOutput, APIEndPoint: CertAPIEndPoint, CA: CertCA, FQDN: args[0]}
 	CertDel.PrintParams()
 	if !CertDel.CheckParams() {
-		ccmd.Usage()
+		if nil != ccmd.Usage() {
+			println("Internal Error")
+		}
 		return
 	}
 }
@@ -232,10 +245,13 @@ func certCsrCmdCb(ccmd *cobra.Command, args []string) {
 		fmt.Printf("CERT CSR requires 1 Arguments but found %d \n", len(args))
 		return
 	}
-	var CertCSR = clitypes.CertCSRType{Verbose, JSONOutput, Force, CertAPIEndPoint, CertCA, args[0]}
+	var CertCSR = clitypes.CertCSRType{Verbose: Verbose, JSONOutput: JSONOutput, Force: Force,
+		APIEndPoint: CertAPIEndPoint, CA: CertCA, FQDN: args[0]}
 	CertCSR.PrintParams()
 	if !CertCSR.CheckParams() {
-		ccmd.Usage()
+		if nil != ccmd.Usage() {
+			println("Internal Error")
+		}
 		return
 	}
 }
@@ -256,10 +272,13 @@ func certPushCmdCb(ccmd *cobra.Command, args []string) {
 		fmt.Printf("CERT PUSH requires 3 Arguments but found %d \n", len(args))
 		return
 	}
-	var CertPush = clitypes.CertPushType{Verbose, JSONOutput, Force, CertAPIEndPoint, CertCA, args[0], args[1], args[2]}
+	var CertPush = clitypes.CertPushType{Verbose: Verbose, JSONOutput: JSONOutput, Force: Force,
+		APIEndPoint: CertAPIEndPoint, CA: CertCA, FQDN: args[0], CRTpem: args[1], CHNpem: args[2]}
 	CertPush.PrintParams()
 	if !CertPush.CheckParams() {
-		ccmd.Usage()
+		if nil != ccmd.Usage() {
+			println("Internal Error")
+		}
 		return
 	}
 }
@@ -275,7 +294,9 @@ var certCommand = &cobra.Command{
 
 func certCmdCb(ccmd *cobra.Command, args []string) {
 	fmt.Fprintf(os.Stderr, "ERROR!  reason: command CERT is used without ca, list, claim, get, del, csr, push or query \n ")
-	ccmd.Usage()
+	if nil != ccmd.Usage() {
+		println("Internal Error")
+	}
 	os.Exit(1)
 }
 
