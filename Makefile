@@ -23,7 +23,7 @@ cli:
 docker: service-docker
 
 service-docker:
-	$(DOCKER) build -t dns3ld:$(DNS3LD_VERSION) -f docker/Dockerfile-dns3ld .
+	$(DOCKER) build -t dns3ld:$(DNS3LD_VERSION)-dev -f docker/Dockerfile-dns3ld .
 
 test:
 	$(GOENV) go test $(GODIRS) -coverprofile coverage.out
