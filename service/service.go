@@ -3,7 +3,7 @@ package service
 import (
 	"net/http"
 
-	"github.com/dta4/dns3l-go/service/apiv1"
+	"github.com/dns3l/dns3l-core/service/apiv1"
 	"github.com/gorilla/mux"
 )
 

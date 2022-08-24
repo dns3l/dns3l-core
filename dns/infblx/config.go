@@ -1,6 +1,6 @@
 package infblx
 
-import dns_types "github.com/dta4/dns3l-go/dns/types"
+import dns_types "github.com/dns3l/dns3l-core/dns/types"
 
 type Config struct {
 	Name      string `yaml:"name" validate:"required"`

@@ -1,6 +1,6 @@
 package otc
 
-import "github.com/dta4/dns3l-go/dns/types"
+import "github.com/dns3l/dns3l-core/dns/types"
 
 type DNSProvider struct {
 	C *Config `validate:"required"`

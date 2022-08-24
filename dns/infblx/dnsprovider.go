@@ -1,7 +1,7 @@
 package infblx
 
 import (
-	"github.com/dta4/dns3l-go/dns/types"
+	"github.com/dns3l/dns3l-core/dns/types"
 
 	ibclient "github.com/infobloxopen/infoblox-go-client/v2"
 )
@@ -41,6 +41,8 @@ func (p *DNSProvider) getIBConnector() (*ibclient.Connector, error) {
 
 }
 
+// Will probably be used in the future
+// nolint:unused
 func (p *DNSProvider) getIBObjectManager(conn ibclient.IBConnector) ibclient.IBObjectManager {
 	return ibclient.NewObjectManager(conn, "myclient", "")
 }

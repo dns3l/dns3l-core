@@ -7,14 +7,14 @@ import (
 	"strings"
 	"time"
 
-	cacommon "github.com/dta4/dns3l-go/ca/common"
-	"github.com/dta4/dns3l-go/ca/types"
-	"github.com/dta4/dns3l-go/common"
-	"github.com/dta4/dns3l-go/dns"
-	dnstypes "github.com/dta4/dns3l-go/dns/types"
-	"github.com/dta4/dns3l-go/service/apiv1"
-	"github.com/dta4/dns3l-go/service/auth"
-	"github.com/dta4/dns3l-go/util"
+	cacommon "github.com/dns3l/dns3l-core/ca/common"
+	"github.com/dns3l/dns3l-core/ca/types"
+	"github.com/dns3l/dns3l-core/common"
+	"github.com/dns3l/dns3l-core/dns"
+	dnstypes "github.com/dns3l/dns3l-core/dns/types"
+	"github.com/dns3l/dns3l-core/service/apiv1"
+	"github.com/dns3l/dns3l-core/service/auth"
+	"github.com/dns3l/dns3l-core/util"
 	"github.com/sirupsen/logrus"
 )
 
@@ -26,7 +26,7 @@ func (s *V1) ClaimCertificate(caID string, cinfo *apiv1.CertClaimInfo, authz *au
 	//Ensure standard notation
 	cinfo.Name = util.GetDomainFQDNDot(cinfo.Name)
 	for i := range cinfo.SubjectAltNames {
-		cinfo.SubjectAltNames[i] = util.GetDomainFQDNDot(cinfo.Name)
+		cinfo.SubjectAltNames[i] = util.GetDomainFQDNDot(cinfo.SubjectAltNames[i])
 	}
 
 	var firstDomain string

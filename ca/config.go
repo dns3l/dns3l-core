@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"time"
 
-	castate "github.com/dta4/dns3l-go/ca/state"
-	"github.com/dta4/dns3l-go/ca/types"
-	"github.com/dta4/dns3l-go/dns"
-	dnstypes "github.com/dta4/dns3l-go/dns/types"
-	"github.com/dta4/dns3l-go/util"
+	castate "github.com/dns3l/dns3l-core/ca/state"
+	"github.com/dns3l/dns3l-core/ca/types"
+	"github.com/dns3l/dns3l-core/dns"
+	dnstypes "github.com/dns3l/dns3l-core/dns/types"
+	"github.com/dns3l/dns3l-core/util"
 
-	"github.com/dta4/dns3l-go/state"
+	"github.com/dns3l/dns3l-core/state"
 	"gopkg.in/yaml.v2"
 )
 

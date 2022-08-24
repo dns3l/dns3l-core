@@ -1,9 +1,9 @@
 package service
 
 import (
-	"github.com/dta4/dns3l-go/dns"
-	dnstypes "github.com/dta4/dns3l-go/dns/types"
-	"github.com/dta4/dns3l-go/state"
+	"github.com/dns3l/dns3l-core/dns"
+	dnstypes "github.com/dns3l/dns3l-core/dns/types"
+	"github.com/dns3l/dns3l-core/state"
 )
 
 type CAConfigurationContextImpl struct {

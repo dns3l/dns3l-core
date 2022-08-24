@@ -3,7 +3,7 @@ package legacy
 import (
 	"errors"
 
-	"github.com/dta4/dns3l-go/ca/types"
+	"github.com/dns3l/dns3l-core/ca/types"
 )
 
 type CAProvider struct {

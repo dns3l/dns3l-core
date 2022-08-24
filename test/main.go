@@ -1,8 +1,8 @@
 package main
 
 import (
-	acmetest "github.com/dta4/dns3l-go/ca/acme/test"
-	"github.com/dta4/dns3l-go/dns"
+	acmetest "github.com/dns3l/dns3l-core/ca/acme/test"
+	"github.com/dns3l/dns3l-core/dns"
 	log "github.com/sirupsen/logrus"
 )
 

@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/dta4/dns3l-go/ca/common"
-	"github.com/dta4/dns3l-go/ca/types"
-	cmn "github.com/dta4/dns3l-go/common"
-	"github.com/dta4/dns3l-go/util"
+	"github.com/dns3l/dns3l-core/ca/common"
+	"github.com/dns3l/dns3l-core/ca/types"
+	cmn "github.com/dns3l/dns3l-core/common"
+	"github.com/dns3l/dns3l-core/util"
 	"github.com/sirupsen/logrus"
 )
 

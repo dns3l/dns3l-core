@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/dta4/dns3l-go/util"
+	"github.com/dns3l/dns3l-core/util"
 )
 
 type RootZone struct {

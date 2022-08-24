@@ -12,7 +12,7 @@ const (
 	strAlphanumUnderscoreDashDot = `^[a-zA-Z0-9\._-]*$`
 	strWildcard                  = `^\*$`
 	strFQDNDotAtEnd              = `^([a-zA-Z0-9]{1}[a-zA-Z0-9-]{0,62})(\.[a-zA-Z0-9]{1}[a-zA-Z0-9-]{0,62})*?(\.[a-zA-Z]{1}[a-zA-Z0-9]{0,62})\.$` //RFC 1123
-	strFQDNWildcard              = `^\*\.([a-zA-Z0-9]{1}[a-zA-Z0-9-]{0,62})(\.[a-zA-Z0-9]{1}[a-zA-Z0-9-]{0,62})*?(\.[a-zA-Z]{1}[a-zA-Z0-9]{0,62})$`
+	strFQDNWildcard              = `^\*\.([a-zA-Z0-9]{1}[a-zA-Z0-9-]{0,62})(\.[a-zA-Z0-9]{1}[a-zA-Z0-9-]{0,62})*?(\.[a-zA-Z]{1}[a-zA-Z0-9]{0,62})\.?$`
 	strSemver                    = `v?([0-9]+)(\.[0-9]+)?(\.[0-9]+)?(-([0-9A-Za-z\-]+(\.[0-9A-Za-z\-]+)*))?(\+([0-9A-Za-z\-]+(\.[0-9A-Za-z\-]+)*))?`
 )
 
@@ -30,10 +30,10 @@ var (
 	}
 )
 
-func RegisterDNS3LValidations(val *validator.Validate) {
+func RegisterDNS3LValidations(val *validator.Validate) error {
 	for i := range reVals {
 		reVal := &reVals[i] //otherwise we don't get pointers and run in segfault...
-		val.RegisterValidation(reVal.name, func(fl validator.FieldLevel) bool {
+		err := val.RegisterValidation(reVal.name, func(fl validator.FieldLevel) bool {
 			res := reVal.re.MatchString(fl.Field().String())
 			log.WithFields(logrus.Fields{
 				"validationType": reVal.name,
@@ -42,6 +42,10 @@ func RegisterDNS3LValidations(val *validator.Validate) {
 			}).Debugf("Input field validation success: %t", res)
 			return res
 		})
+		if err != nil {
+			return err
+		}
 	}
+	return nil
 
 }
