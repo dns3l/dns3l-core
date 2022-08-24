@@ -3,9 +3,9 @@ package main
 import (
 	"os"
 
-	"github.com/dta4/dns3l-go/context"
-	"github.com/dta4/dns3l-go/service"
-	"github.com/dta4/dns3l-go/state"
+	"github.com/dns3l/dns3l-core/context"
+	"github.com/dns3l/dns3l-core/service"
+	"github.com/dns3l/dns3l-core/state"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -23,7 +23,7 @@ func main() {
 var rootCmd = &cobra.Command{
 	Use:   "dns3ld",
 	Short: "dns3l backend daemon",
-	Long:  `DNS3LD backend daemon, version ` + context.Version,
+	Long:  `DNS3LD backend daemon, version ` + context.ServiceVersion,
 	Run: func(cmd *cobra.Command, args []string) {
 
 		confPath, err := cmd.PersistentFlags().GetString("config")

@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	"github.com/coreos/go-oidc"
-	"github.com/dta4/dns3l-go/common"
-	myvalidation "github.com/dta4/dns3l-go/util/validation"
+	"github.com/dns3l/dns3l-core/common"
+	myvalidation "github.com/dns3l/dns3l-core/util/validation"
 	"github.com/go-playground/validator/v10"
 )
 
@@ -59,7 +59,10 @@ func (h *OIDCHandler) Init() error {
 	h.verifier = h.provider.Verifier(oidcConfig)
 
 	h.validate = validator.New()
-	myvalidation.RegisterDNS3LValidations(h.validate)
+	err = myvalidation.RegisterDNS3LValidations(h.validate)
+	if err != nil {
+		return err
+	}
 
 	return nil
 

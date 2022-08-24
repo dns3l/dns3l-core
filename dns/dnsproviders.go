@@ -1,9 +1,9 @@
 package dns
 
 import (
-	"github.com/dta4/dns3l-go/dns/infblx"
-	"github.com/dta4/dns3l-go/dns/otc"
-	"github.com/dta4/dns3l-go/dns/types"
+	"github.com/dns3l/dns3l-core/dns/infblx"
+	"github.com/dns3l/dns3l-core/dns/otc"
+	"github.com/dns3l/dns3l-core/dns/types"
 )
 
 var DNSProviderBuilders = map[string]func() types.DNSProviderBuilder{

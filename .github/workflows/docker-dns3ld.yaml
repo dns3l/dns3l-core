@@ -1,0 +1,37 @@
+name: docker-dns3ld
+
+env:
+  dest_repo:  ghcr.io/dns3l/dns3ld
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Determine version tag
+        run: >
+          set -e; dest_tag=$(awk -v FS="dns3ld=" 'NF>1{print $2}' VERSIONS); echo "dest_tag=$dest_tag" >> $GITHUB_ENV; echo "Docker tag: $dest_tag"
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Login to Github Packages
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Check if image already built
+        run: set +e; docker manifest inspect $dest_repo:$dest_tag > /dev/null; echo "image_exists=$?" >> $GITHUB_ENV;
+      - name: Build and push
+        if: env.image_exists == 1
+        id: docker_build
+        uses: docker/build-push-action@v3
+        with:
+          file: docker/Dockerfile-dns3ld
+          push: true
+          tags: ${{ env.dest_repo }}:${{ env.dest_tag }}

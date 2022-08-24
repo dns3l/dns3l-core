@@ -1,8 +1,8 @@
 package apiv1
 
 import (
-	"github.com/dta4/dns3l-go/service/auth"
-	"github.com/dta4/dns3l-go/util"
+	"github.com/dns3l/dns3l-core/service/auth"
+	"github.com/dns3l/dns3l-core/util"
 )
 
 type ServiceV1 interface {

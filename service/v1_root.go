@@ -1,9 +1,9 @@
 package service
 
 import (
-	"github.com/dta4/dns3l-go/context"
-	"github.com/dta4/dns3l-go/service/apiv1"
-	"github.com/dta4/dns3l-go/service/auth"
+	"github.com/dns3l/dns3l-core/context"
+	"github.com/dns3l/dns3l-core/service/apiv1"
+	"github.com/dns3l/dns3l-core/service/auth"
 )
 
 type V1 struct {
@@ -13,7 +13,7 @@ type V1 struct {
 func (s *V1) GetServerInfo() *apiv1.ServerInfo {
 	return &apiv1.ServerInfo{
 		Version: &apiv1.ServerInfoVersion{
-			Daemon: context.Version,
+			Daemon: context.ServiceVersion,
 			API:    apiv1.Version,
 		},
 		Contact: &apiv1.ServerInfoContact{

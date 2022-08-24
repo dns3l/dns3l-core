@@ -3,9 +3,9 @@ package service
 import (
 	"fmt"
 
-	"github.com/dta4/dns3l-go/ca"
-	"github.com/dta4/dns3l-go/common"
-	"github.com/dta4/dns3l-go/service/apiv1"
+	"github.com/dns3l/dns3l-core/ca"
+	"github.com/dns3l/dns3l-core/common"
+	"github.com/dns3l/dns3l-core/service/apiv1"
 )
 
 func (s *V1) GetDNSHandlers() []apiv1.DNSHandlerInfo {
@@ -99,7 +99,7 @@ func (s *V1) GetCA(id string) (*apiv1.CAInfo, error) {
 
 	prov, exists := s.Service.Config.CA.Providers[id]
 	if !exists {
-		return nil, &common.NotFoundError{id}
+		return nil, &common.NotFoundError{RequestedResource: id}
 	}
 
 	res, err := caInfoFromProvider(fu, id, prov)

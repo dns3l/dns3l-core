@@ -4,8 +4,8 @@ import (
 	"math/rand"
 	"net"
 
-	"github.com/dta4/dns3l-go/dns/common"
-	"github.com/dta4/dns3l-go/util"
+	"github.com/dns3l/dns3l-core/dns/common"
+	"github.com/dns3l/dns3l-core/util"
 
 	"github.com/sirupsen/logrus"
 )
@@ -32,7 +32,10 @@ func TestAllProvidersFromConfig() {
 	}
 
 	rt := common.ResolveTester{}
-	rt.ConfigureFromEnv()
+	err = rt.ConfigureFromEnv()
+	if err != nil {
+		panic(err)
+	}
 
 	for id, p := range c.DNS.Providers {
 

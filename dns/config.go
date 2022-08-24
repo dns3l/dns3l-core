@@ -3,7 +3,7 @@ package dns
 import (
 	"fmt"
 
-	"github.com/dta4/dns3l-go/dns/types"
+	"github.com/dns3l/dns3l-core/dns/types"
 	"gopkg.in/yaml.v2"
 )
 

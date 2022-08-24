@@ -56,7 +56,7 @@ func (c *SQLDBProviderDefault) GetNewDBConn() (*sql.DB, error) {
 
 // TestDBConn connects to the database and sends a sql.DB.Ping() once
 func (c *SQLDBProviderDefault) TestDBConn() error {
-	log.Debugf("Testing DB connection...")
+	log.Debug("Testing DB connection...")
 	db, err := c.GetNewDBConn()
 	if err != nil {
 		return fmt.Errorf("problems while obtaining established database connection: %v", err)
@@ -66,7 +66,7 @@ func (c *SQLDBProviderDefault) TestDBConn() error {
 	if err != nil {
 		return fmt.Errorf("problems while pinging database: %v", err)
 	}
-	log.Debugf("%sSuccessfully tested DB connection")
+	log.Debug("Successfully tested DB connection")
 
 	return nil
 }

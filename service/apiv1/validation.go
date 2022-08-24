@@ -1,7 +1,7 @@
 package apiv1
 
 import (
-	myvalidation "github.com/dta4/dns3l-go/util/validation"
+	myvalidation "github.com/dns3l/dns3l-core/util/validation"
 	"github.com/go-playground/validator/v10"
 )
 
@@ -11,8 +11,7 @@ type Validator struct {
 
 func (v *Validator) Init() error {
 	v.a = validator.New()
-	myvalidation.RegisterDNS3LValidations(v.a)
-	return nil
+	return myvalidation.RegisterDNS3LValidations(v.a)
 }
 
 func (v *Validator) ValidateAPIStruct(rbody interface{}) error {

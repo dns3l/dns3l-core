@@ -5,7 +5,7 @@ RUN apk add --no-cache \
     bash \
     make
 COPY . .
-RUN make
+RUN make service
 
 
 FROM alpine:3.16

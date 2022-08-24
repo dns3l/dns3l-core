@@ -1,5 +1,9 @@
 # dns3l-core
 
+[![golangci-lint](https://github.com/dns3l/dns3l-core/actions/workflows/golint.yaml/badge.svg)](https://github.com/dns3l/dns3l-core/actions/workflows/golint.yaml)
+[![docker-dns3ld](https://github.com/dns3l/dns3l-core/actions/workflows/docker-dns3ld.yaml/badge.svg)](https://github.com/dns3l/dns3l-core/actions/workflows/docker-dns3ld.yaml)
+
+
 Core parts of dns3l written in Go:
 - Backend daemon for [DNS3L](https://github.com/dta4/dns3l)
 - API/Libraries for DNS3L functionality
@@ -35,8 +39,17 @@ to obtain a statically linked binary.
 To obtain a Docker image, run
 
 ```
-docker build -t <tag-name> -f docker/Dockerfile-dns3ld .
+make docker
 ```
+
+or explicitly (same semantics)
+
+```
+docker build -t dns3ld:$(awk -v FS="dns3ld=" 'NF>1{print $2}' VERSIONS)-dev -f docker/Dockerfile-dns3ld .
+```
+
+The awk command above is an example that will create the right tag name from the VERSIONS file, feel free
+to choose other tag names as needed.
 
 ## Usage
 
@@ -56,6 +69,8 @@ Available Commands:
 Flags:
   -c, --config string   YAML-formatted configuration for dns3ld. (default "config.yaml")
   -h, --help            help for dns3ld
+  -r, --renew           Whether automatic cert renewal jobs should run. Useful if multiple instances run on the
+                                        same DB and you want to disable renewal for the replicas, which is not yet thread-safe. (default true)
   -s, --socket string   L4 socket on which the service should listen. (default ":80")
 
 Use "dns3ld [command] --help" for more information about a command.

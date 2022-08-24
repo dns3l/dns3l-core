@@ -3,7 +3,7 @@ package auth
 import (
 	"fmt"
 
-	"github.com/dta4/dns3l-go/common"
+	"github.com/dns3l/dns3l-core/common"
 )
 
 // Authorization info for a specific user, along with some personal data

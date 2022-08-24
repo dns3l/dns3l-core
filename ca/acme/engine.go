@@ -8,11 +8,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dta4/dns3l-go/ca/common"
-	"github.com/dta4/dns3l-go/ca/types"
-	cmn "github.com/dta4/dns3l-go/common"
-	dnscommon "github.com/dta4/dns3l-go/dns/common"
-	"github.com/dta4/dns3l-go/util"
+	"github.com/dns3l/dns3l-core/ca/common"
+	"github.com/dns3l/dns3l-core/ca/types"
+	cmn "github.com/dns3l/dns3l-core/common"
+	dnscommon "github.com/dns3l/dns3l-core/dns/common"
+	"github.com/dns3l/dns3l-core/util"
 	"github.com/go-acme/lego/v4/certificate"
 	"github.com/go-acme/lego/v4/challenge/dns01"
 	legodns01 "github.com/go-acme/lego/v4/challenge/dns01"
@@ -97,11 +97,13 @@ func (e *Engine) TriggerUpdate(acmeuser string, keyname string, keyrz string, do
 			forceUpdate = true
 		}
 		if issuedBy != "" && info.IssuedByUser != issuedBy {
-			log.Infof("Issued-by-user for key %s has changed from %s to %s")
+			log.Infof("Issued-by-user for key %s has changed from %s to %s",
+				keyname, info.IssuedByUser, issuedBy)
 			info.IssuedByUser = issuedBy
 		}
 		if issuedByEmail != "" && info.IssuedByEmail != issuedByEmail {
-			log.Infof("Issued-by-email for key %s has changed from %s to %s")
+			log.Infof("Issued-by-email for key %s has changed from %s to %s",
+				keyname, info.IssuedByEmail, issuedByEmail)
 			info.IssuedByEmail = issuedByEmail
 		}
 

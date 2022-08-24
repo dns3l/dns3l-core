@@ -8,10 +8,10 @@ import (
 	"time"
 
 	"github.com/Masterminds/squirrel"
-	"github.com/dta4/dns3l-go/ca/types"
-	"github.com/dta4/dns3l-go/common"
-	"github.com/dta4/dns3l-go/state"
-	"github.com/dta4/dns3l-go/util"
+	"github.com/dns3l/dns3l-core/ca/types"
+	"github.com/dns3l/dns3l-core/common"
+	"github.com/dns3l/dns3l-core/state"
+	"github.com/dns3l/dns3l-core/util"
 )
 
 type CAStateManagerSQL struct {

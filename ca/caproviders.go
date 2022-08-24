@@ -1,8 +1,8 @@
 package ca
 
 import (
-	"github.com/dta4/dns3l-go/ca/acme"
-	"github.com/dta4/dns3l-go/ca/legacy"
+	"github.com/dns3l/dns3l-core/ca/acme"
+	"github.com/dns3l/dns3l-core/ca/legacy"
 )
 
 var CAProviderBuilders = map[string]func() CAProviderBuilder{
