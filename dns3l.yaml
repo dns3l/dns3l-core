@@ -3,22 +3,18 @@ debug: false
 json: true
 force: false
 dns: 
-  backend : infblxNIC     # this name must match with a section of dns_providers
+  backend : infblxFOO     # this name must match with a section of dns_providers
   id: user              # we need this entries for the $Shell Vars
   secret: pass
-# TESTDATA DNS_ADD & DNS_DEL
-# args0==FQDN  maba01Host.sub.ibtest.a4.dtlabs.de 
-# args1==TYPE  a 
-# args2==DATA  10.10.1.111
   providers:
     infblxNIC: 
       type: infblx
-      name: InfoblxNIC
+      name: InfobloxExample
       #url: https://infoblox.example.com/wapi/v2.10
-      host: infoblox01v.dtlabs.de
+      host: infoblox.example.com
       port: 443 
       version: 2.10
-      DNSView: DNS_Access_4.0
+      DNSView: myview
       SSLVerify: false
       auth: #endpoint specific
         user: user

@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 
+	"github.com/dns3l/dns3l-core/context"
 	"github.com/spf13/cobra"
 )
 
@@ -22,6 +23,6 @@ var versionCmd = &cobra.Command{
 	Short: "Print the version number of dns3l CLI",
 	Long:  `All software has versions. This is dns3l CLIs`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("dns3l version := 0.1.7")
+		fmt.Printf("dns3l version := %s\n", context.CLIVersion)
 	},
 }
