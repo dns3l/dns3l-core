@@ -26,7 +26,7 @@ func (s *V1) ClaimCertificate(caID string, cinfo *apiv1.CertClaimInfo, authz *au
 	//Ensure standard notation
 	cinfo.Name = util.GetDomainFQDNDot(cinfo.Name)
 	for i := range cinfo.SubjectAltNames {
-		cinfo.SubjectAltNames[i] = util.GetDomainFQDNDot(cinfo.Name)
+		cinfo.SubjectAltNames[i] = util.GetDomainFQDNDot(cinfo.SubjectAltNames[i])
 	}
 
 	var firstDomain string
