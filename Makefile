@@ -1,6 +1,7 @@
 .PHONY : test cli service
 
 
+DOCKER = /usr/bin/docker
 GOARCH = amd64
 DNS3LD_VERSION = $(shell awk -v FS="dns3ld=" 'NF>1{print $$2}' VERSIONS)
 DNS3LCLI_VERSION = $(shell awk -v FS="dns3lcli=" 'NF>1{print $$2}' VERSIONS)
@@ -18,6 +19,11 @@ service:
 
 cli:
 	$(GOENV) go build -v -ldflags $(GO_LDFLAGS) -o dns3lcli ./cmd/dns3lcli/.	
+
+docker: service-docker
+
+service-docker:
+	$(DOCKER) build -t dns3ld:$(DNS3LD_VERSION) -f docker/Dockerfile-dns3ld .
 
 test:
 	$(GOENV) go test $(GODIRS) -coverprofile coverage.out
