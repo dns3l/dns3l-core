@@ -2,7 +2,7 @@ package clitypes
 
 import (
 	"fmt"
-	// "github.com/dns3l/dns3l-core/dns/otc"
+
 	"github.com/dns3l/dns3l-core/dns/types"
 )
 

@@ -5,6 +5,8 @@ import (
 	"net"
 	"os"
 
+	//	"github.com/dta4/dns3l-go/cli/clitypes"
+
 	"github.com/dns3l/dns3l-core/cli/clitypes"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -108,7 +110,9 @@ func DNSAddCmdCb(ccmd *cobra.Command, args []string) {
 	dnsAdd.Init(Verbose, JSONOutput, Backend, Force, DNSProviderID, DNSProviderSecret, args)
 	dnsAdd.PrintParams()
 	if !dnsAdd.CheckParams() {
-		ccmd.Usage()
+		if nil != ccmd.Usage() {
+			println("Internal Error")
+		}
 		return
 	}
 	// see dnsTypeList in file util.go
@@ -156,7 +160,9 @@ func DNSDelCmdCb(ccmd *cobra.Command, args []string) {
 	dnsDel.Init(Verbose, JSONOutput, Backend, DNSProviderID, DNSProviderSecret, args)
 	dnsDel.PrintParams()
 	if !dnsDel.CheckParams() {
-		ccmd.Usage()
+		if nil != ccmd.Usage() {
+			println("Internal Error")
+		}
 		return
 	}
 	// see dnsTypeList in file util.go
@@ -189,10 +195,12 @@ func DNSListCmdCb(ccmd *cobra.Command, args []string) {
 		fmt.Printf(" DNS LIST requires 0 Arguments but found %d \n", len(args))
 		return
 	}
-	var dnsList = clitypes.DNSListType{Verbose, JSONOutput}
+	var dnsList = clitypes.DNSListType{Verbose: Verbose, JSONOutput: JSONOutput}
 	dnsList.PrintParams()
 	if !dnsList.CheckParams() {
-		ccmd.Usage()
+		if nil != ccmd.Usage() {
+			println("Internal Error")
+		}
 		return
 	}
 
@@ -214,10 +222,13 @@ func DNSQueryCmdCb(ccmd *cobra.Command, args []string) {
 		fmt.Printf(" DNS QUERY requires 1 Arguments but found %d \n", len(args))
 		return
 	}
-	var dnsQuery = clitypes.DNSQueryType{Verbose, JSONOutput, Backend, DNSProviderID, DNSProviderSecret, args[0]}
+	var dnsQuery = clitypes.DNSQueryType{Verbose: Verbose, JSONOutput: JSONOutput,
+		Backend: Backend, User: DNSProviderID, Pass: DNSProviderSecret, FQDN: args[0]}
 	dnsQuery.PrintParams()
 	if !dnsQuery.CheckParams() {
-		ccmd.Usage()
+		if nil != ccmd.Usage() {
+			println("Internal Error")
+		}
 		return
 	}
 }
@@ -243,7 +254,9 @@ var DNSCommand = &cobra.Command{
 // and this is not allowed -> exit
 func DNSCmdCb(ccmd *cobra.Command, args []string) {
 	fmt.Fprintf(os.Stderr, "ERROR!  reason: command DNS is used without add, del, list or query \n ")
-	ccmd.Usage()
+	if nil != ccmd.Usage() {
+		println("Internal Error")
+	}
 	os.Exit(1)
 }
 
