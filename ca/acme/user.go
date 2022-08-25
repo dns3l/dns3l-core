@@ -46,6 +46,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/dns3l/dns3l-core/common"
 	"github.com/go-acme/lego/v4/certcrypto"
 
 	"github.com/go-acme/lego/v4/lego"
@@ -61,6 +62,7 @@ type User interface {
 	GetRegistration() *registration.Resource
 	GetPrivateKey() crypto.PrivateKey
 	GetClient() *lego.Client
+	DeleteUser() error
 }
 
 // DBUser is a User implementation that is SQL-database-backed (tested with postgres and sqlite)
@@ -167,6 +169,49 @@ func (u *DefaultUser) InitUser() error {
 	log.Debugf("User '%s' successfully initialized", u.UID)
 
 	return nil
+}
+
+func (u *DefaultUser) DeleteUser() error {
+	log.Debugf("Deleting ACME user '%s'", u.UID)
+
+	keyStr, registrationStr, err := u.State.GetACMEUserPrivkeyByID(u.UID)
+	if err != nil {
+		return err
+	}
+
+	if keyStr == "" {
+		return &common.NotFoundError{RequestedResource: u.UID}
+	}
+
+	u.key, err = ecKeyFromStr(keyStr)
+	if err != nil {
+		return err
+	}
+	u.registration, err = registrationFromStr(registrationStr)
+	if err != nil {
+		return fmt.Errorf("problem while parsing existing registration data: %v", err)
+	}
+
+	lconfig := lego.NewConfig(u)
+	lconfig.Certificate.KeyType = certcrypto.RSA2048
+	lconfig.CADirURL = u.Config.URL
+
+	u.client, err = lego.NewClient(lconfig)
+	if err != nil {
+		return err
+	}
+
+	err = u.client.Registration.DeleteRegistration()
+	if err != nil {
+		return fmt.Errorf("error while deleting remote registration of ACME user: %v", err)
+	}
+
+	u.client = nil
+
+	//TODO maybe a force option if user cannot be found remotely but still exists locally...
+
+	return u.State.DeleteACMEUser(u.UID)
+
 }
 
 func registrationToStr(r *registration.Resource) (string, error) {

@@ -261,7 +261,6 @@ func (s *V1) DeleteCertificatesAllCA(crtID string, authz *auth.AuthorizationInfo
 
 	fu := s.Service.Config.CA.Functions
 
-	//GetCertificateResources does not modify anything, so check permissions after request...
 	err := checkAllowedToUseDomain(s.Service.Config.RootZones, authz, crtID, false, true)
 	if err != nil {
 		return err
