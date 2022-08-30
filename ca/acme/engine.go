@@ -279,8 +279,6 @@ func generateRSAPrivateKey() (*rsa.PrivateKey, error) {
 	return k, nil
 }
 
-/*
-//TODO implement
 func (e *Engine) DeleteACMEUser(acmeuser string) error {
 
 	state, err := e.State.NewSession()
@@ -289,9 +287,13 @@ func (e *Engine) DeleteACMEUser(acmeuser string) error {
 	}
 	defer state.Close()
 
-	state.DeleteACMEUser(acmeuser string) {
-
+	var u User = &DefaultUser{
+		Config: e.Conf,
+		State:  state,
+		UID:    acmeuser,
+		Email:  "",
 	}
 
+	return u.DeleteUser()
+
 }
-*/

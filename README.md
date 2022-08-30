@@ -82,6 +82,25 @@ Example
 ./dns3ld --config config-example.yaml --socket 127.0.0.1:8080
 ```
 
+### docker-compose
+
+Example:
+
+```yaml
+  backend:
+    image: ghcr.io/dns3l/dns3ld:1.0.1
+    container_name: dns3l-backend
+    restart: always
+    volumes:
+      - /root/dns3ld.conf.yaml:/etc/dns3ld.conf.yaml:ro
+    networks:
+      - dns3l
+    command: 
+      --config=/etc/dns3ld.conf.yaml
+      --socket=:8080
+    dns_search: .
+```
+
 ## Test
 
 ### Unit tests

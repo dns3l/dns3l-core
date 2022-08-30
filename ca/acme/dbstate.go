@@ -60,3 +60,14 @@ func (s *ACMEStateManagerSQLSession) PutACMEUser(userid, privatekey,
 	}
 	return nil
 }
+
+func (s *ACMEStateManagerSQLSession) DeleteACMEUser(userid string) error {
+
+	_, err := s.db.Exec(`delete from `+s.prov.Prov.DBName("acmeusers")+` where user_id = ? AND ca_id = ? limit 1;`,
+		userid, s.prov.CAID)
+
+	if err != nil {
+		return fmt.Errorf("problem while deleting ACME user: %v", err)
+	}
+	return nil
+}

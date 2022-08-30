@@ -105,11 +105,10 @@ func (p *CAProvider) RenewCertificate(cinfo *types.CertificateRenewInfo) error {
 
 }
 
-func (p *CAProvider) CleanupBeforeDeletion(keyID string) error {
+func (p *CAProvider) CleanupAfterDeletion(keyID string) error {
 
-	//acmeuser := "acme-" + keyID
+	acmeuser := "acme-" + keyID
 
-	//return p.engine.DeleteACMEUser(acmeuser)
-	return errors.New("not implemented yet")
+	return p.engine.DeleteACMEUser(acmeuser)
 
 }

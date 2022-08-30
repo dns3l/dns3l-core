@@ -16,6 +16,8 @@ type ACMEStateManagerSession interface {
 	GetACMEUserPrivkeyByID(userid string) (string, string, error)
 
 	PutACMEUser(userid, privatekey, registrationStr string, registrationDate time.Time) error
+
+	DeleteACMEUser(userid string) error
 }
 
 //A NoRenewalDueError is thrown if the certificate is not yet outdated enough to be renewed
