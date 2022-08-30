@@ -76,7 +76,7 @@ for all
 // -b, --backend       | DNS backend API endpoint [$DNS3L_DNS_BACKEND]
 var Backend string
 
-var backendDefaultNoOpt = "InfoblxNIC"
+var backendDefaultNoOpt = "Infoblox"
 
 // DNSProviderID id or username for login
 // -i   --id id or username for login [$DNS3L_DNS_ID]

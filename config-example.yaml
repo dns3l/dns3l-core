@@ -113,8 +113,8 @@ auth:
     kilgore@kilgore.trout:
       - read
       #- write
-      - foo
-      - test.otc.dta4.de.
+      - foo.example.org.
+      - bar.example.com.
 renew:
   jobStartTime: 01:00
   maxDuration: 6h
