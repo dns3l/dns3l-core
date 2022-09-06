@@ -5,6 +5,8 @@ import (
 	"math/rand"
 	"testing"
 	"time"
+
+	"github.com/go-playground/assert/v2"
 )
 
 type SchedulerJob struct {
@@ -19,11 +21,13 @@ func TestSchedulers(T *testing.T) {
 
 	rand.Seed(time.Now().Unix())
 
+	num := rand.Intn(123)
+	jobsExecuted := 0
+
 	s := &Scheduler[SchedulerJob, *SchedulerJob]{
-		JobStartTime: "17:20",
+		JobStartTime: "17:20", //doesn't matter in the tests
 		MaxDuration:  time.Minute,
 		GetJobsFunc: func() ([]SchedulerJob, error) {
-			num := rand.Intn(123)
 			jobs := make([]SchedulerJob, num)
 			for i := 0; i < num; i++ {
 				jobs[i] = SchedulerJob{
@@ -39,10 +43,15 @@ func TestSchedulers(T *testing.T) {
 			fmt.Println("Starting job " + job.Name)
 			time.Sleep(duration)
 			fmt.Println("Stopping job " + job.Name)
+			jobsExecuted++
 			return nil
 		},
 	}
 
 	s.scheduleRenewJobs()
+
+	time.Sleep(61 * time.Second)
+
+	assert.Equal(T, num, jobsExecuted)
 
 }

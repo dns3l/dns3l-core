@@ -1,6 +1,7 @@
 # dns3l-core
 
 [![golangci-lint](https://github.com/dns3l/dns3l-core/actions/workflows/golint.yaml/badge.svg)](https://github.com/dns3l/dns3l-core/actions/workflows/golint.yaml)
+[![go test](https://github.com/dns3l/dns3l-core/actions/workflows/gotest.yaml/badge.svg)](https://github.com/dns3l/dns3l-core/actions/workflows/gotest.yaml)
 [![docker-dns3ld](https://github.com/dns3l/dns3l-core/actions/workflows/docker-dns3ld.yaml/badge.svg)](https://github.com/dns3l/dns3l-core/actions/workflows/docker-dns3ld.yaml)
 
 

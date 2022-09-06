@@ -8,6 +8,7 @@ require (
 	github.com/creasty/defaults v1.6.0
 	github.com/go-acme/lego/v4 v4.7.0
 	github.com/go-co-op/gocron v1.16.2
+	github.com/go-playground/assert/v2 v2.0.1
 	github.com/go-playground/validator/v10 v10.11.0
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/gorilla/mux v1.8.0
