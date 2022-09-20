@@ -1,28 +1,33 @@
+# The URL is presented over the config API
 url: https://foobar.example.com
 adminemail:
+  # These addresses are presented over the config API
   - admin1@example.com
   - admin2@example.net
 dns: # DNS service providers
   providers:
     infblxA: # Infoblox NIOS over WAPI
-      type: infblx
+      type: infoblox
       name: Infoblox A
-      #url: https://infoblox.example.com/wapi/v2.10
       host: foo.bar2.local
-      port: 12345
-      version: v2.10
+      port: 443
+      version: 2.10 #WAPI version to use
+      dnsview: my-dnsview # The DNS view configured in Infoblox
       auth: #endpoint specific
         user: username
         pass: password
+      # sslverify: "false" #only set this in case cert validation shall be disabled
     infblxB:
-      type: infblx
+      type: infoblox
       name: Infoblox B
       host: foo.bar.local
       port: 1234
-      version: v2.8
+      version: 2.8
+      dnsview: my-dnsview
       auth:
         user: username
         pass: password
+      #sslverify: "false"
     dns3l:
       type: otc # Open Telekom Cloud (OTC) DNS
       name: DNS3L Labs Inc. OTC tenant
@@ -30,8 +35,8 @@ dns: # DNS service providers
         authurl: https://iam.eu-de.otc.t-systems.com/v3
         projectname: #omitted
         projectid: #omitted
-        ak: access key ID
-        sk: secret access key
+        ak: accesskeyID
+        sk: secretaccesskey
       os-region: eu-de
 # somepdns:
 #   type: pdns # PowerDNS AS
@@ -45,8 +50,10 @@ ca: #ACME and none ACME CA
       url: https://acme-v02.api.letsencrypt.org/directory
       roots: https://letsencrypt.org/certificates/
       description: "Let's Encrypt Official"
-      logopath: "https://foo.bar/logo.png"
+      logopath: "/images/logo.png"
       checkNameservers:
+       # These nameservers are used to check if and when the DNS entries are propagated
+       # so the ACME provider can read the challenges
        - 80.158.48.19:53
        - 93.188.242.252:53
       daysRenewBeforeExpiry: 30
@@ -55,13 +62,14 @@ ca: #ACME and none ACME CA
       name: T-Sec Trust Center ACME Staging
       catype: public
       url: https://acme.npp.test.telesec.de/v2/directory
-      auth: #CA specific
+      auth:
+        # EAB is currently not implemented
         account: Account Id
         key: EAB KeyId
         hmac: EAB HMAC
       roots: https://www.telesec.de/en/root-program/root-program/overview/
       description: "Telesec Trust Center ACME Staging"
-      logopath: "https://bar.foo/logo.png"
+      logopath: "../logo.png"
       daysRenewBeforeExpiry: 30
     step:
       type: acme
@@ -98,26 +106,69 @@ rtzn:
     acmedns: dns3l
     ca: ['*']
 db:
+  # Since database providers are not 100% abstracted in Go, only "mysql" is supported
+  # at the moment. "sqlite3" might work but is unsupported.
   type: mysql
+
+  # SQL data source string
+  # === For mysql:
+  # MySQL data source name (DSN)
+  # Reference: https://github.com/go-sql-driver/mysql#dsn-data-source-name
+  # ?parseTime=true MUST be added to the end, otherwise errors will occur
+  # === For sqlite3:
+  # Database file name
   url: user:password@tcp(192.168.0.1)/dns3ld?parseTime=true
+
+  # This prefix is added to every database created/used
   dbprefix: dns3l
 auth:
+
+  #OIDC token issue
   issuer: https://token.issuer.url.de/auth
+
+  #OIDC Client ID
   client_id: cli-app
+
+  #Disables authentication, everyone can use the API
   authn_disabled: false
+
+  #Disables authorization if authn is enabled, everybody who is logged in can do anything
   authz_disabled: false
+  
+  #When contacting the auth provider service, SSL cert verification is disabled
   http_insecure_skip_verify: true
-  claims_debug: true
+
+  #If set to true, information in the claims is dumped to the log
+  debug_claims: false
+
+  #User e-mail address used (for ACME, persistency) if authn is disabled
   authn_disabled_email: foo@telekom.de
+
+  #If your auth provider cannot provide you with the "groups" list in the token
+  #claims, use this as a workaround to inject values to a user's list. Not suitable
+  #for scalable LDAP auth, but sufficient for testing setups.
   inject_groups:
+
+    #First level: e-mail address
     kilgore@kilgore.trout:
+      #List of groups to inject
       - read
       #- write
       - foo.example.org.
       - bar.example.com.
-renew:
-  jobStartTime: 01:00
-  maxDuration: 6h
-  limitPerDay: 2048
-  daysWarnBeforeExpiry: 120
 
+renew:
+  #Renewal jobs start every day at the specified time (UTC).
+  jobStartTime: 01:00
+
+  #Renewal jobs are scheduled so they are over after the given duration.
+  maxDuration: 6h
+
+  #Not more than the given amount of jobs is scheduled per day in order to
+  #avoid overload and suffering from rate limits. If the limit is hit, a warning
+  #is set in the log.
+  limitPerDay: 2048
+
+  #Additionally, last-resort warnings are logged if certificates are about to 
+  #expire, e.g. if they have not been renewed for any reason.
+  daysWarnBeforeExpiry: 10

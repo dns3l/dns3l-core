@@ -14,6 +14,7 @@ const (
 	strFQDNDotAtEnd              = `^([a-zA-Z0-9]{1}[a-zA-Z0-9-]{0,62})(\.[a-zA-Z0-9]{1}[a-zA-Z0-9-]{0,62})*?(\.[a-zA-Z]{1}[a-zA-Z0-9]{0,62})\.$` //RFC 1123
 	strFQDNWildcard              = `^\*\.([a-zA-Z0-9]{1}[a-zA-Z0-9-]{0,62})(\.[a-zA-Z0-9]{1}[a-zA-Z0-9-]{0,62})*?(\.[a-zA-Z]{1}[a-zA-Z0-9]{0,62})\.?$`
 	strSemver                    = `v?([0-9]+)(\.[0-9]+)?(\.[0-9]+)?(-([0-9A-Za-z\-]+(\.[0-9A-Za-z\-]+)*))?(\+([0-9A-Za-z\-]+(\.[0-9A-Za-z\-]+)*))?`
+	strRemoteFile                = `^[a-zA-Z0-9\._\\/-]*$`
 )
 
 var (
@@ -27,6 +28,7 @@ var (
 		{"fqdnDotAtEnd", regexp.MustCompile(strFQDNDotAtEnd)},
 		{"fqdnWildcard", regexp.MustCompile(strFQDNWildcard)},
 		{"semver", regexp.MustCompile(strSemver)},
+		{"remotefile", regexp.MustCompile(strRemoteFile)},
 	}
 )
 
