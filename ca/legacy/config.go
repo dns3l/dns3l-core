@@ -9,7 +9,7 @@ type Config struct {
 	CAType      string `yaml:"catype" validate:"required,alpha"` //public or private only...
 	Roots       string `yaml:"roots" validate:"required,url"`
 	Description string `yaml:"description"`
-	LogoPath    string `yaml:"logopath" validate:"url"`
+	LogoPath    string `yaml:"logopath" validate:"url|remotefile"`
 }
 
 func (c *Config) NewInstance() (ca_types.CAProvider, error) {

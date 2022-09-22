@@ -16,7 +16,7 @@ type Config struct {
 	DaysRenewBeforeExpiry int      `yaml:"daysRenewBeforeExpiry" default:"16" validate:"required"`
 	CheckNameservers      []string `yaml:"checkNameservers"`
 	Description           string   `yaml:"description"`
-	LogoPath              string   `yaml:"logopath" validate:"url"`
+	LogoPath              string   `yaml:"logopath" validate:"url|remotefile"`
 }
 
 func (c *Config) NewInstance() (ca_types.CAProvider, error) {
