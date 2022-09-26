@@ -10,6 +10,7 @@ import (
 
 	"github.com/coreos/go-oidc"
 	"github.com/dns3l/dns3l-core/common"
+	"github.com/dns3l/dns3l-core/util"
 	myvalidation "github.com/dns3l/dns3l-core/util/validation"
 	"github.com/go-playground/validator/v10"
 )
@@ -188,7 +189,7 @@ func (h *OIDCHandler) groupsToDomain(group string) (string, bool) {
 	if h.GroupsReplaceDot {
 		group = strings.Replace(reDashToDot.ReplaceAllString(group, "$1.$2"), "__", "_", -1)
 	}
-	return group, true
+	return util.GetDomainFQDNDot(group), true
 }
 
 func GetBearerToken(r *http.Request) (string, error) {
