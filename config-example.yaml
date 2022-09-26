@@ -152,10 +152,28 @@ auth:
     #First level: e-mail address
     kilgore@kilgore.trout:
       #List of groups to inject
-      - read
-      #- write
+      - read #allow read actions
+      #- write #allow write actions
       - foo.example.org.
       - bar.example.com.
+
+  # Prefix of the groups in the claim. Groups without the given prefix will be ignored.
+  # The prefix is stripped from the group to render the allowed root zone
+  # The prefix also applies to the "read" and "write" groups (i.e. "<prefix>write")
+  # Default: ""
+  groups_prefix: dns3l_
+
+  # Replace all occurrences of single '_' with  '.'
+  # Useful if your authz provider does not support groups with a '.' in the name
+  # This replacement is done *after* the goups prefix has been stripped (see above).
+  # If you have underscores in your root zone, use "__" (double underscore) and they will
+  # be replaced by a single underscore.
+  groups_replace_dot: false
+
+  # === Example for groups_prefix: dns3l_ and groups_replace_dot: true 
+  # "dns3l_foo_bar_com" will allow domain "foo.bar.com"
+  # "dns3l_under__score_corp" will allow domain "under_score.corp"
+  # "dns3l_read" will allow read access
 
 renew:
   #Renewal jobs start every day at the specified time (UTC).

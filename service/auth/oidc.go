@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/coreos/go-oidc"
@@ -22,6 +23,8 @@ type OIDCHandler struct {
 	HTTPInsecureSkipVerify bool                `yaml:"http_insecure_skip_verify"`
 	DebugClaims            bool                `yaml:"debug_claims"`
 	InjectGroups           map[string][]string `yaml:"inject_groups"`
+	GroupsPrefix           string              `yaml:"groups_prefix" validate:"alphanumUnderscoreDashDot"`
+	GroupsReplaceDot       bool                `yaml:"groups_replace_dot"`
 
 	provider *oidc.Provider
 	verifier *oidc.IDTokenVerifier
@@ -144,20 +147,48 @@ func (h *OIDCHandler) AuthnGetAuthzInfo(r *http.Request) (*AuthorizationInfo, er
 	}
 
 	for _, grp := range cinfo.Groups {
-		if strings.EqualFold(grp, "write") {
+
+		domain, valid := h.groupsToDomain(grp)
+
+		if !valid {
+			//e.g. does not have the prefix, silently ignore it
+			continue
+		}
+
+		if strings.EqualFold(domain, "write") {
 			authzinfo.WriteAllowed = true
 			authzinfo.ReadAllowed = true
 			continue
 		}
-		if strings.EqualFold(grp, "read") {
+		if strings.EqualFold(domain, "read") {
 			authzinfo.ReadAllowed = true
 			continue
 		}
-		authzinfo.RootzonesAllowed[grp] = true
+		authzinfo.RootzonesAllowed[domain] = true
 	}
 
 	return authzinfo, nil
 
+}
+
+var reDashToDot = regexp.MustCompile(`([^_])_([^_])`)
+
+func (h *OIDCHandler) groupsToDomain(group string) (string, bool) {
+
+	if !strings.HasPrefix(group, h.GroupsPrefix) {
+		return "", false
+	}
+
+	group = group[len(h.GroupsPrefix):]
+
+	if group == "" {
+		return "", false
+	}
+
+	if h.GroupsReplaceDot {
+		group = strings.Replace(reDashToDot.ReplaceAllString(group, "$1.$2"), "__", "_", -1)
+	}
+	return group, true
 }
 
 func GetBearerToken(r *http.Request) (string, error) {
