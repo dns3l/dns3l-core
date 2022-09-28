@@ -132,7 +132,7 @@ func (u *DefaultUser) InitUser() error {
 
 	lconfig := lego.NewConfig(u)
 	lconfig.Certificate.KeyType = certcrypto.RSA2048
-	lconfig.CADirURL = u.Config.URL
+	lconfig.CADirURL = u.Config.API
 
 	u.client, err = lego.NewClient(lconfig)
 	if err != nil {
@@ -194,7 +194,7 @@ func (u *DefaultUser) DeleteUser() error {
 
 	lconfig := lego.NewConfig(u)
 	lconfig.Certificate.KeyType = certcrypto.RSA2048
-	lconfig.CADirURL = u.Config.URL
+	lconfig.CADirURL = u.Config.API
 
 	u.client, err = lego.NewClient(lconfig)
 	if err != nil {

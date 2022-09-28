@@ -7,7 +7,8 @@ import (
 type Config struct {
 	Name   string `yaml:"name" validate:"required"`
 	CAType string `yaml:"catype" validate:"required,alpha"` //public or private only...
-	URL    string `yaml:"url" validate:"required,url"`
+	API    string `yaml:"api" validate:"required,url"`
+	URL    string `yaml:"url" validate:"url"`
 	Auth   struct {
 		User string `yaml:"user" validate:"alphanumUnderscoreDashDot"`
 		Pass string `yaml:"pass"`
