@@ -168,6 +168,8 @@ func (h *OIDCHandler) AuthnGetAuthzInfo(r *http.Request) (*AuthorizationInfo, er
 		authzinfo.RootzonesAllowed[domain] = true
 	}
 
+	log.WithField("authzinfo", authzinfo).Debug("Authzinfo generated.")
+
 	return authzinfo, nil
 
 }
