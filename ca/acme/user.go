@@ -44,6 +44,7 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/dns3l/dns3l-core/common"
@@ -133,6 +134,9 @@ func (u *DefaultUser) InitUser() error {
 	lconfig := lego.NewConfig(u)
 	lconfig.Certificate.KeyType = certcrypto.RSA2048
 	lconfig.CADirURL = u.Config.API
+	if u.Config.HTTPInsecureSkipVerify {
+		lconfig.HTTPClient.Transport.(*http.Transport).TLSClientConfig.InsecureSkipVerify = true
+	}
 
 	u.client, err = lego.NewClient(lconfig)
 	if err != nil {
@@ -195,6 +199,9 @@ func (u *DefaultUser) DeleteUser() error {
 	lconfig := lego.NewConfig(u)
 	lconfig.Certificate.KeyType = certcrypto.RSA2048
 	lconfig.CADirURL = u.Config.API
+	if u.Config.HTTPInsecureSkipVerify {
+		lconfig.HTTPClient.Transport.(*http.Transport).TLSClientConfig.InsecureSkipVerify = true
+	}
 
 	u.client, err = lego.NewClient(lconfig)
 	if err != nil {
