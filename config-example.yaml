@@ -73,7 +73,7 @@ ca: #ACME and none ACME CA
       description: "Telesec Trust Center ACME Staging"
       logopath: "../logo.png"
       daysRenewBeforeExpiry: 30
-      httpinsecureskipverify: true #if TLS cert check shall be disabled
+      httpInsecureSkipVerify: true #if TLS cert check shall be disabled
     step:
       type: acme
       name: ACME RA for Smallstep CM
