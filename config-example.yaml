@@ -47,7 +47,8 @@ ca: #ACME and none ACME CA
       type: acme
       name: Let's Encrypt
       catype: public
-      url: https://acme-v02.api.letsencrypt.org/directory
+      api: https://acme-v02.api.letsencrypt.org/directory
+      url: https://letsencrypt.org
       roots: https://letsencrypt.org/certificates/
       description: "Let's Encrypt Official"
       logopath: "/images/logo.png"
@@ -61,7 +62,8 @@ ca: #ACME and none ACME CA
       type: acme
       name: T-Sec Trust Center ACME Staging
       catype: public
-      url: https://acme.npp.test.telesec.de/v2/directory
+      api: https://acme.npp.test.telesec.de/v2/directory
+      url: https://www.telesec.de
       auth:
         # EAB is currently not implemented
         account: Account Id
@@ -71,11 +73,13 @@ ca: #ACME and none ACME CA
       description: "Telesec Trust Center ACME Staging"
       logopath: "../logo.png"
       daysRenewBeforeExpiry: 30
+      httpinsecureskipverify: true #if TLS cert check shall be disabled
     step:
       type: acme
       name: ACME RA for Smallstep CM
       catype: private
-      url: https://acme.example.com/acme/acme/directory
+      api: https://acme.example.com/acme/acme/directory
+      url: https://example.com
       roots: null
       description: "ACME RA for Smallstep CM. Lorem Ipsum."
       logopath: "https://foo.bar/logo.png"
