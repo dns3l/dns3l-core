@@ -66,7 +66,6 @@ export DNS3L_DATABASE=${DNS3L_DATABASE:-"dns3l"}
 export DNS3L_DB_USER=${DNS3L_DB_USER:-"dns3l"}
 export DNS3L_DB_PASS=${DNS3L_DB_PASS:-$(random_token)}
 export DNS3L_DB_HOST=${DNS3L_DB_HOST:-"db"}
-export MARIADB_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD:-$(random_token)}
 
 production=false
 if [[ ${ENVIRONMENT,,} == "production" ]]; then
@@ -84,7 +83,7 @@ fi
 ### DNS3L DB bootstrapping...
 ###
 
-if [ "${production}" == "false" ]; then
+if [ "${production}" == "false" -a -n "${MARIADB_ROOT_PASSWORD}" ]; then
   echo "Bootstrapping DNS3L Database..."
   set +e
   /dckrz -wait tcp://${DNS3L_DB_HOST}:3306 -timeout ${SERVICE_TIMEOUT} -- \

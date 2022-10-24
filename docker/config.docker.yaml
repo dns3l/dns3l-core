@@ -9,14 +9,16 @@ adminemail:
 dns: # DNS service providers
   providers:
     # infblx:
-    #   type: infblx # Infoblox NIOS over WAPI
+    #   type: infoblox # Infoblox NIOS over WAPI
     #   name: Infoblox
     #   host: foo.bar.local
     #   port: 1234
     #   version: v2.8
+    #   dnsview: my-dnsview
     #   auth:
     #     user: username
     #     pass: password
+    #   sslverify: false
     otc:
       type: otc # Open Telekom Cloud (OTC)
       name: OTC
@@ -78,12 +80,14 @@ db:
 
 auth:
   issuer: {{.Env.DNS3L_AUTH_URL}}
-  client_id: cli-app ### ???
+  client_id: dns3l-api
   authn_disabled: false
   authz_disabled: true
   http_insecure_skip_verify: true
   claims_debug: true
   authn_disabled_email: foo@example.com ### ???
+  groups_prefix: DNS3L_
+  groups_replace_dot: true
 
 renew:
   jobStartTime: 01:00
