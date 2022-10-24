@@ -76,7 +76,7 @@ func TestWithLEStaging() {
 		Conf: &acme.Config{
 			Name:                  "Test LE Staging",
 			CAType:                "public",
-			URL:                   "https://acme-staging-v02.api.letsencrypt.org/directory",
+			API:                   "https://acme-staging-v02.api.letsencrypt.org/directory",
 			Roots:                 "",
 			DaysRenewBeforeExpiry: 100, //this is to test immediale renewal
 			CheckNameservers:      []string{"80.158.48.19:53", "93.188.242.252:53"},

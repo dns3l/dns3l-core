@@ -165,8 +165,10 @@ func (h *OIDCHandler) AuthnGetAuthzInfo(r *http.Request) (*AuthorizationInfo, er
 			authzinfo.ReadAllowed = true
 			continue
 		}
-		authzinfo.RootzonesAllowed[domain] = true
+		authzinfo.RootzonesAllowed[util.GetDomainFQDNDot(domain)] = true
 	}
+
+	log.WithField("authzinfo", authzinfo).Debug("Authzinfo generated.")
 
 	return authzinfo, nil
 
@@ -189,7 +191,7 @@ func (h *OIDCHandler) groupsToDomain(group string) (string, bool) {
 	if h.GroupsReplaceDot {
 		group = strings.Replace(reDashToDot.ReplaceAllString(group, "$1.$2"), "__", "_", -1)
 	}
-	return util.GetDomainFQDNDot(group), true
+	return group, true
 }
 
 func GetBearerToken(r *http.Request) (string, error) {
