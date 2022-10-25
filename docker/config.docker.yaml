@@ -36,8 +36,8 @@ ca:
       type: acme
       name: "Let's Encrypt"
       catype: public
-      url: https://acme-v02.api.letsencrypt.org/directory
-      # url: https://letsencrypt.org
+      api: https://acme-v02.api.letsencrypt.org/directory
+      url: https://letsencrypt.org
       roots: https://letsencrypt.org/certificates/
       description: "The most popular public ACME CA worldwide."
       logopath: "http://localhost/le.png"
@@ -47,8 +47,8 @@ ca:
       type: acme
       name: "Let's Encrypt Staging"
       catype: public
-      url: https://acme-staging-v02.api.letsencrypt.org/directory
-      # url: "https://letsencrypt.org/docs/staging-environment"
+      api: https://acme-staging-v02.api.letsencrypt.org/directory
+      url: https://letsencrypt.org/docs/staging-environment
       roots: https://letsencrypt.org/certificates/
       description: "The most popular public ACME CA worldwide."
       logopath: "http://localhost/le.png"
@@ -58,8 +58,8 @@ ca:
       type: acme
       name: "Smallstep CM RA"
       catype: private
-      url: {{.Env.STEP_RA_URL}}/acme/acme/directory
-      # url: https://smallstep.com/certificates/
+      api: {{.Env.STEP_RA_URL}}/acme/acme/directory
+      url: https://smallstep.com/certificates/
       roots: null
       description: "A CAaaS powered by Smallstep Labs, Inc."
       logopath: "http://localhost/ss.png"
