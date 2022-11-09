@@ -151,7 +151,7 @@ func (e *Engine) TriggerUpdate(acmeuser string, keyname string, keyrz string, do
 		Config: e.Conf,
 		State:  state,
 		UID:    info.ACMEUser,
-		Email:  info.IssuedByEmail,
+		Email:  e.getACMEEmail(info),
 	}
 
 	err = u.InitUser()
@@ -207,6 +207,14 @@ func (e *Engine) TriggerUpdate(acmeuser string, keyname string, keyrz string, do
 	return castate.PutCACertData(!noKey, keyname, keyrz, e.CAID, info,
 		certStr, issuerCertStr)
 
+}
+
+func (e *Engine) getACMEEmail(info *types.CACertInfo) string {
+	if e.Conf.ACMERegisterWithoutEMail {
+		return ""
+	} else {
+		return info.IssuedByEmail
+	}
 }
 
 func sanitizeDomains(domains []string) ([]string, error) {

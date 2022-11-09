@@ -74,6 +74,8 @@ ca: #ACME and none ACME CA
       logopath: "../logo.png"
       daysRenewBeforeExpiry: 30
       httpInsecureSkipVerify: true #if TLS cert check shall be disabled
+      acmeRegisterWithoutEmail: true # if registration of new ACME users should 
+                                     # be done without e-mail address
     step:
       type: acme
       name: ACME RA for Smallstep CM
