@@ -119,19 +119,19 @@ if [ -r /etc/dns3ld.conf.yml -a -s /etc/dns3ld.conf.yml ]; then
   ln -fs /etc/dns3ld.conf.yml ${DNS3LPATH}/config.yaml
 else
   /dckrz -template ${DNS3LPATH}/config.yaml.tmpl:${DNS3LPATH}/config.yaml
+
+  # Template usage is waiting for deps...
+  /dckrz -wait ${STEP_RA_URL} -timeout ${SERVICE_TIMEOUT} -skip-tls-verify -wait-http-status-code 404 -- \
+    step ca bootstrap -f --ca-url ${STEP_RA_URL} --fingerprint ${STEP_RA_FINGERPRINT}
+  # Run --install as root or https://github.com/dns3l/dns3l-core/issues/16
+  #
+  /dckrz -wait ${STEP_RA_URL} -timeout ${SERVICE_TIMEOUT} -skip-tls-verify -wait-http-status-code 404 -- \
+    sudo step ca bootstrap -f --ca-url ${STEP_RA_URL} --fingerprint ${STEP_RA_FINGERPRINT} --install
+  /dckrz -wait ${DNS3L_AUTH_URL}/.well-known/openid-configuration -skip-tls-verify -timeout ${SERVICE_TIMEOUT} -- echo "Ok. DexIDP is there."
 fi
-
-/dckrz -wait ${STEP_RA_URL} -timeout ${SERVICE_TIMEOUT} -skip-tls-verify -wait-http-status-code 404 -- \
-  step ca bootstrap -f --ca-url ${STEP_RA_URL} --fingerprint ${STEP_RA_FINGERPRINT}
-
-# Run --install as root or https://github.com/dns3l/dns3l-core/issues/16
-#
-/dckrz -wait ${STEP_RA_URL} -timeout ${SERVICE_TIMEOUT} -skip-tls-verify -wait-http-status-code 404 -- \
-  sudo step ca bootstrap -f --ca-url ${STEP_RA_URL} --fingerprint ${STEP_RA_FINGERPRINT} --install
 
 /dckrz -wait tcp://${DNS3L_DB_HOST}:3306 -timeout ${SERVICE_TIMEOUT} -- echo "Ok. MariaDB is there."
 /dckrz -wait tcp://${DNS3L_DB_HOST}:3306 -timeout ${SERVICE_TIMEOUT} -- /app/dns3ld dbcreate
-/dckrz -wait ${DNS3L_AUTH_URL}/.well-known/openid-configuration -skip-tls-verify -timeout ${SERVICE_TIMEOUT} -- echo "Ok. DexIDP is there."
 
 if [[ `basename ${1}` == "dns3ld" ]]; then # prod
     exec "$@" </dev/null #>/dev/null 2>&1
