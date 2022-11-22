@@ -1,0 +1,20 @@
+FROM golang:1.18-alpine AS build
+
+WORKDIR /go/build
+RUN apk add --no-cache \
+    bash \
+    make
+COPY . .
+RUN make service
+
+
+FROM alpine:3.16
+
+WORKDIR /app
+RUN apk add --no-cache \
+    ca-certificates \
+    && \
+    adduser --uid 1000 -D dns3ld
+COPY --from=build /go/build/dns3ld .
+USER dns3ld
+ENTRYPOINT ["/app/dns3ld"]
