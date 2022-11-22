@@ -17,6 +17,8 @@ jobs:
       - name: Determine version tag
         run: >
           set -e; dest_tag=$(awk -v FS="dns3ld=" 'NF>1{print $2}' VERSIONS); echo "dest_tag=$dest_tag" >> $GITHUB_ENV; echo "Docker tag: $dest_tag"
+      - name: Setup QEMU
+        uses: docker/setup-qemu-action@v2
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       - name: Login to Github Packages
@@ -32,6 +34,7 @@ jobs:
         id: docker_build
         uses: docker/build-push-action@v3
         with:
+          platforms: linux/amd64,linux/arm64
           file: docker/Dockerfile-dns3ld
           push: true
           tags: ${{ env.dest_repo }}:${{ env.dest_tag }}
