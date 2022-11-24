@@ -178,8 +178,8 @@ github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0 h1:P6pPBnrTSX3DEVR4fDembhR
 github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0/go.mod h1:vmVJ0l/dxyfGW6FmdpVm2joNMFikkuWg0EoCKLGUMNw=
 github.com/leodido/go-urn v1.2.1 h1:BqpAaACuzVSgi/VLzGZIobT2z4v53pjosyNd9Yv6n/w=
 github.com/leodido/go-urn v1.2.1/go.mod h1:zt4jvISO2HfUBqxjfIshjdMTYS56ZS/qv49ictyFfxY=
-github.com/lnobach/acme-lego v0.0.0-20221123083417-4f4ac90e2cdf h1:bEL49rCi8MsqHMgUXaCwUGzysVVIsenWWRqEFwwefuc=
-github.com/lnobach/acme-lego v0.0.0-20221123083417-4f4ac90e2cdf/go.mod h1:0Ml8vGPAngksAWW2iSZ4ya9iy/GMJhHF9ehxf2JdBTQ=
+github.com/lnobach/acme-lego v0.0.0-20221124090407-038b7ffa7abb h1:7vSzgzj9jFACqqIMwwUnv5W0d1QC7WPehikrq6VMArI=
+github.com/lnobach/acme-lego v0.0.0-20221124090407-038b7ffa7abb/go.mod h1:0Ml8vGPAngksAWW2iSZ4ya9iy/GMJhHF9ehxf2JdBTQ=
 github.com/magefile/mage v1.10.0/go.mod h1:z5UZb/iS3GoOSn0JgWuiw7dxlurVYTu+/jHXqQg881A=
 github.com/magiconair/properties v1.8.6 h1:5ibWZ6iY0NctNGWo87LalDlEZ6R41TqbbDamhfG/Qzo=
 github.com/magiconair/properties v1.8.6/go.mod h1:y3VJvCyxH9uVvJTWEGAELF3aiYNyPKd5NZ3oSwXrF60=
