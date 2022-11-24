@@ -4,20 +4,21 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/miekg/dns"
+
+	"github.com/dns3l/dns3l-core/dns/types"
 )
 
 // The ResolveTester can be used to test if a set DNS01 acme challenge has been actually
 // placed on a DNS service so it can be successfully validated. It also provides functionality
 // to wait for an active DNS challenge record.
 type ResolveTester struct {
-	DNSCheckServers   []string      `yaml:"DNSCheckServers"`
-	ResolveMaxRetries int           `yaml:"ResolveMaxRetries"`
-	ResolveTimeout    time.Duration `yaml:"ResolveTimeout"`
+	DNSCheckServers []string      `yaml:"DNSCheckServers"`
+	ResolveTimeout  time.Duration `yaml:"ResolveTimeout"`
+	ResolveInterval time.Duration `yaml:"ResolveInterval"`
 }
 
 // WaitForAActive checks for the A record for being placed. If it is not
@@ -66,7 +67,10 @@ func (re *ResolveTester) waitForActive(dName string, dnstype uint16,
 	m := dns.Msg{}
 	m.SetQuestion(dName, dnstype)
 
-	for i := 0; i < re.ResolveMaxRetries; i++ {
+	startTime := time.Now()
+
+	i := 1
+	for {
 		dnsSocket := getDNSSocketForTry(i, re.DNSCheckServers)
 		log.Debugf("Trying to resolve %s with DNS server %s, attempt %d..", dName, dnsSocket, i)
 		r, t, err := c.Exchange(&m, dnsSocket)
@@ -85,10 +89,13 @@ func (re *ResolveTester) waitForActive(dName string, dnstype uint16,
 				return nil
 			}
 		}
-		time.Sleep(re.ResolveTimeout)
+		if startTime.Add(re.ResolveTimeout).Before(time.Now()) {
+			return fmt.Errorf("total resolve timeout exceeded")
+		}
+		time.Sleep(re.ResolveInterval)
+		i++
 	}
 
-	return fmt.Errorf("too many retries to resolve record after setting")
 }
 
 func getDNSSocketForTry(tryNum int, dnsSockets []string) string {
@@ -96,19 +103,26 @@ func getDNSSocketForTry(tryNum int, dnsSockets []string) string {
 	return dnsSockets[tryNum%len(dnsSockets)]
 }
 
+func (re *ResolveTester) ConfigureFromPrecheckConf(pcc *types.PrecheckConfig) {
+	re.ResolveInterval = pcc.PrecheckInterval
+	re.ResolveTimeout = pcc.PrecheckTimeout
+	re.DNSCheckServers = pcc.CheckNameservers
+
+}
+
 // ConfigureFromEnv configures a ResolveTester object based on environment
 // variables set. No fields on this object need to be pre-initialized.
 func (re *ResolveTester) ConfigureFromEnv() error {
 	var err error
-	cfResolveMaxRetriesStr := os.Getenv("DNS3LD_TESTRESOLVE_RETRIES")
-	var cfResolveMaxRetries int
-	if cfResolveMaxRetriesStr != "" {
-		cfResolveMaxRetries, err = strconv.Atoi(cfResolveMaxRetriesStr)
+	cfResolveIntervalStr := os.Getenv("DNS3LD_TESTRESOLVE_INTERVAL")
+	var cfResolveInterval time.Duration
+	if cfResolveIntervalStr != "" {
+		cfResolveInterval, err = time.ParseDuration(cfResolveIntervalStr)
 		if err != nil {
 			return err
 		}
 	} else {
-		cfResolveMaxRetries = 10
+		cfResolveInterval = 2 * time.Second
 	}
 	cfResolveTimeoutStr := os.Getenv("DNS3LD_TESTRESOLVE_TIMEOUT")
 	var cfResolveTimeout time.Duration
@@ -118,13 +132,13 @@ func (re *ResolveTester) ConfigureFromEnv() error {
 			return err
 		}
 	} else {
-		cfResolveTimeout = 5 * time.Second
+		cfResolveTimeout = time.Minute
 	}
 	cfDNSCheckServers := os.Getenv("DNS3LD_DNSCHECKSERVERS")
 	if cfDNSCheckServers == "" {
 		cfDNSCheckServers = "80.158.48.19:53,93.188.242.252:53"
 	}
-	re.ResolveMaxRetries = cfResolveMaxRetries
+	re.ResolveInterval = cfResolveInterval
 	re.ResolveTimeout = cfResolveTimeout
 	re.DNSCheckServers = strings.Split(cfDNSCheckServers, ",")
 	return nil

@@ -46,3 +46,9 @@ func (p *DNSProvider) getIBConnector() (*ibclient.Connector, error) {
 func (p *DNSProvider) getIBObjectManager(conn ibclient.IBConnector) ibclient.IBObjectManager {
 	return ibclient.NewObjectManager(conn, "myclient", "")
 }
+
+func (p *DNSProvider) GetPrecheckConfig() *types.PrecheckConfig {
+	conf := &p.C.preCheck
+	conf.SetDefaults()
+	return conf
+}

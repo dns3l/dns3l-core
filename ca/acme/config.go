@@ -13,13 +13,12 @@ type Config struct {
 		User string `yaml:"user" validate:"alphanumUnderscoreDashDot"`
 		Pass string `yaml:"pass"`
 	} `yaml:"auth"`
-	Roots                    string   `yaml:"roots"`
-	DaysRenewBeforeExpiry    int      `yaml:"daysRenewBeforeExpiry" default:"16" validate:"required"`
-	CheckNameservers         []string `yaml:"checkNameservers"`
-	Description              string   `yaml:"description"`
-	LogoPath                 string   `yaml:"logopath" validate:"url|remotefile"`
-	HTTPInsecureSkipVerify   bool     `yaml:"httpInsecureSkipVerify"`
-	ACMERegisterWithoutEMail bool     `yaml:"acmeRegisterWithoutEmail"`
+	Roots                    string `yaml:"roots"`
+	DaysRenewBeforeExpiry    int    `yaml:"daysRenewBeforeExpiry" default:"16" validate:"required"`
+	Description              string `yaml:"description"`
+	LogoPath                 string `yaml:"logopath" validate:"url|remotefile"`
+	HTTPInsecureSkipVerify   bool   `yaml:"httpInsecureSkipVerify"`
+	ACMERegisterWithoutEMail bool   `yaml:"acmeRegisterWithoutEmail"`
 }
 
 func (c *Config) NewInstance() (ca_types.CAProvider, error) {
