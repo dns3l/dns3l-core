@@ -2,8 +2,6 @@ module github.com/dns3l/dns3l-core
 
 go 1.18
 
-replace github.com/go-acme/lego/v4 v4.7.0 => github.com/lnobach/acme-lego v0.0.0-20221124090407-038b7ffa7abb
-
 require (
 	github.com/Masterminds/squirrel v1.5.3
 	github.com/coreos/go-oidc v2.2.1+incompatible

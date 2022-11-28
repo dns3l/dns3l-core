@@ -163,7 +163,12 @@ func (e *Engine) TriggerUpdate(acmeuser string, keyname string, keyrz string, do
 
 	dnsprov := e.NewDNSProviderDNS3L(e.Context)
 
-	err = u.GetClient().Challenge.SetDNS01Provider(dnsprov, dns01.DisablePropagationCheck())
+	err = u.GetClient().Challenge.SetDNS01Provider(dnsprov,
+		dns01.WrapPreCheck(func(domain, fqdn, value string, check dns01.PreCheckFunc) (bool, error) {
+			log.Debug("Skipping lego's DNS01 propagation check (ignore the previous 2 log lines).")
+			return true, nil
+		}))
+
 	if err != nil {
 		return err
 	}
@@ -283,6 +288,10 @@ func (p *DNSProviderWrapper) CleanUp(domain, token, keyAuth string) error {
 	}
 	log.Debugf("Cleaned up challenge for domain '%s'", domain)
 	return nil
+}
+
+func (p *DNSProviderWrapper) Timeout() (timeout, interval time.Duration) {
+	return time.Second, 0
 }
 
 func generateRSAPrivateKey() (*rsa.PrivateKey, error) {
