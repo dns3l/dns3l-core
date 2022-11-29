@@ -9,9 +9,10 @@ type DNSProviderBuilder interface {
 }
 
 type DNSProviderInfo struct {
-	Name        string
-	Feature     []string
-	ZoneNesting bool
+	Name              string
+	Feature           []string
+	ZoneNesting       bool
+	DefaultAutoDNSTTL uint32
 }
 
 type DNSProvider interface {

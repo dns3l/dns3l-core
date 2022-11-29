@@ -32,3 +32,19 @@ func ValidateDomainNameWildcard(domain string) error {
 	}
 	return fmt.Errorf("domain name string '%s' has invalid format or is too long", domain)
 }
+
+const maxTTL uint32 = 604800
+
+func ValidateSetDefaultTTL(configuredTTL, defaultTTL uint32) uint32 {
+
+	if configuredTTL <= 0 {
+		return defaultTTL
+	}
+
+	if configuredTTL > maxTTL {
+		return maxTTL
+	}
+
+	return configuredTTL
+
+}

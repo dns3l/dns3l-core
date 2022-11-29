@@ -13,7 +13,11 @@ type Config struct {
 		User string `yaml:"user" validate:"required,alphanumUnderscoreDash"`
 		Pass string `yaml:"pass" validate:"required"`
 	} `yaml:"auth" validate:"required"`
-	preCheck dns_types.PrecheckConfig `yaml:"precheck"`
+	TTL struct {
+		Challenge uint32 `yaml:"challenge" validate:"numeric"`
+		AutoDNS   uint32 `yaml:"autodns" validate:"numeric"`
+	} `yaml:"ttl"`
+	PreCheck dns_types.PrecheckConfig `yaml:"precheck"`
 }
 
 func (c *Config) NewInstance() (dns_types.DNSProvider, error) {

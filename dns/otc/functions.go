@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/dns3l/dns3l-core/dns/common"
+	dnscommon "github.com/dns3l/dns3l-core/dns/common"
 	"github.com/dns3l/dns3l-core/util"
 	"github.com/huaweicloud/golangsdk"
 	"github.com/huaweicloud/golangsdk/openstack"
@@ -62,7 +63,10 @@ func (s *DNSProvider) SetRecordAcmeChallenge(domainName string, challenge string
 		return fmt.Errorf("error while getting managing zone: %v", err)
 	}
 
-	err = setRecordInZone(client, zone.ID, dName, "TXT", 3600, fmt.Sprintf("\"%s\"", challenge))
+	err = setRecordInZone(
+		client, zone.ID, dName, "TXT",
+		dnscommon.ValidateSetDefaultTTL(s.C.TTL.Challenge, 300),
+		fmt.Sprintf("\"%s\"", challenge))
 	if err != nil {
 		return fmt.Errorf("error while setting TXT record in zone: %v", err)
 	}

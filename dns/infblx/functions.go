@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/dns3l/dns3l-core/dns/common"
+	dnscommon "github.com/dns3l/dns3l-core/dns/common"
 	"github.com/dns3l/dns3l-core/util"
 	ibclient "github.com/infobloxopen/infoblox-go-client/v2"
 )
@@ -37,7 +38,7 @@ func (p *DNSProvider) SetRecordAcmeChallenge(domainName string, challenge string
 		View: p.C.DNSView,
 		Name: util.GetDomainNoFQDNDot(dName),
 		Text: challenge,
-		Ttl:  360,
+		Ttl:  uint(dnscommon.ValidateSetDefaultTTL(p.C.TTL.Challenge, 300)),
 	}))
 
 	if err != nil {

@@ -37,6 +37,9 @@ dns: # DNS service providers
         projectid: #omitted
         ak: accesskeyID
         sk: secretaccesskey
+      ttl:
+        challenge: 60
+        autodns: 3600
       os-region: eu-de
       precheck:
         enabled: true

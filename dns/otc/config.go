@@ -13,7 +13,11 @@ type Config struct {
 		AccessKey   string `yaml:"ak" validate:"required,alphanum"`
 		SecretKey   string `yaml:"sk" validate:"required,alphanum"`
 	} `yaml:"auth" validate:"required"`
-	OSRegion string                   `yaml:"os-region" validate:"alphanumUnderscoreDash"`
+	OSRegion string `yaml:"os-region" validate:"alphanumUnderscoreDash"`
+	TTL      struct {
+		Challenge uint32 `yaml:"challenge" validate:"numeric"`
+		AutoDNS   uint32 `yaml:"autodns" validate:"numeric"`
+	} `yaml:"ttl"`
 	PreCheck dns_types.PrecheckConfig `yaml:"precheck"`
 }
 
