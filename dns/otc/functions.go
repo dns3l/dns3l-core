@@ -12,6 +12,7 @@ import (
 	"github.com/huaweicloud/golangsdk/openstack"
 	"github.com/huaweicloud/golangsdk/openstack/dns/v2/recordsets"
 	"github.com/huaweicloud/golangsdk/openstack/dns/v2/zones"
+	"github.com/sirupsen/logrus"
 )
 
 // Only allows legal TTL range.
@@ -48,6 +49,10 @@ func (s *DNSProvider) SetRecordAcmeChallenge(domainName string, challenge string
 		return err
 	}
 
+	ttl := dnscommon.ValidateSetDefaultTTL(s.C.TTL.Challenge, 300)
+
+	log.WithFields(logrus.Fields{"domainName": dName, "ttl": ttl, "challenge": challenge}).Debug("Setting ACME challenge record.")
+
 	provider, err := s.Auth()
 	if err != nil {
 		return err
@@ -64,8 +69,7 @@ func (s *DNSProvider) SetRecordAcmeChallenge(domainName string, challenge string
 	}
 
 	err = setRecordInZone(
-		client, zone.ID, dName, "TXT",
-		dnscommon.ValidateSetDefaultTTL(s.C.TTL.Challenge, 300),
+		client, zone.ID, dName, "TXT", ttl,
 		fmt.Sprintf("\"%s\"", challenge))
 	if err != nil {
 		return fmt.Errorf("error while setting TXT record in zone: %v", err)
@@ -90,6 +94,8 @@ func (s *DNSProvider) SetRecordA(domainName string, ttl uint32, addr net.IP) err
 	if err != nil {
 		return err
 	}
+
+	log.WithFields(logrus.Fields{"domainName": dName, "ttl": ttl, "addr": addr}).Debug("Setting A record.")
 
 	provider, err := s.Auth()
 	if err != nil {
@@ -132,6 +138,8 @@ func (s *DNSProvider) DeleteRecordAcmeChallenge(domainName string) error {
 		return err
 	}
 
+	log.WithFields(logrus.Fields{"domainName": dName}).Debug("Deleting ACME challenge record.")
+
 	provider, err := s.Auth()
 	if err != nil {
 		return err
@@ -167,6 +175,8 @@ func (s *DNSProvider) DeleteRecordA(domainName string) error {
 	if err != nil {
 		return err
 	}
+
+	log.WithFields(logrus.Fields{"domainName": dName}).Debug("Deleting A record.")
 
 	provider, err := s.Auth()
 	if err != nil {
