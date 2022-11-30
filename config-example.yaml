@@ -37,7 +37,19 @@ dns: # DNS service providers
         projectid: #omitted
         ak: accesskeyID
         sk: secretaccesskey
+      ttl:
+        challenge: 60
+        autodns: 3600
       os-region: eu-de
+      precheck:
+        enabled: true
+        checkNameservers:
+          # These nameservers are used to check if and when the DNS entries are propagated
+          # so the ACME provider can read the challenges
+          - 1.2.3.4:53
+          - 5.6.7.8:53
+        precheckInterval: 2s
+        precheckTimeout: 2m
 # somepdns:
 #   type: pdns # PowerDNS AS
 #   ...
@@ -52,11 +64,6 @@ ca: #ACME and none ACME CA
       roots: https://letsencrypt.org/certificates/
       description: "Let's Encrypt Official"
       logopath: "/images/logo.png"
-      checkNameservers:
-       # These nameservers are used to check if and when the DNS entries are propagated
-       # so the ACME provider can read the challenges
-       - 80.158.48.19:53
-       - 93.188.242.252:53
       daysRenewBeforeExpiry: 30
     tsec-staging:
       type: acme

@@ -105,7 +105,7 @@ func (s *V1) ClaimCertificate(caID string, cinfo *apiv1.CertClaimInfo, authz *au
 		for domain, prov := range autodnsProvs {
 			log.WithFields(logrus.Fields{"domain": domain, "prov": prov, "addr": autodnsV4}).Info(
 				"Setting AutoDNS entry")
-			err := prov.SetRecordA(domain, 300, autodnsV4) //TODO TTL to config
+			err := prov.SetRecordA(domain, prov.GetInfo().DefaultAutoDNSTTL, autodnsV4)
 			if err != nil {
 				return err
 			}

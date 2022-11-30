@@ -79,7 +79,6 @@ func TestWithLEStaging() {
 			API:                   "https://acme-staging-v02.api.letsencrypt.org/directory",
 			Roots:                 "",
 			DaysRenewBeforeExpiry: 100, //this is to test immediale renewal
-			CheckNameservers:      []string{"80.158.48.19:53", "93.188.242.252:53"},
 		},
 		State: &acme.ACMEStateManagerSQL{
 			CAID: caID,

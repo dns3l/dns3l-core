@@ -145,10 +145,24 @@ func (u *DefaultUser) InitUser() error {
 
 	if notRegistered {
 
-		u.registration, err = u.client.Registration.Register(registration.RegisterOptions{
-			TermsOfServiceAgreed: true})
-		if err != nil {
-			return fmt.Errorf("problem when registering: %v", err)
+		if u.Config.Auth.User == "" {
+
+			u.registration, err = u.client.Registration.Register(registration.RegisterOptions{
+				TermsOfServiceAgreed: true})
+			if err != nil {
+				return fmt.Errorf("problem when registering: %v", err)
+			}
+		} else {
+
+			eabopts := registration.RegisterEABOptions{
+				Kid:         u.Config.Auth.User,
+				HmacEncoded: u.Config.Auth.Pass,
+			}
+
+			u.registration, err = u.client.Registration.RegisterWithExternalAccountBinding(eabopts)
+			if err != nil {
+				return fmt.Errorf("problem when registering with EAB: %v", err)
+			}
 		}
 
 		log.Debugf("User '%s' was successfully registered with ACME provider, storing info",

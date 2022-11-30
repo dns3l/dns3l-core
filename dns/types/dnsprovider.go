@@ -9,13 +9,15 @@ type DNSProviderBuilder interface {
 }
 
 type DNSProviderInfo struct {
-	Name        string
-	Feature     []string
-	ZoneNesting bool
+	Name              string
+	Feature           []string
+	ZoneNesting       bool
+	DefaultAutoDNSTTL uint32
 }
 
 type DNSProvider interface {
 	GetInfo() *DNSProviderInfo
+	GetPrecheckConfig() *PrecheckConfig
 	SetRecordAcmeChallenge(domainName string, challenge string) error
 	SetRecordA(domainName string, ttl uint32, addr net.IP) error
 	DeleteRecordAcmeChallenge(domainName string) error

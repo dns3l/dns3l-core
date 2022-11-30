@@ -5,6 +5,7 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -16,6 +17,7 @@ import (
 	"github.com/go-acme/lego/v4/certificate"
 	"github.com/go-acme/lego/v4/challenge/dns01"
 	legodns01 "github.com/go-acme/lego/v4/challenge/dns01"
+	"github.com/sirupsen/logrus"
 )
 
 const keyBitLength = 2048
@@ -161,12 +163,11 @@ func (e *Engine) TriggerUpdate(acmeuser string, keyname string, keyrz string, do
 
 	dnsprov := e.NewDNSProviderDNS3L(e.Context)
 
-	if len(e.Conf.CheckNameservers) > 0 {
-		err = u.GetClient().Challenge.SetDNS01Provider(dnsprov,
-			dns01.AddRecursiveNameservers(e.Conf.CheckNameservers))
-	} else {
-		err = u.GetClient().Challenge.SetDNS01Provider(dnsprov)
-	}
+	err = u.GetClient().Challenge.SetDNS01Provider(dnsprov,
+		dns01.WrapPreCheck(func(domain, fqdn, value string, check dns01.PreCheckFunc) (bool, error) {
+			log.Debug("Skipping lego's DNS01 propagation check (ignore the previous 2 log lines).")
+			return true, nil
+		}))
 
 	if err != nil {
 		return err
@@ -253,6 +254,21 @@ func (p *DNSProviderWrapper) Present(domain, token, keyAuth string) error {
 		return err
 	}
 	log.Debugf("Presented challenge for domain '%s'", domain)
+
+	chkconf := dnsprovider.GetPrecheckConfig()
+	if chkconf.Enabled {
+		log.WithFields(logrus.Fields{"fqdn": fqdn, "challenge": challenge}).Debug("Starting DNS propagation check...")
+		rt := dnscommon.ResolveTester{}
+		rt.ConfigureFromPrecheckConf(chkconf)
+		err := rt.WaitForChallengeActive(fqdn, challenge)
+		if err != nil {
+			return fmt.Errorf("DNS propagation pre-check did not succeed: %w", err)
+		}
+		log.WithFields(logrus.Fields{"fqdn": fqdn, "challenge": challenge}).Debug("Successful DNS propagation check.")
+	} else {
+		log.WithFields(logrus.Fields{"fqdn": fqdn, "challenge": challenge}).Debug("DNS propagation check disabled.")
+	}
+
 	return nil
 }
 
@@ -272,6 +288,10 @@ func (p *DNSProviderWrapper) CleanUp(domain, token, keyAuth string) error {
 	}
 	log.Debugf("Cleaned up challenge for domain '%s'", domain)
 	return nil
+}
+
+func (p *DNSProviderWrapper) Timeout() (timeout, interval time.Duration) {
+	return time.Second, 0
 }
 
 func generateRSAPrivateKey() (*rsa.PrivateKey, error) {
