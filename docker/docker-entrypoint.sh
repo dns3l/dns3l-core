@@ -71,6 +71,10 @@ production=false
 if [[ ${ENVIRONMENT,,} == "production" ]]; then
   production=true
 fi
+renewal=true
+if [[ ${DNS3L_RENEWAL,,} == "false" ]]; then
+  renewal=false
+fi
 
 # Avoid destroying bootstrapping by simple start/stop
 if [[ ! -e ${DNS3LPATH}/.bootstrapped ]]; then
@@ -134,7 +138,11 @@ fi
 /dckrz -wait tcp://${DNS3L_DB_HOST}:3306 -timeout ${SERVICE_TIMEOUT} -- /app/dns3ld dbcreate
 
 if [[ `basename ${1}` == "dns3ld" ]]; then # prod
+  if [ "${renewal}" == "false" ]; then
+    exec /app/dns3ld --renew=false -s :8880 -c ${DNS3LPATH}/config.yaml </dev/null #>/dev/null 2>&1
+  else
     exec "$@" </dev/null #>/dev/null 2>&1
+  fi
 else # dev
     /app/dns3ld -s :8880 -c ${DNS3LPATH}/config.yaml || true
 fi
