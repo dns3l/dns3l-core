@@ -134,22 +134,34 @@ db:
 
   # This prefix is added to every table created/used
   dbprefix: dns3l
+
+# Auth config (currently only Open ID Connect is supported)
 auth:
 
-  #OIDC token issue
-  issuer: https://token.issuer.url.de/auth
+  # You can define multiple OIDC token issuers.
+  # dns3ld will spawn an individual OIDC client instance per issuer.
+  # The OIDC client for authx will be selected by the issuer URL in the
+  # token of a request.
+  #
+  # Note that an attacker can choose the weakest issuer defined here by
+  # arbitrarily setting the issuer URL in the token, so ensure all your
+  # OIDC configurations and endpoints are adequately secure.
+  oidc_bindings:
+    https://token.issuer.url.de/auth:
+      #OIDC Client ID
+      client_id: cli-app
 
-  #OIDC Client ID
-  client_id: cli-app
+      #When contacting the auth provider service, SSL cert verification is disabled
+      http_insecure_skip_verify: false
+  # https://other.issuer.com/auth
+  #   ...
+
 
   #Disables authentication, everyone can use the API
   authn_disabled: false
 
   #Disables authorization if authn is enabled, everybody who is logged in can do anything
   authz_disabled: false
-  
-  #When contacting the auth provider service, SSL cert verification is disabled
-  http_insecure_skip_verify: true
 
   #If set to true, information in the claims is dumped to the log
   debug_claims: false

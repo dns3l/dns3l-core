@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"errors"
+	"fmt"
 	"net/http"
 	"regexp"
 	"strings"
@@ -16,20 +17,25 @@ import (
 )
 
 type OIDCHandler struct {
-	Issuer                 string              `yaml:"issuer" validate:"url,required"`
-	ClientID               string              `yaml:"client_id" validate:"required"`
-	AuthnDisabled          bool                `yaml:"authn_disabled"`
-	AuthnDisabledEmail     string              `yaml:"authn_disabled_email" validate:"email"`
-	AuthzDisabled          bool                `yaml:"authz_disabled"`
-	HTTPInsecureSkipVerify bool                `yaml:"http_insecure_skip_verify"`
-	DebugClaims            bool                `yaml:"debug_claims"`
-	InjectGroups           map[string][]string `yaml:"inject_groups"`
-	GroupsPrefix           string              `yaml:"groups_prefix" validate:"alphanumUnderscoreDashDot"`
-	GroupsReplaceDot       bool                `yaml:"groups_replace_dot"`
+	AuthnDisabled      bool                `yaml:"authn_disabled"`
+	AuthnDisabledEmail string              `yaml:"authn_disabled_email" validate:"email"`
+	AuthzDisabled      bool                `yaml:"authz_disabled"`
+	DebugClaims        bool                `yaml:"debug_claims"`
+	InjectGroups       map[string][]string `yaml:"inject_groups"`
+	GroupsPrefix       string              `yaml:"groups_prefix" validate:"alphanumUnderscoreDashDot"`
+	GroupsReplaceDot   bool                `yaml:"groups_replace_dot"`
+
+	OIDCBindings map[string]OIDCBinding `yaml:"oidc_bindings"`
+
+	validate *validator.Validate
+}
+
+type OIDCBinding struct {
+	ClientID               string `yaml:"client_id" validate:"required"`
+	HTTPInsecureSkipVerify bool   `yaml:"http_insecure_skip_verify"`
 
 	provider *oidc.Provider
 	verifier *oidc.IDTokenVerifier
-	validate *validator.Validate
 }
 
 type ClaimsInfo struct {
@@ -46,21 +52,25 @@ func (h *OIDCHandler) Init() error {
 		return nil
 	}
 
-	myClient := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: h.HTTPInsecureSkipVerify},
-		},
-	}
-	ctx := oidc.ClientContext(context.Background(), myClient)
+	for issuer, binding := range h.OIDCBindings {
 
-	h.provider, err = oidc.NewProvider(ctx, h.Issuer)
-	if err != nil {
-		return err
+		myClient := &http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{InsecureSkipVerify: binding.HTTPInsecureSkipVerify},
+			},
+		}
+		ctx := oidc.ClientContext(context.Background(), myClient)
+
+		binding.provider, err = oidc.NewProvider(ctx, issuer)
+		if err != nil {
+			return err
+		}
+		oidcConfig := &oidc.Config{
+			ClientID: binding.ClientID,
+		}
+		binding.verifier = binding.provider.Verifier(oidcConfig)
+
 	}
-	oidcConfig := &oidc.Config{
-		ClientID: h.ClientID,
-	}
-	h.verifier = h.provider.Verifier(oidcConfig)
 
 	h.validate = validator.New()
 	err = myvalidation.RegisterDNS3LValidations(h.validate)
@@ -69,6 +79,22 @@ func (h *OIDCHandler) Init() error {
 	}
 
 	return nil
+
+}
+
+func (h *OIDCHandler) selectIssuer(token string) (OIDCBinding, error) {
+
+	issuerURL, err := getIssuerURL(token)
+	if err != nil {
+		return OIDCBinding{}, err
+	}
+
+	binding, exists := h.OIDCBindings[issuerURL]
+	if !exists {
+		return OIDCBinding{}, fmt.Errorf("no OIDC binding exists with the given issuer URL '%s'", issuerURL)
+	}
+
+	return binding, nil
 
 }
 
@@ -89,7 +115,12 @@ func (h *OIDCHandler) AuthnGetAuthzInfo(r *http.Request) (*AuthorizationInfo, er
 		return nil, &common.NotAuthnedError{Msg: "no bearer token has been set"}
 	}
 
-	idToken, err := h.verifier.Verify(r.Context(), tkn)
+	issuer, err := h.selectIssuer(tkn)
+	if err != nil {
+		return nil, fmt.Errorf("problem detecting OIDC token issuer: %w", err)
+	}
+
+	idToken, err := issuer.verifier.Verify(r.Context(), tkn)
 	if err != nil {
 		return nil, err
 	}
