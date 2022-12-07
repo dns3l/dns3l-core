@@ -17,7 +17,6 @@ func getIssuerURL(token string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("base64 decoded of 2nd part of token failed: %w", err)
 	}
-	fmt.Println(string(decodedStr))
 	var decoded struct {
 		Issuer string `json:"iss"`
 	}

@@ -69,7 +69,7 @@ func createNewOIDCBinding(binding *OIDCBinding, issuer string, onStartup bool) e
 	}
 	binding.verifier = binding.provider.Verifier(oidcConfig)
 
-	log.WithError(err).WithField("issuerURL", issuer).Info("Successfully initialized new OIDC provider.")
+	log.WithField("issuerURL", issuer).Info("Successfully initialized new OIDC provider.")
 	return nil
 }
 
