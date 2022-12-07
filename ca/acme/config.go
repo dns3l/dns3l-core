@@ -9,10 +9,10 @@ type Config struct {
 	CAType string `yaml:"catype" validate:"required,alpha"` //public or private only...
 	API    string `yaml:"api" validate:"required,url"`
 	URL    string `yaml:"url" validate:"url"`
-	Auth   struct {
-		User string `yaml:"user" validate:"alphanumUnderscoreDashDot"`
-		Pass string `yaml:"pass"`
-	} `yaml:"auth"`
+	EAB    struct {
+		KID  string `yaml:"kid" validate:"alphanumUnderscoreDashDot"`
+		HMAC string `yaml:"hmac"`
+	} `yaml:"eab"`
 	Roots                    string `yaml:"roots"`
 	DaysRenewBeforeExpiry    int    `yaml:"daysRenewBeforeExpiry" default:"16" validate:"required"`
 	Description              string `yaml:"description"`
