@@ -69,7 +69,7 @@ func TestIssuerExtraction(t *testing.T) {
 func TestSelectIssuer(t *testing.T) {
 
 	h := OIDCHandler{
-		OIDCBindings: map[string]OIDCBinding{
+		OIDCBindings: map[string]*OIDCBinding{
 			"https://acme.dev.example.com/auth": {
 				ClientID: "example-client",
 			},
@@ -79,22 +79,22 @@ func TestSelectIssuer(t *testing.T) {
 		},
 	}
 
-	binding, err := h.selectIssuer(corrctTestToken)
+	binding, _, err := h.selectIssuer(corrctTestToken)
 	if err != nil {
 		panic(err)
 	}
 	assert.Equal(t, binding.ClientID, "example-client")
 
-	binding, err = h.selectIssuer(corrctTestToken2)
+	binding, _, err = h.selectIssuer(corrctTestToken2)
 	if err != nil {
 		panic(err)
 	}
 	assert.Equal(t, binding.ClientID, "example2-client")
 
-	_, err = h.selectIssuer(wrongTestToken1)
+	_, _, err = h.selectIssuer(wrongTestToken1)
 	assertErrorContains(err, "invalid character 'S'")
 
-	_, err = h.selectIssuer(tokenUnknownIssuer)
+	_, _, err = h.selectIssuer(tokenUnknownIssuer)
 	assertErrorContains(err, "no OIDC binding exists with the given issuer URL")
 
 }

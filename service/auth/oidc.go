@@ -25,7 +25,7 @@ type OIDCHandler struct {
 	GroupsPrefix       string              `yaml:"groups_prefix" validate:"alphanumUnderscoreDashDot"`
 	GroupsReplaceDot   bool                `yaml:"groups_replace_dot"`
 
-	OIDCBindings map[string]OIDCBinding `yaml:"oidc_bindings"`
+	OIDCBindings map[string]*OIDCBinding `yaml:"oidc_bindings"`
 
 	validate *validator.Validate
 }
@@ -33,6 +33,7 @@ type OIDCHandler struct {
 type OIDCBinding struct {
 	ClientID               string `yaml:"client_id" validate:"required"`
 	HTTPInsecureSkipVerify bool   `yaml:"http_insecure_skip_verify"`
+	ForceOnStartup         bool   `yaml:"force_on_startup"`
 
 	provider *oidc.Provider
 	verifier *oidc.IDTokenVerifier
@@ -45,6 +46,33 @@ type ClaimsInfo struct {
 	Groups        []string
 }
 
+func createNewOIDCBinding(binding *OIDCBinding, issuer string, onStartup bool) error {
+	myClient := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: binding.HTTPInsecureSkipVerify},
+		},
+	}
+	ctx := oidc.ClientContext(context.Background(), myClient)
+
+	var err error
+	binding.provider, err = oidc.NewProvider(ctx, issuer)
+	if err != nil {
+		if binding.ForceOnStartup || !onStartup {
+			return fmt.Errorf("could not initialize new OIDC binding for %s: %w", issuer, err)
+		}
+		binding.provider = nil
+		log.WithError(err).WithField("issuerURL", issuer).Errorf("Error while initializing new provider, will retry with next request.")
+		return nil
+	}
+	oidcConfig := &oidc.Config{
+		ClientID: binding.ClientID,
+	}
+	binding.verifier = binding.provider.Verifier(oidcConfig)
+
+	log.WithError(err).WithField("issuerURL", issuer).Info("Successfully initialized new OIDC provider.")
+	return nil
+}
+
 func (h *OIDCHandler) Init() error {
 	var err error
 
@@ -53,22 +81,10 @@ func (h *OIDCHandler) Init() error {
 	}
 
 	for issuer, binding := range h.OIDCBindings {
-
-		myClient := &http.Client{
-			Transport: &http.Transport{
-				TLSClientConfig: &tls.Config{InsecureSkipVerify: binding.HTTPInsecureSkipVerify},
-			},
-		}
-		ctx := oidc.ClientContext(context.Background(), myClient)
-
-		binding.provider, err = oidc.NewProvider(ctx, issuer)
+		err := createNewOIDCBinding(binding, issuer, true)
 		if err != nil {
 			return err
 		}
-		oidcConfig := &oidc.Config{
-			ClientID: binding.ClientID,
-		}
-		binding.verifier = binding.provider.Verifier(oidcConfig)
 
 	}
 
@@ -82,19 +98,19 @@ func (h *OIDCHandler) Init() error {
 
 }
 
-func (h *OIDCHandler) selectIssuer(token string) (OIDCBinding, error) {
+func (h *OIDCHandler) selectIssuer(token string) (*OIDCBinding, string, error) {
 
 	issuerURL, err := getIssuerURL(token)
 	if err != nil {
-		return OIDCBinding{}, err
+		return nil, "", err
 	}
 
 	binding, exists := h.OIDCBindings[issuerURL]
 	if !exists {
-		return OIDCBinding{}, fmt.Errorf("no OIDC binding exists with the given issuer URL '%s'", issuerURL)
+		return nil, "", fmt.Errorf("no OIDC binding exists with the given issuer URL '%s'", issuerURL)
 	}
 
-	return binding, nil
+	return binding, issuerURL, nil
 
 }
 
@@ -115,9 +131,17 @@ func (h *OIDCHandler) AuthnGetAuthzInfo(r *http.Request) (*AuthorizationInfo, er
 		return nil, &common.NotAuthnedError{Msg: "no bearer token has been set"}
 	}
 
-	issuer, err := h.selectIssuer(tkn)
+	issuer, issuerURL, err := h.selectIssuer(tkn)
 	if err != nil {
 		return nil, fmt.Errorf("problem detecting OIDC token issuer: %w", err)
+	}
+
+	if issuer.provider == nil {
+		//the OIDC client has not been set on startup, e.g. due to an error
+		err = createNewOIDCBinding(issuer, issuerURL, false)
+		if err != nil {
+			return nil, fmt.Errorf("problem initializing OIDC client: %w", err)
+		}
 	}
 
 	idToken, err := issuer.verifier.Verify(r.Context(), tkn)

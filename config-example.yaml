@@ -153,6 +153,11 @@ auth:
 
       #When contacting the auth provider service, SSL cert verification is disabled
       http_insecure_skip_verify: false
+
+      #Stop with an error on startup if the token issuer cannot be detected
+      #immediately. Otherwise, will retry on first request.
+      force_on_startup: false
+
   # https://other.issuer.com/auth
   #   ...
 
