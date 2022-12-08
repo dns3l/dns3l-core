@@ -2,6 +2,7 @@ package clitypes
 
 import (
 	"fmt"
+	"os"
 )
 
 /*DNSListType ----------------------------------------------------------------------------------
@@ -12,18 +13,18 @@ type DNSListType struct {
 	JSONOutput bool
 }
 
-// PrintParams prints the parameters of the command dns del
-func (dnsList DNSListType) PrintParams() {
+// PrintParams prints the parameters of the command dns list
+func (dnsList *DNSListType) PrintParams() {
 	if dnsList.Verbose {
-		fmt.Printf("Command DNS list called \n")
+		fmt.Fprintf(os.Stderr, "Command DNS list called \n")
 		PrintViperConfigDNS()
-		fmt.Printf("JsonOut 	'%t' \n", dnsList.JSONOutput)
+		fmt.Fprintf(os.Stderr, "JsonOut 	'%t' \n", dnsList.JSONOutput)
 	}
 	fmt.Printf("THIS COMMAND IS NOT IMPLEMENTED YET\n")
 }
 
-// CheckParams prints the parameters of the command dns del
-func (dnsList DNSListType) CheckParams() bool {
+// CheckParams prints the parameters of the command dns list
+func (dnsList *DNSListType) CheckParams() bool {
 	OK := true
 	return OK
 }

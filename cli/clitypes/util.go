@@ -2,6 +2,9 @@ package clitypes
 
 import (
 	"fmt"
+	"net/http"
+	"net/http/httputil"
+	"os"
 	"regexp"
 	"strings"
 
@@ -13,43 +16,146 @@ import (
 
 // NotImplemented print the message NOT IMPLENENTED
 func NotImplemented() {
-	fmt.Printf("\n\n===================================\nTHIS COMMAND IS NOT IMPLEMENTED YET\n===================================\n\n")
+	fmt.Fprintf(os.Stderr, "\n\n===================================\nTHIS COMMAND IS NOT IMPLEMENTED YET\n===================================\n\n")
 
 }
 
-func setProvider(dnsbackend string, id string, secret string) types.DNSProvider {
+func PrintFullRequestOut(headline string, req *http.Request) {
+	b, err := httputil.DumpRequestOut(req, true) // req.GetBody()
+	if err == nil {
+		fmt.Fprintf(os.Stderr, "%v\n", headline)
+		fmt.Fprintf(os.Stderr, "%v\n", string(b))
+	} else {
+		fmt.Fprintf(os.Stderr, "%v\n", headline)
+		fmt.Fprintf(os.Stderr, "ERROR printing the request: '%v'", err.Error())
+	}
+}
+
+func PrintFullRespond(headline string, resp *http.Response) {
+	b, err := httputil.DumpResponse(resp, true)
+	if err == nil {
+		fmt.Fprintf(os.Stderr, "%v\n", headline)
+		fmt.Fprintf(os.Stderr, "HTTP Respond StatusCode:='%v'\n", resp.StatusCode)
+		fmt.Fprintf(os.Stderr, "%v\n", string(b))
+	} else {
+		fmt.Fprintf(os.Stderr, "%v\n", headline)
+		fmt.Fprintf(os.Stderr, "Error printing the respond: '%v'", err.Error())
+	}
+}
+
+func getProviderData(dnsbackend string, verbose bool) (string, string) {
+	var user string = ""
+	var secret string = ""
+	vip := viper.GetViper()
+	providerPath := "dns.providers." + dnsbackend + "."
+	if verbose {
+		fmt.Fprintf(os.Stderr, "INFO Will use Provider.path := %s\n", providerPath)
+	}
+	providerT := vip.GetString(providerPath + "type")
+	if verbose {
+		fmt.Fprintf(os.Stderr, "INFO Found Provider Type := %s\n", providerT)
+	}
+	if providerT == "infblx" {
+		user = vip.GetString(providerPath + "auth.user")
+		secret = vip.GetString(providerPath + "auth.pass")
+	} else if providerT == "otc" {
+		user = vip.GetString(providerPath + "auth.accesskey ")
+		secret = vip.GetString(providerPath + "auth.secretkey")
+
+	}
+	if verbose {
+		fmt.Fprintf(os.Stderr, "INFO provider user '%s'\n", user)
+		fmt.Fprintf(os.Stderr, "INFO provider pass '%s'\n", secret)
+	}
+	return user, secret
+}
+
+func setProvider(dnsbackend string, id string, secret string, useTresor bool, verbose bool) types.DNSProvider {
 	var dns types.DNSProvider
 	vip := viper.GetViper()
 	providerPath := "dns.providers." + dnsbackend + "."
-	fmt.Printf("use Provider.path := %s\n", providerPath)
+	if verbose {
+		fmt.Fprintf(os.Stderr, "INFO setProvider() use Provider.path := %s\n", providerPath)
+	}
 	providerT := vip.GetString(providerPath + "type")
-	fmt.Printf("Found Provider Type := %s\n", providerT)
+	if verbose {
+		fmt.Fprintf(os.Stderr, "INFO setProvider() Found Provider Type := %s\n", providerT)
+	}
 	if providerT == "infblx" {
-		fmt.Printf("case infblk\n")
+		if verbose {
+			fmt.Fprintf(os.Stderr, "INFO setProvider() processing case infblk\n")
+		}
 		influxProvider := infblx.DNSProvider{}
 		infblxConfig := infblx.Config{}
 		infblxConfig.Name = vip.GetString(providerPath + "name")
 		infblxConfig.Host = vip.GetString(providerPath + "host")
 		infblxConfig.Port = vip.GetString(providerPath + "port")
 		infblxConfig.Version = vip.GetString(providerPath + "version")
-		infblxConfig.Auth.User = vip.GetString(providerPath + "auth.user")
-		infblxConfig.Auth.Pass = vip.GetString(providerPath + "auth.pass")
+		if infblxConfig.Name == "" || infblxConfig.Host == "" || infblxConfig.Port == "" || infblxConfig.Version == "" {
+			return nil
+		}
+		// in some cases override the password
+		// if general DNS-USER  has the value "" or "USE_PROVIDER_DATA
+		// the value out of the special providers section is used
+		if verbose {
+			fmt.Fprintf(os.Stderr, "INFO setProvider()  User ID := %s\n", id)
+		}
+		if id != "" && id != "NOT_SET" {
+			infblxConfig.Auth.User = id
+		} else {
+			infblxConfig.Auth.User = vip.GetString(providerPath + "auth.user")
+			if verbose {
+				fmt.Fprintf(os.Stderr, "INFO  setProvider() User of the providers section %s is used infblk\n", dnsbackend)
+				fmt.Fprintf(os.Stderr, "INFO  setProvider() User:= %s ", infblxConfig.Auth.User)
+			}
+			if infblxConfig.Auth.User == "" {
+				fmt.Fprintf(os.Stderr, "ERROR:  setProvider() User/ID is empty command failed -- > exit")
+				return nil
+			}
+		}
+		// resolve the secret
+		if useTresor {
+			var err error
+			var sec []byte
+			if verbose {
+				fmt.Fprintf(os.Stderr, "INFO setProvider(): User %s and password from Tresor \n", infblxConfig.Auth.User)
+			}
+			if sec, err = GetPasswordfromRing(infblxConfig.Auth.User, verbose); err != nil {
+				fmt.Fprintf(os.Stderr, "ERROR setProvider(), no secret provided in the Keyring for DNSBackend '%v' and ID:= '%v'\n", dnsbackend, infblxConfig.Auth.User)
+				infblxConfig.Auth.Pass = ""
+			} else {
+				infblxConfig.Auth.Pass = string(sec)
+				if verbose {
+					fmt.Fprintf(os.Stderr, "INFO setProvider() Secret provided by Keyring for DNSBackend '%v' and ID:= '%v''\n", dnsbackend, infblxConfig.Auth.User)
+				}
+			}
+			// else { infblxConfig.Auth.Pass = vip.GetString(providerPath + "auth.pass") }
+		} else {
+			// if general DNS-SECRET  has the value "" or "USE_PROVIDER_DATA"
+			// the value out of the special providers section is used
+			if secret != "" && secret != "NOT_SET" {
+				if verbose {
+					fmt.Fprintf(os.Stderr, "INFO setProvider() secret != '' or 'NOT_SET'\n")
+				}
+				infblxConfig.Auth.Pass = secret
+			} else {
+				if verbose {
+					fmt.Fprintf(os.Stderr, "INFO setProvider()  using Provider section  \n")
+				}
+				infblxConfig.Auth.Pass = vip.GetString(providerPath + "auth.pass")
+			}
+		}
 		infblxConfig.DNSView = vip.GetString(providerPath + "dnsview")
 		infblxConfig.SSLVerify = vip.GetString(providerPath + "sslverify")
+		if infblxConfig.DNSView == "" || infblxConfig.SSLVerify == "" {
+			return nil
+		}
 		influxProvider.C = &infblxConfig
-		// Passwort überschreiebn aus cobra
-		// USER + PASS
-		if id != "" && id != "user" {
-			infblxConfig.Auth.User = id
-		}
-		if secret != "" && secret != "pass" {
-			infblxConfig.Auth.Pass = secret
-		}
 		// infblx-Provider eine Interface zuweisen
 		dns = &influxProvider
 		return dns
 	} else if providerT == "otc" {
-		fmt.Printf("case otc\n")
+		fmt.Fprintf(os.Stderr, "case otc\n")
 		otcProvider := otc.DNSProvider{}
 		otcConfig := otc.Config{}
 		otcConfig.Name = vip.GetString(providerPath + "name")
@@ -58,13 +164,75 @@ func setProvider(dnsbackend string, id string, secret string) types.DNSProvider 
 		otcConfig.Auth.AccessKey = vip.GetString(providerPath + "auth.accesskey ")
 		otcConfig.Auth.SecretKey = vip.GetString(providerPath + "auth.secretkey")
 		otcConfig.OSRegion = vip.GetString(providerPath + "osregion")
+		if otcConfig.Name == "" || otcConfig.Auth.AuthURL == "" || otcConfig.Auth.ProjectName == "" || otcConfig.Auth.AccessKey == "" || otcConfig.Auth.SecretKey == "" || otcConfig.OSRegion == "" {
+			return nil
+		}
 		otcProvider.C = &otcConfig
 		// otc-Provider eine Interface zuweisen
 		dns = &otcProvider
 		return dns
 	}
-	fmt.Printf("not match for %s %s \n", dnsbackend, providerT)
+	fmt.Fprintf(os.Stderr, "not match for %s %s \n", dnsbackend, providerT)
 	return nil
+}
+
+func SetCertClaimHints(hintsSection string) hintsType {
+	vip := viper.GetViper()
+	var hints hintsType
+	hints.Kty = vip.GetString("hints." + hintsSection + ".kty")
+	hints.Crv = vip.GetString("hints." + hintsSection + ".crv")
+	hints.Size = vip.GetUint32("hints." + hintsSection + ".size")
+	hints.TTL = vip.GetString("hints." + hintsSection + ".ttl")
+	hints.Subject = vip.GetString("hints." + hintsSection + ".subject")
+	// split the words
+	hints.KeyUsage = vip.GetStringSlice("hints." + hintsSection + ".keyUsage")
+	// split the words
+	hints.ExtKeyUsage = vip.GetStringSlice("hints." + hintsSection + ".extKeyUsage")
+	return hints
+}
+
+func printCertClaimHints(hints hintsType) {
+	fmt.Fprintf(os.Stderr, "Cert hints	   kty: '%s' \n", hints.Kty)
+	fmt.Fprintf(os.Stderr, "Cert hints 	   crv: '%s' \n", hints.Crv)
+	fmt.Fprintf(os.Stderr, "Cert hints 	  size: '%v' \n", hints.Size)
+	fmt.Fprintf(os.Stderr, "Cert hints 	   ttl: '%s' \n", hints.TTL)
+	fmt.Fprintf(os.Stderr, "Cert hints     subject: '%s' \n", hints.Subject)
+	if len(hints.KeyUsage) > 0 {
+		for _, v := range hints.KeyUsage {
+			fmt.Fprintf(os.Stderr, "Cert keyUsage 	    '%s' \n", v)
+		}
+	}
+	if len(hints.ExtKeyUsage) > 0 {
+		for _, v := range hints.ExtKeyUsage {
+			fmt.Fprintf(os.Stderr, "Cert ExtkeyUsage    '%s' \n", v)
+		}
+	}
+}
+
+func FinalCertToken(inToken string) string {
+	var aToken string
+	switch inToken {
+	case "USE_RING_TOKEN":
+		token, inErr := GetPasswordfromRing("CertAccountToken", false)
+		if inErr == nil {
+			aToken = string(token)
+		} else {
+			fmt.Fprintf(os.Stderr, "Token for AMCE API Endpoint not found in KeyRing as exspected \n")
+			aToken = ""
+		}
+	case "USE_ENV_TOKEN":
+		vip := viper.GetViper()
+		envToken := vip.GetString("cert.accessToken")
+		if envToken != "" {
+			aToken = envToken
+		} else {
+			fmt.Fprintf(os.Stderr, "Token for AMCE API Endpoint not found in enviroment as exspected \n")
+			aToken = ""
+		}
+	default:
+		aToken = inToken
+	}
+	return aToken
 }
 
 // PrintDNSProvider prints the parameters of the dns provider
@@ -72,24 +240,24 @@ func PrintDNSProvider(provider types.DNSProvider) {
 	// type assertion
 	switch value := provider.(type) {
 	case *(infblx.DNSProvider):
-		fmt.Printf("Infblk Provider Config Name 	'%s' \n", value.C.Name)
-		fmt.Printf("Infblk Provider Config Host 	'%s' \n", value.C.Host)
-		fmt.Printf("Infblk Provider Config Port 	'%s' \n", value.C.Port)
-		fmt.Printf("Infblk Provider Config Version 	'%s' \n", value.C.Version)
-		fmt.Printf("Infblk Provider Config Auth User 	'%s' \n", value.C.Auth.User)
-		fmt.Printf("Infblk Provider Config Auth Pass 	'%s' \n", value.C.Auth.Pass)
-		fmt.Printf("Infblk Provider Config DNSView 	'%s' \n", value.C.DNSView)
-		fmt.Printf("Infblk Provider Config SSLVerify 	'%s' \n", value.C.SSLVerify)
+		fmt.Fprintf(os.Stderr, "Infblk Provider Config Name 	    '%s' \n", value.C.Name)
+		fmt.Fprintf(os.Stderr, "Infblk Provider Config Host     	'%s' \n", value.C.Host)
+		fmt.Fprintf(os.Stderr, "Infblk Provider Config Port     	'%s' \n", value.C.Port)
+		fmt.Fprintf(os.Stderr, "Infblk Provider Config Version    	'%s' \n", value.C.Version)
+		fmt.Fprintf(os.Stderr, "Infblk Provider Config Auth User 	'%s' \n", value.C.Auth.User)
+		fmt.Fprintf(os.Stderr, "Infblk Provider Config Auth Pass 	'%s' \n", value.C.Auth.Pass)
+		fmt.Fprintf(os.Stderr, "Infblk Provider Config DNSView   	'%s' \n", value.C.DNSView)
+		fmt.Fprintf(os.Stderr, "Infblk Provider Config SSLVerify 	'%s' \n", value.C.SSLVerify)
 	case *(otc.DNSProvider):
-		fmt.Printf("OTC Provider Config Name  '%s' \n", value.C.Name)
-		fmt.Printf("OTC Provider Config Auth.AuthURL  '%s' \n", value.C.Auth.AuthURL)
-		fmt.Printf("OTC Provider Config Auth.ProjectName  '%s' \n", value.C.Auth.ProjectName)
-		fmt.Printf("OTC Provider Config Auth.AccessKey  '%s' \n", value.C.Auth.AccessKey)
-		fmt.Printf("OTC Provider Config Auth.SecretKey  '%s' \n", value.C.Auth.SecretKey)
-		fmt.Printf("OTC Provider Config OSRegion  '%s' \n", value.C.OSRegion)
-		fmt.Printf("infblx.DNSProvider")
+		fmt.Fprintf(os.Stderr, "OTC Provider Config Name            '%s' \n", value.C.Name)
+		fmt.Fprintf(os.Stderr, "OTC Provider Config Auth.AuthURL    '%s' \n", value.C.Auth.AuthURL)
+		fmt.Fprintf(os.Stderr, "OTC Provider Config Auth.ProjectName '%s' \n", value.C.Auth.ProjectName)
+		fmt.Fprintf(os.Stderr, "OTC Provider Config Auth.AccessKey  '%s' \n", value.C.Auth.AccessKey)
+		fmt.Fprintf(os.Stderr, "OTC Provider Config Auth.SecretKey  '%s' \n", value.C.Auth.SecretKey)
+		fmt.Fprintf(os.Stderr, "OTC Provider Config OSRegion        '%s' \n", value.C.OSRegion)
+		fmt.Fprintf(os.Stderr, "infblx.DNSProvider")
 	default:
-		fmt.Printf("No known Provider type %T\n", value)
+		fmt.Fprintf(os.Stderr, "No known Provider type %T\n", value)
 	}
 
 }
@@ -99,12 +267,12 @@ func PrintViperConfigDNS() {
 	// Provider = viper.GetString("provider")
 	//BackendAPIEndPoint = viper.GetString("api")
 	vip := viper.GetViper()
-	fmt.Printf("VIPER Provider Name 	'%s' \n", vip.GetString("dns.backend"))
-	fmt.Printf("VIPER dns force flag	'%s' \n", vip.GetString("force"))
-	fmt.Printf("VIPER debug flag 	'%s' \n", vip.GetString("debug"))
-	fmt.Printf("VIPER json output 	'%s' \n", vip.GetString("json"))
-	fmt.Printf("VIPER User/ Id 	'%s' \n", vip.GetString("dns.id"))
-	fmt.Printf("VIPER secret / Password 	'%s' \n", vip.GetString("dns.secret"))
+	fmt.Fprintf(os.Stderr, "resulting value Provider Name 	'%s' \n", vip.GetString("dns.backend"))
+	fmt.Fprintf(os.Stderr, "resulting value  dns force flag	'%s' \n", vip.GetString("force"))
+	fmt.Fprintf(os.Stderr, "resulting value  debug flag 	    '%s' \n", vip.GetString("debug"))
+	fmt.Fprintf(os.Stderr, "resulting value  json output 	    '%s' \n", vip.GetString("json"))
+	fmt.Fprintf(os.Stderr, "resulting value  User/ Id 	        '%s' \n", vip.GetString("dns.id"))
+	fmt.Fprintf(os.Stderr, "resulting value  secret / Password '%s' \n", vip.GetString("dns.secret"))
 
 }
 
@@ -113,14 +281,14 @@ func PrintViperConfigCert() {
 	// Provider = viper.GetString("provider")
 	//BackendAPIEndPoint = viper.GetString("api")
 	vip := viper.GetViper()
-	fmt.Printf("VIPER cert.ca 	'%s' \n", vip.GetString("cert.ca"))
-	fmt.Printf("VIPER cert.wildcard	'%s' \n", vip.GetString("cert.wildcard"))
-	fmt.Printf("VIPER cert.autodns 	'%s' \n", vip.GetString("cert.autodns"))
-	fmt.Printf("VIPER cert.mode 	'%s' \n", vip.GetString("cert.mode"))
-	fmt.Printf("VIPER cert.api  	'%s' \n", vip.GetString("cert.api"))
-	fmt.Printf("VIPER force flag	'%s' \n", vip.GetString("force"))
-	fmt.Printf("VIPER debug flag 	'%s' \n", vip.GetString("debug"))
-	fmt.Printf("VIPER json output 	'%s' \n", vip.GetString("json"))
+	fmt.Fprintf(os.Stderr, "resulting value  cert.ca 	    '%s' \n", vip.GetString("cert.ca"))
+	fmt.Fprintf(os.Stderr, "resulting value  cert.wildcard	'%v' \n", vip.GetString("cert.wildcard"))
+	fmt.Fprintf(os.Stderr, "resulting value  cert.autodns 	'%s' \n", vip.GetString("cert.autodns"))
+	fmt.Fprintf(os.Stderr, "resulting value  cert.mode 	'%s' \n", vip.GetString("cert.mode"))
+	fmt.Fprintf(os.Stderr, "resulting value  cert.api  	'%s' \n", vip.GetString("cert.api"))
+	fmt.Fprintf(os.Stderr, "resulting value  force flag	'%s' \n", vip.GetString("force"))
+	fmt.Fprintf(os.Stderr, "resulting value  debug flag 	'%s' \n", vip.GetString("debug"))
+	fmt.Fprintf(os.Stderr, "resulting value  json output 	'%s' \n", vip.GetString("json"))
 }
 
 var dnsTypeList [3]string = [...]string{"a", "txt", "cname"}
@@ -152,6 +320,9 @@ func CheckTypeOfData(valStr string, typeString string) bool {
 
 // CheckTypeOfFQDN TOBE Done Wildcard CNAME e.g in Zertifikate
 func CheckTypeOfFQDN(valStr string) bool {
+	if valStr == "" {
+		return true
+	}
 	return regExFQDN.MatchString(valStr)
 }
 

@@ -14,10 +14,12 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/huaweicloud/golangsdk v0.0.0-20210831081626-d823fe11ceba
 	github.com/infobloxopen/infoblox-go-client/v2 v2.1.1
+	github.com/jsipprell/keyctl v1.0.3
 	github.com/miekg/dns v1.1.50
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.4.0
 	github.com/spf13/viper v1.12.0
+	golang.org/x/term v0.0.0-20220919170432-7a66f970e087
 	gopkg.in/yaml.v2 v2.4.0
 )
 

@@ -2,6 +2,7 @@ package clitypes
 
 import (
 	"fmt"
+	"os"
 )
 
 /*CertPushType  ---------------------------------------------------------------------------------
@@ -21,6 +22,7 @@ type CertPushType struct {
 	JSONOutput  bool
 	Force       bool
 	APIEndPoint string
+	AccessToken string
 	CA          string
 	FQDN        string
 	CRTpem      string
@@ -28,23 +30,24 @@ type CertPushType struct {
 }
 
 // PrintParams prints the parameters of the command cert push
-func (CertPush CertPushType) PrintParams() {
+func (CertPush *CertPushType) PrintParams() {
 	if CertPush.Verbose {
-		fmt.Printf("Command Cert Push called \n")
+		fmt.Fprintf(os.Stderr, "Command Cert Push called \n")
 		PrintViperConfigCert()
-		fmt.Printf("JsonOut 	'%t' \n", CertPush.JSONOutput)
-		fmt.Printf("Force         	'%t' \n", CertPush.Force)
-		fmt.Printf("Api EndPoint  	'%s' \n", CertPush.APIEndPoint)
-		fmt.Printf("CA          	'%s' \n", CertPush.CA)
-		fmt.Printf("FQDN         '%s' is OK '%t' \n", CertPush.FQDN, CheckTypeOfFQDN(CertPush.FQDN))
-		fmt.Printf("CRT.pem      '%s' \n", CertPush.CRTpem)
-		fmt.Printf("CHN.pem,     '%s' \n", CertPush.CHNpem)
+		fmt.Fprintf(os.Stderr, "JsonOut 	'%t' \n", CertPush.JSONOutput)
+		fmt.Fprintf(os.Stderr, "Force         	'%t' \n", CertPush.Force)
+		fmt.Fprintf(os.Stderr, "Api EndPoint  	'%s' \n", CertPush.APIEndPoint)
+		fmt.Fprintf(os.Stderr, "AccessToken  (4 < len)='%t' \n", (len(CertPush.AccessToken) > 4))
+		fmt.Fprintf(os.Stderr, "CA          	'%s' \n", CertPush.CA)
+		fmt.Fprintf(os.Stderr, "FQDN         '%s' is OK '%t' \n", CertPush.FQDN, CheckTypeOfFQDN(CertPush.FQDN))
+		fmt.Fprintf(os.Stderr, "CRT.pem      '%s' \n", CertPush.CRTpem)
+		fmt.Fprintf(os.Stderr, "CHN.pem,     '%s' \n", CertPush.CHNpem)
 	}
-	fmt.Printf("THIS COMMAND IS NOT IMPLEMENTED YET\n")
+	fmt.Fprintf(os.Stderr, "THIS COMMAND IS NOT IMPLEMENTED YET\n")
 }
 
 // CheckParams prints the parameters of the command cert push
-func (CertPush CertPushType) CheckParams() bool {
+func (CertPush *CertPushType) CheckParams() bool {
 	// check api
 	// check CA
 	// check CRT.pem
@@ -53,6 +56,10 @@ func (CertPush CertPushType) CheckParams() bool {
 	if !CheckTypeOfFQDN(CertPush.FQDN) {
 		OK = false
 		fmt.Printf("Cert FQDN  '%s' is not valid \n", CertPush.FQDN)
+	}
+	if len(CertPush.AccessToken) <= 4 {
+		OK = false
+		fmt.Fprintf(os.Stderr, "ERRORE: Cert AccessToken  heuristic check failed \n")
 	}
 
 	return OK

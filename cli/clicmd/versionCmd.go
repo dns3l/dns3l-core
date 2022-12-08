@@ -1,4 +1,4 @@
-package cli
+package clicmd
 
 import (
 	"fmt"
@@ -23,6 +23,6 @@ var versionCmd = &cobra.Command{
 	Short: "Print the version number of dns3l CLI",
 	Long:  `All software has versions. This is dns3l CLIs`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("dns3l version := %s\n", context.CLIVersion)
+		fmt.Printf("Version:=%s\n", context.CLIVersion)
 	},
 }

@@ -1,4 +1,4 @@
-package cli
+package clicmd
 
 import (
 	"fmt"
@@ -42,18 +42,15 @@ var JSONOutput bool
 var Force bool
 
 // Config ===========================
-// the following logic is not implemented !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-// -c, --config    | Configuration (~/.dns3l.json) [$DNS3L_CONFIG]
-// -c			--> [$DNS3L_CONFIG] or ~/.dns3l.json id shell variable is not set or empty
-// nothing 	--> "" empty String
-// -c "file"	--> only the name of file, not a path
-// This is implemented
+// -c, --config
+// NoOptDefault -c
+// --> [$DNS3L_CONFIG] or or default value ~/.dns3l.json, if shell variable is not set or empty
+// -c="file"	--> only a name of file
 // we search in several places in this order
-// current directory
-// shell varibale#
-// home directory
-// home
+// -- current directory
+// -- shell varibale
+// -- home directory
+
 var Config string = ""
 
 // ConfigDummy necessary for viper & cobra hack
@@ -78,10 +75,17 @@ var viperShellPrefix = "DNS3L"
 	-m, --mode
 	  , --ca        <<<=== c of cert conflicts the the c of config
 */
+
+/* You can provide your own Help command or your own template for the default command to use with following functions
+cmd.SetHelpCommand(cmd *Command)
+cmd.SetHelpFunc(f func(*Command, []string))
+cmd.SetHelpTemplate(s string)
+*/
+
 var rootCmd = &cobra.Command{
 	Use:   "dns3cli",
 	Short: "CLI for dns3ld and DNS",
-	Long:  "Deal with \n1) DNS3L X.509 certificates\n2) DNS3L DNS backends",
+	Long:  "Deal with \n1) DNS3L X.509 certificates\n2) DNS3L DNS backends\n for help about a command use ./dns3cli <command> --help ",
 	Run: func(cmd *cobra.Command, args []string) {
 		// One can use this function of commands to modify or inspect strings straight from the terminal`,
 
@@ -94,7 +98,7 @@ func Execute() {
 	// start with the root element of our commands tree
 	err := rootCmd.Execute()
 	if err != nil && err.Error() != "" {
-		fmt.Fprintf(os.Stderr, "Where was an error while executing your dns3l CLI '%s'", err)
+		fmt.Fprintf(os.Stderr, "ERROR: Where was an fatal error while executing your dns3l CLI '%s'", err)
 		os.Exit(1)
 	}
 	// fmt.Printf("Exit of commands.Execute()\n")
@@ -133,73 +137,76 @@ func init() {
 	rootCmd.PersistentFlags().BoolVarP(&Force, "force", "f", vip.GetBool("force"), "Change existing DATA")
 	rootCmd.PersistentFlags().Lookup("force").NoOptDefVal = "true"
 	// add the sub commands
-	// fmt.Printf("Command::Init() before initDNS()\n ")
 	initDNS()
-	// fmt.Printf("Command::Init() After initDNS()\n ")
 	initCert()
+	initLogin()
 }
 
 func initViperConfig() {
-
-	viper.AddConfigPath(".") // optionally look for config in the working directory
+	vip := viper.GetViper()
+	vip.AddConfigPath(".") // optionally look for config in the working directory
 	if checkEnv(viperShellPrefix + "_CONFIG") {
-		viper.AddConfigPath("$" + viperShellPrefix + "_CONFIG") // == "$DNS3L_CONFIG"
+		vip.AddConfigPath("$" + viperShellPrefix + "_CONFIG") // == "$DNS3L_CONFIG"
 	}
 	// Find home directory.
 	home, errOS := os.UserHomeDir()
 	cobra.CheckErr(errOS)
-	viper.AddConfigPath(home)   // path to look for the config file in
-	viper.SetConfigType("yaml") // REQUIRED if the config file does not have the extension in the name
-	viper.AutomaticEnv()
+	vip.AddConfigPath(home)   // path to look for the config file in
+	vip.SetConfigType("yaml") // REQUIRED if the config file does not have the extension in the name
+	vip.AutomaticEnv()
 	// has to be called behind aAtomaticEnv()
 	// it is not necessary to set this
 	// because we expliitly set the names of the shell variable
-	viper.SetEnvPrefix(viperShellPrefix)
+	vip.SetEnvPrefix(viperShellPrefix)
 	// Defaultvalues
-	viper.SetDefault("config", "dns3l")
-	viper.SetDefault("debug", "false")
-	viper.SetDefault("json", "false")
+	vip.SetDefault("config", "dns3lcli.yaml")
+	vip.SetDefault("debug", "false")
+	vip.SetDefault("json", "false")
 	// the error of BindEnv means you did not provide any key (looked at sourcecode)
-	viper.BindEnv("config", viperShellPrefix+"_CONFIG") //nolint:errcheck
-	viper.BindEnv("debug", viperShellPrefix+"_DEBUG")   //nolint:errcheck
-	viper.BindEnv("json", viperShellPrefix+"_JSON")     //nolint:errcheck
+	vip.BindEnv("config", viperShellPrefix+"_CONFIG") //nolint:errcheck
+	vip.BindEnv("debug", viperShellPrefix+"_DEBUG")   //nolint:errcheck
+	vip.BindEnv("json", viperShellPrefix+"_JSON")     //nolint:errcheck
 	// DNS and cert
-	viper.SetDefault("force", "false")
-	viper.BindEnv("force", viperShellPrefix+"_FORCE") //nolint:errcheck
+	vip.SetDefault("force", "false")
+	vip.BindEnv("force", viperShellPrefix+"_FORCE") //nolint:errcheck
 	// printViperConfigRoot()
 	// DNS part
-	viper.SetDefault("dns.backend", "InfoblxNIC")
-	viper.SetDefault("dns.id", "user")
-	viper.SetDefault("dns.secret", "pass")
-	viper.BindEnv("dns.backend", viperShellPrefix+"_DNS_BACKEND") //nolint:errcheck
-	viper.BindEnv("dns.id", viperShellPrefix+"_DNS_ID")           //nolint:errcheck
-	viper.BindEnv("dns.secret", viperShellPrefix+"_DNS_SECRET")   //nolint:errcheck
+	vip.SetDefault("dns.backend", "NOT_SET")
+	vip.SetDefault("dns.id", "NOT_SET")
+	vip.SetDefault("dns.secret", "NOT_SET")
+	vip.BindEnv("dns.backend", viperShellPrefix+"_DNS_BACKEND") //nolint:errcheck
+	vip.BindEnv("dns.id", viperShellPrefix+"_DNS_ID")           //nolint:errcheck
+	vip.BindEnv("dns.secret", viperShellPrefix+"_DNS_SECRET")   //nolint:errcheck
 	// CERT part
 	// not done
-	viper.SetDefault("cert.ca", "ViDef_CA")
-	viper.SetDefault("cert.wildcard", "ViDef_wildcard")
-	viper.SetDefault("cert.autodns", "false")
-	viper.SetDefault("cert.modeFull", "false")
-	viper.SetDefault("cert.api", "ViDef_cert_api")
-	viper.BindEnv("cert.ca", viperShellPrefix+"_CERT_CA")             //nolint:errcheck
-	viper.BindEnv("cert.wildcard", viperShellPrefix+"_CERT_WILDCARD") //nolint:errcheck
-	viper.BindEnv("cert.autodns", viperShellPrefix+"_CERT_AUTODNS")   //nolint:errcheck
-	viper.BindEnv("cert.modeFull", viperShellPrefix+"_CERT_MODE")     //nolint:errcheck
-	viper.BindEnv("cert.api", viperShellPrefix+"_CERT__API")          //nolint:errcheck
+	vip.SetDefault("cert.ca", "NOT_SET")
+	vip.SetDefault("cert.wildcard", "NOT_SET")
+	vip.SetDefault("cert.autodns", "false")
+	vip.SetDefault("cert.modeFull", "false")
+	vip.SetDefault("cert.api", "NOT_SET")
+	vip.BindEnv("cert.ca", viperShellPrefix+"_CERT_CA")             //nolint:errcheck
+	vip.BindEnv("cert.wildcard", viperShellPrefix+"_CERT_WILDCARD") //nolint:errcheck
+	vip.BindEnv("cert.autodns", viperShellPrefix+"_CERT_AUTODNS")   //nolint:errcheck
+	vip.BindEnv("cert.modeFull", viperShellPrefix+"_CERT_MODE")     //nolint:errcheck
+	vip.BindEnv("cert.api", viperShellPrefix+"_CERT__API")          //nolint:errcheck
 
 	// if in the commandline was no --config
 	if Config == "" {
-		Config = viper.GetString("config")
+		Config = vip.GetString("config")
 	}
-	// fmt.Printf("InitViper: Using config file: '%s' \n", Config)
-	viper.SetConfigName(Config) // name of config file (without extension)
-	err := viper.ReadInConfig() // Find and read the config file
-	if err != nil {             // Handle errors reading the config file
-		fmt.Printf("fatal error config file:%v \n Using config file: %s\n", err, viper.ConfigFileUsed())
-		// os.Exit(1)
-	} else if Verbose {
-		fmt.Printf("Viper Configuration sucessfully read: %s\n", viper.ConfigFileUsed())
-		// printViperConfigRoot()
+	if Verbose {
+		fmt.Fprintf(os.Stderr, "INFO: Using config file: '%s' \n", Config)
+	}
+	if !parseCommandLineForHelp() {
+		vip.SetConfigName(Config) // name of config file (without extension)
+		err := vip.ReadInConfig() // Find and read the config file
+		if err != nil {           // Handle errors reading the config file
+			fmt.Fprintf(os.Stderr, "ERROR: Init fatal error config file:%v \n Using config file: %s\n", err, vip.ConfigFileUsed())
+			// os.Exit(1)
+		} else if Verbose {
+			fmt.Fprintf(os.Stderr, "SUCCESS: Init Configuration sucessfully read: %s\n", vip.ConfigFileUsed())
+			// printViperConfigRoot()
+		}
 	}
 }
 
@@ -210,19 +217,38 @@ func initViperConfig() {
 func parseCommandLineForConfig() (string, bool) {
 	regExWithValue := regexp.MustCompile(`^((-c=\w+)|(--config=\w+))`)
 	var cliVal string
+	var count int = 0
 	for _, v := range os.Args {
 		// fmt.Printf("Value := %s \n", v)
 		if strings.EqualFold(v, "-c") || strings.EqualFold(v, "--config") {
-			cliVal = "dns3l.json"
-			// fmt.Printf("Config + without file found -> assign NoOptDefault '%s' \n", cliVal)
-			return cliVal, true
+			cliVal = "dns3lcli.yaml"
+			// fmt.Printf("Flag Config without a filename found -> assign the NoOptdefault '%s' \n", cliVal)
+			count++
 		}
 		if regExWithValue.MatchString(v) {
 			// alles nach dem 1sten = übernehmen
 			cliVal = v[strings.Index(v, "=")+1:]
 			// fmt.Printf("Assign '%s' to Config file  \n", cliVal)
-			return cliVal, true
+			count++
 		}
 	}
+	if count == 1 {
+		return cliVal, true
+	}
+	if count > 1 {
+		fmt.Fprintf(os.Stderr, "ERROR: Init found  more than one config flag!\n")
+		return string(""), false
+	}
 	return string(""), false
+}
+
+//  -h, --help
+func parseCommandLineForHelp() bool {
+	for _, v := range os.Args {
+		// fmt.Printf("Value := %s \n", v)
+		if strings.EqualFold(v, "-h") || strings.EqualFold(v, "--help") {
+			return true
+		}
+	}
+	return false
 }

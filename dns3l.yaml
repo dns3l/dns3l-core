@@ -1,35 +1,38 @@
 ---
-debug: false
+debug: true
 json: true
 force: false
 dns: 
-  backend : infblxFOO     # this name must match with a section of dns_providers
-  id: user              # we need this entries for the $Shell Vars
-  secret: pass
+  backend : infblxExample     # this name must match with a section of dns_providers
+  # the following value is needed to make short names to the ENVIROMENT
+  # and viper does the work, do not change
+  id: NOT_SET              
+  # the following  value is needed to make short names to the ENVIROMENT
+  # and viper does the work, do not change
+  secret: NOT_SET             
   providers:
-    infblxNIC: 
+    infblxExample: 
       type: infblx
-      name: InfobloxExample
-      #url: https://infoblox.example.com/wapi/v2.10
-      host: infoblox.example.com
+      name: InfoblxExample
+      host: infoblox01v.example.com
       port: 443 
       version: 2.10
-      DNSView: myview
+      DNSView: DNS_Access_4.0
       SSLVerify: false
       auth: #endpoint specific
-        user: user
-        pass: pass
-    infblxB:
+        user: test
+        pass: testPass      
+    infblxExample02:
       type: infblx
       name: Infoblox B
       host: foo.bar.local
       port: 1234
       version: v2.8
       auth:
-        user: user
-        pass: pass
+        user: username
+        pass: password
     dns3l:
-      type: otc # Open Telekom Cloud (OTC) DNS
+      type: otc # Open Telekom Cloud (OTC)
       name: DNS3L Labs Inc. OTC tenant
       auth:
         authurl: https://iam.eu-de.otc.t-systems.com/v3
@@ -39,8 +42,46 @@ dns:
         sk: secret access key
       os-region: eu-de
 cert:
-  api: VIPER_CERT_API
+# api: VIPER_CERT_API
+  api: https://acme.example.com/api/v1
   ca: VIPER_CERT_CA
   wildcard: false
-  autodns: false
+  autodns: ""
   modefull: true
+  accessToken: 
+acme:
+  oicdUrl: https://acme.example.com/auth/.well-known/openid-configuration
+  clientId: dns3l-example-app   # token for this application is requested
+  clientSecret: ""
+  user: acmeUser
+  pass: 
+hints:
+  default:
+    kty: RSA
+    crv: P-256
+    size: 128
+    ttl: 30d
+    subject: "C=DE,O=ACME Inc.,OU=DNS3L,CN=foo.bar.acme.org"
+    keyUsage: [
+      "keyEncipherment",
+      "dataEncipherment",
+      "digitalSignature",
+    ]
+    extKeyUsage: [
+      "serverAuth",
+    ]
+  example01:
+    kty: RSA
+    crv: P-256
+    size: 128
+    ttl: 30d
+    subject: "C=DE,O=ACME Inc.,OU=DNS3L,CN=foo.bar.acme.org"
+    keyUsage: [
+      "keyEncipherment",
+      "dataEncipherment",
+      "digitalSignature",
+    ]
+    extKeyUsage: [
+      "serverAuth",
+    ]
+end:
