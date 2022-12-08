@@ -213,9 +213,8 @@ func (e *Engine) TriggerUpdate(acmeuser string, keyname string, keyrz string, do
 func (e *Engine) getACMEEmail(info *types.CACertInfo) string {
 	if e.Conf.ACMERegisterWithoutEMail {
 		return ""
-	} else {
-		return info.IssuedByEmail
 	}
+	return info.IssuedByEmail
 }
 
 func sanitizeDomains(domains []string) ([]string, error) {

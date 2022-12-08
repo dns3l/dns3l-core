@@ -145,7 +145,7 @@ func (u *DefaultUser) InitUser() error {
 
 	if notRegistered {
 
-		if u.Config.Auth.User == "" {
+		if u.Config.EAB.KID == "" {
 
 			u.registration, err = u.client.Registration.Register(registration.RegisterOptions{
 				TermsOfServiceAgreed: true})
@@ -155,8 +155,9 @@ func (u *DefaultUser) InitUser() error {
 		} else {
 
 			eabopts := registration.RegisterEABOptions{
-				Kid:         u.Config.Auth.User,
-				HmacEncoded: u.Config.Auth.Pass,
+				TermsOfServiceAgreed: true,
+				Kid:                  u.Config.EAB.KID,
+				HmacEncoded:          u.Config.EAB.HMAC,
 			}
 
 			u.registration, err = u.client.Registration.RegisterWithExternalAccountBinding(eabopts)
