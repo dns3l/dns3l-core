@@ -70,7 +70,7 @@ func getProviderData(dnsbackend string, verbose bool) (string, string) {
 	return user, secret
 }
 
-func setProvider(dnsbackend string, id string, secret string, useTresor bool, verbose bool) types.DNSProvider {
+func setProvider(dnsbackend string, id string, secret string, usePWSafe bool, verbose bool) types.DNSProvider {
 	var dns types.DNSProvider
 	vip := viper.GetViper()
 	providerPath := "dns.providers." + dnsbackend + "."
@@ -94,12 +94,10 @@ func setProvider(dnsbackend string, id string, secret string, useTresor bool, ve
 		if infblxConfig.Name == "" || infblxConfig.Host == "" || infblxConfig.Port == "" || infblxConfig.Version == "" {
 			return nil
 		}
-		// in some cases override the password
-		// if general DNS-USER  has the value "" or "USE_PROVIDER_DATA
-		// the value out of the special providers section is used
 		if verbose {
 			fmt.Fprintf(os.Stderr, "INFO setProvider()  User ID := %s\n", id)
 		}
+		// with "" or "NOT_SET" we switch to the values in the providersection"
 		if id != "" && id != "NOT_SET" {
 			infblxConfig.Auth.User = id
 		} else {
@@ -114,11 +112,11 @@ func setProvider(dnsbackend string, id string, secret string, useTresor bool, ve
 			}
 		}
 		// resolve the secret
-		if useTresor {
+		if usePWSafe {
 			var err error
 			var sec []byte
 			if verbose {
-				fmt.Fprintf(os.Stderr, "INFO setProvider(): User %s and password from Tresor \n", infblxConfig.Auth.User)
+				fmt.Fprintf(os.Stderr, "INFO setProvider(): User %s and password from safe \n", infblxConfig.Auth.User)
 			}
 			if sec, err = GetPasswordfromRing(infblxConfig.Auth.User, verbose); err != nil {
 				fmt.Fprintf(os.Stderr, "ERROR setProvider(), no secret provided in the Keyring for DNSBackend '%v' and ID:= '%v'\n", dnsbackend, infblxConfig.Auth.User)
@@ -129,10 +127,8 @@ func setProvider(dnsbackend string, id string, secret string, useTresor bool, ve
 					fmt.Fprintf(os.Stderr, "INFO setProvider() Secret provided by Keyring for DNSBackend '%v' and ID:= '%v''\n", dnsbackend, infblxConfig.Auth.User)
 				}
 			}
-			// else { infblxConfig.Auth.Pass = vip.GetString(providerPath + "auth.pass") }
 		} else {
-			// if general DNS-SECRET  has the value "" or "USE_PROVIDER_DATA"
-			// the value out of the special providers section is used
+			// with "" or "NOT_SET" we switch to the values in the providersection"
 			if secret != "" && secret != "NOT_SET" {
 				if verbose {
 					fmt.Fprintf(os.Stderr, "INFO setProvider() secret != '' or 'NOT_SET'\n")
@@ -237,7 +233,6 @@ func FinalCertToken(inToken string) string {
 
 // PrintDNSProvider prints the parameters of the dns provider
 func PrintDNSProvider(provider types.DNSProvider) {
-	// type assertion
 	switch value := provider.(type) {
 	case *(infblx.DNSProvider):
 		fmt.Fprintf(os.Stderr, "Infblk Provider Config Name 	    '%s' \n", value.C.Name)
@@ -318,7 +313,8 @@ func CheckTypeOfData(valStr string, typeString string) bool {
 	return false
 }
 
-// CheckTypeOfFQDN TOBE Done Wildcard CNAME e.g in Zertifikate
+// CheckTypeOfFQDN
+// no checks for wildcard, CNAME e.g in certificates
 func CheckTypeOfFQDN(valStr string) bool {
 	if valStr == "" {
 		return true

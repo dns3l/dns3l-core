@@ -117,7 +117,6 @@ func init() {
 	//that we have the values from config-file or shell Variable
 	initViperConfig()
 	vip := viper.GetViper()
-	// fmt.Printf("Behind cobra.OnInitialize(initViperConfig)\n")
 	// this is a dummy flag
 	// does not work because we need viper to read its config File
 	// becasue that we can set the default values for the cobra flags during intitalisation
@@ -126,11 +125,9 @@ func init() {
 	rootCmd.PersistentFlags().Lookup("config").NoOptDefVal = "Value_is_never_used"
 	// global flags are implemented as persistent flags on the rootCmd
 	// the settings behind the command has a higher priority than the shell variable
-	// fmt.Printf("Debug in CommandsGoInit()         	'%t' \n", vip.GetBool("debug"))
 	rootCmd.PersistentFlags().BoolVarP(&Verbose, "debug", "v", vip.GetBool("debug"), "Enable more output")
 	rootCmd.PersistentFlags().Lookup("debug").NoOptDefVal = "true"
 	// json output
-	// fmt.Printf("json in CommandsGoInit()         	'%t' \n", vip.GetBool("json"))
 	rootCmd.PersistentFlags().BoolVarP(&JSONOutput, "json", "j", vip.GetBool("json"), "Results as JSON formatted file")
 	rootCmd.PersistentFlags().Lookup("json").NoOptDefVal = "true"
 	// force
@@ -154,7 +151,7 @@ func initViperConfig() {
 	vip.AddConfigPath(home)   // path to look for the config file in
 	vip.SetConfigType("yaml") // REQUIRED if the config file does not have the extension in the name
 	vip.AutomaticEnv()
-	// has to be called behind aAtomaticEnv()
+	// has to be called behind AutomaticEnv()
 	// it is not necessary to set this
 	// because we expliitly set the names of the shell variable
 	vip.SetEnvPrefix(viperShellPrefix)
@@ -162,7 +159,7 @@ func initViperConfig() {
 	vip.SetDefault("config", "dns3lcli.yaml")
 	vip.SetDefault("debug", "false")
 	vip.SetDefault("json", "false")
-	// the error of BindEnv means you did not provide any key (looked at sourcecode)
+	// the error of BindEnv means you did not provide any key (can be looked at sourcecode of viper)
 	vip.BindEnv("config", viperShellPrefix+"_CONFIG") //nolint:errcheck
 	vip.BindEnv("debug", viperShellPrefix+"_DEBUG")   //nolint:errcheck
 	vip.BindEnv("json", viperShellPrefix+"_JSON")     //nolint:errcheck
@@ -222,13 +219,11 @@ func parseCommandLineForConfig() (string, bool) {
 		// fmt.Printf("Value := %s \n", v)
 		if strings.EqualFold(v, "-c") || strings.EqualFold(v, "--config") {
 			cliVal = "dns3lcli.yaml"
-			// fmt.Printf("Flag Config without a filename found -> assign the NoOptdefault '%s' \n", cliVal)
 			count++
 		}
 		if regExWithValue.MatchString(v) {
 			// alles nach dem 1sten = übernehmen
 			cliVal = v[strings.Index(v, "=")+1:]
-			// fmt.Printf("Assign '%s' to Config file  \n", cliVal)
 			count++
 		}
 	}
@@ -245,7 +240,6 @@ func parseCommandLineForConfig() (string, bool) {
 //  -h, --help
 func parseCommandLineForHelp() bool {
 	for _, v := range os.Args {
-		// fmt.Printf("Value := %s \n", v)
 		if strings.EqualFold(v, "-h") || strings.EqualFold(v, "--help") {
 			return true
 		}

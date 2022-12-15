@@ -90,11 +90,7 @@ func (loginData *LoginACMEType) GetDEXToken(msg *OpenIdInfo) (*TokenInfo, error)
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	/*
-		SetBasicAuth sets the request's Authorization header to use HTTP Basic Authentication with the provided username and password.
-		With HTTP Basic Authentication the provided username and password are not encrypted.
-		Some protocols may impose additional requirements on pre-escaping the username and password. For instance, when used with OAuth2, both arguments must be URL encoded first with url.QueryEscape.
-	*/
+	// OAuth2, both arguments must be URL encoded first with url.QueryEscape.
 	req.SetBasicAuth(url.QueryEscape(loginData.ClientInfo.ClientId), url.QueryEscape(loginData.ClientInfo.ClientSecret))
 	if loginData.Verbose {
 		PrintFullRequestOut("INFO: Dump of token http.request", req)
@@ -173,9 +169,6 @@ func (loginData *LoginACMEType) CheckParams() bool {
 }
 
 func (loginData *LoginACMEType) DoCommand() {
-	// get the password
-	// und keines in der kommandozeile angegebn ist
-	// am bestenn 2 funktionen schrieben
 	if loginData.FromTerminal {
 		bIn, inErr := GetPasswordFromConsole("Password for acme account " + loginData.ACMEProviderID + " =")
 		if inErr == nil {
@@ -201,7 +194,6 @@ func (loginData *LoginACMEType) DoCommand() {
 		return
 	}
 	// put into the ring
-	// fmt.Printf("Get token '%s'\n", string(tok.AccesssToken))
 	if !loginData.ACMEForceOStream {
 		err := CachePassword("CertAccountToken", tok.AccesssToken, uint(tok.Expire+60), loginData.Verbose)
 		if nil != err {

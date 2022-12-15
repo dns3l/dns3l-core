@@ -49,7 +49,6 @@ func (loginData *LoginDNSType) CheckParams() bool {
 				fmt.Fprintf(os.Stderr, "ERROR: No DNS backend Password provided \n  use --terminal=XXXX or  $(DNS3L_DNS_SECRET) or config to provide one\n")
 			}
 		}
-		// || loginData.Password == ""
 	}
 	return OK
 }
@@ -68,7 +67,6 @@ func (loginData *LoginDNSType) DoCommand() {
 			return
 		}
 	} else {
-		// TOBE DONE
 		switch {
 		case loginData.Password == "NOT_SET":
 			_, secret = getProviderData(loginData.DNSBackend, false)
@@ -85,16 +83,16 @@ func (loginData *LoginDNSType) DoCommand() {
 		fmt.Fprintf(os.Stderr, "Override backend user due to ENV/CLI option:\n")
 	}
 	if nil != CachePassword(user, secret, 3600*4, loginData.Verbose) {
-		fmt.Fprintf(os.Stderr, "ERROR store login data of DNS backend, can not store data in the tresor\n")
+		fmt.Fprintf(os.Stderr, "ERROR store login data of DNS backend, can not store data in the password safe \n")
 		return
 	}
 	time.Sleep(time.Millisecond * 10)
 	_, inErr = GetPasswordfromRing(user, loginData.Verbose)
 	if inErr != nil {
-		fmt.Fprintf(os.Stderr, "ERROR: store login data of DNS backend, write to tresor was not OK: Error occured %v", inErr)
+		fmt.Fprintf(os.Stderr, "ERROR: store login data of DNS backend, write to password safe was not OK: Error occured %v", inErr)
 		return
 	}
 	if loginData.Verbose {
-		fmt.Fprintf(os.Stderr, "Info: DNS backend login Secret sucessfully stored in tresor '%v' \n", user)
+		fmt.Fprintf(os.Stderr, "Info: DNS backend login Secret sucessfully stored in password safe '%v' \n", user)
 	}
 }

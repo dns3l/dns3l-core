@@ -19,7 +19,7 @@ type DNSQueryType struct {
 	Backend    string
 	User       string
 	Pass       string
-	UseTresor  bool
+	UsePWSafe  bool
 	FQDN       string
 }
 
@@ -31,7 +31,7 @@ func (DnsQuery *DNSQueryType) PrintParams() {
 		fmt.Fprintf(os.Stderr, "JsonOutput      '%t' \n", DnsQuery.JSONOutput)
 		fmt.Fprintf(os.Stderr, "Backend      	'%s' \n", DnsQuery.Backend)
 		fmt.Fprintf(os.Stderr, "dnsFQDN         '%s' Check:='%t'\n", DnsQuery.FQDN, CheckTypeOfFQDN(DnsQuery.FQDN))
-		fmt.Fprintf(os.Stderr, "use tresor     '%t' \n", DnsQuery.UseTresor)
+		fmt.Fprintf(os.Stderr, "use password safe     '%t' \n", DnsQuery.UsePWSafe)
 
 	}
 	fmt.Printf("THIS COMMAND IS NOT IMPLEMENTED YET\n")

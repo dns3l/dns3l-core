@@ -31,7 +31,7 @@ type DNSAddType struct {
 	Force      bool
 	ID         string
 	Secret     string
-	UseTresor  bool
+	UsePWSafe  bool
 	FQDN       string
 	Type       string
 	Data       string
@@ -40,14 +40,14 @@ type DNSAddType struct {
 }
 
 // Init inits the parameters of the command dns add
-func (dnsAdd *DNSAddType) Init(verbose bool, jsonOutput bool, backend string, force bool, id string, secret string, useTresor bool, args []string) {
+func (dnsAdd *DNSAddType) Init(verbose bool, jsonOutput bool, backend string, force bool, id string, secret string, usePWSafe bool, args []string) {
 	dnsAdd.Verbose = verbose
 	dnsAdd.JSONOutput = jsonOutput
 	dnsAdd.Backend = backend
 	dnsAdd.Force = force
 	dnsAdd.ID = id
 	dnsAdd.Secret = secret
-	dnsAdd.UseTresor = useTresor
+	dnsAdd.UsePWSafe = usePWSafe
 	dnsAdd.FQDN = args[0]
 	dnsAdd.Type = args[1]
 	dnsAdd.Data = args[2]
@@ -58,7 +58,7 @@ func (dnsAdd *DNSAddType) Init(verbose bool, jsonOutput bool, backend string, fo
 		dnsAdd.Seconds = 3000
 	}
 	// viper read the config from the requested DNS provider from the yaml file with the help of viper
-	dnsAdd.P = setProvider(backend, id, secret, useTresor, verbose)
+	dnsAdd.P = setProvider(backend, id, secret, usePWSafe, verbose)
 
 }
 
@@ -71,7 +71,7 @@ func (dnsAdd *DNSAddType) PrintParams() {
 		fmt.Fprintf(os.Stderr, "Backend  	'%s' \n", dnsAdd.Backend)
 		fmt.Fprintf(os.Stderr, "User 	    '%s' \n", dnsAdd.ID)
 		fmt.Fprintf(os.Stderr, "Password 	'%s' \n", dnsAdd.Secret)
-		fmt.Fprintf(os.Stderr, "Use Tresor	'%v' \n", dnsAdd.UseTresor)
+		fmt.Fprintf(os.Stderr, "Use password safe	'%v' \n", dnsAdd.UsePWSafe)
 		fmt.Fprintf(os.Stderr, "Force         	'%t' \n", dnsAdd.Force)
 		fmt.Fprintf(os.Stderr, "dnsFQDN         '%s' Check:= '%t' \n", dnsAdd.FQDN, CheckTypeOfFQDN(dnsAdd.FQDN))
 		fmt.Fprintf(os.Stderr, "dnsType         '%s' Check:= '%t'\n", dnsAdd.Type, CheckTypeOfDNSRecord(dnsAdd.Type))

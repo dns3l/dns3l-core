@@ -210,7 +210,6 @@ func (CertClaim *CertClaimType) PrintParams() {
 		fmt.Fprintf(os.Stderr, "AutoDNS      '%s' \n", CertClaim.AutoDNS)
 		fmt.Fprintf(os.Stderr, "FQDN         '%s' is OK '%t' \n", CertClaim.FQDN, CheckTypeOfFQDN(CertClaim.FQDN))
 		fmt.Fprintf(os.Stderr, "SAN          '%s'\n", CertClaim.SAN)
-		// Das muss korrigiert werden
 		fmt.Fprintf(os.Stderr, "Hints section'%s'\n", string(CertClaim.HintsSection))
 		printCertClaimHints(CertClaim.Hints)
 	}
@@ -220,7 +219,7 @@ func (CertClaim *CertClaimType) PrintParams() {
 func (CertClaim *CertClaimType) CheckParams() bool {
 	// check api
 	// check CA
-	// Wildcard & AutoDNS schließen sich aus
+	// Wildcard & AutoDNS are mutually exclusive
 	// SAN
 	OK := true
 	if !CheckTypeOfFQDN(CertClaim.FQDN) {
@@ -236,8 +235,7 @@ func (CertClaim *CertClaimType) CheckParams() bool {
 		fmt.Fprintf(os.Stderr, "ERROR: Cert AccessToken  heuristic check failed \n")
 	}
 	//
-	// do not check this values if they ars empty!!
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	// do not check this values if they are empty!!
 	if !checkKty(CertClaim.Hints.Kty) {
 		OK = false
 	}
@@ -273,10 +271,8 @@ func (CertClaim *CertClaimType) DoCommand() {
 	if CertClaim.Verbose {
 		fmt.Fprintf(os.Stderr, "INFO: Command CERT CLAIM: API-END_POINT'%v' \n", postCertClaimUrl)
 	}
-	// nih durch ioReader ersetzen
 	jBody, _ := json.MarshalIndent(claimRequest, "\t", "\t")
 	req, err := http.NewRequest(http.MethodPost, postCertClaimUrl, bytes.NewReader(jBody))
-	// req, err := http.NewRequest(http.MethodPost, postCertClaimUrl, nil)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "ERROR: Command cert get full chain: url='%v' Error'%v' \n", postCertClaimUrl, err.Error())
 	}

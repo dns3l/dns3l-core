@@ -84,7 +84,6 @@ func (CertList *CertListType) DoCommand() {
 	if CertList.Verbose {
 		fmt.Fprintf(os.Stderr, "INFO: Command.certList: API-END_POINT'%v' \n", listCaUrl)
 	}
-	// nih durch ioReader ersetzen
 	req, err := http.NewRequest(http.MethodGet, listCaUrl, nil)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "ERROR: Command.certList: url='%v' Error'%v' \n", listCaUrl, err.Error())
@@ -127,7 +126,6 @@ func (CertList *CertListType) DoCommand() {
 		fmt.Fprintf(os.Stderr, "ERROR: Command.certList: can not compile search pattern Error '%v' \n", compileErr.Error())
 		certListJson, _ = json.MarshalIndent(aCertList, "\t", "\t")
 	}
-	// fmt.Fprintf(os.Stdout, "%v\n", resp.StatusCode)
 	// Screen oder JSON File output
 	if CertList.JSONOutput {
 		fmt.Fprintf(os.Stdout, "%v\n", string(certListJson))

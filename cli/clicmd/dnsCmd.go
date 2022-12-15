@@ -86,8 +86,8 @@ var DNSProviderID string
 // -s   --secret  secret e.g. password for login [$DNS3L_DNS_SECRET]
 var DNSProviderSecret string
 
-// Use the Secret from the Tresor LINUX Keyring Windows not implemented
-var DNSUseTresor bool
+// Use the Secret from the PasswordSafe LINUX Keyring Windows not implemented
+var DNSUsePWSafe bool
 
 // ----------------------
 // args args args
@@ -110,7 +110,7 @@ func DNSAddCmdCb(ccmd *cobra.Command, args []string) {
 		return
 	}
 	var dnsAdd clitypes.DNSAddType
-	dnsAdd.Init(Verbose, JSONOutput, Backend, Force, DNSProviderID, DNSProviderSecret, DNSUseTresor, args)
+	dnsAdd.Init(Verbose, JSONOutput, Backend, Force, DNSProviderID, DNSProviderSecret, DNSUsePWSafe, args)
 	dnsAdd.PrintParams()
 	if !dnsAdd.CheckParams() {
 		if nil != ccmd.Usage() {
@@ -124,7 +124,7 @@ func DNSAddCmdCb(ccmd *cobra.Command, args []string) {
 		ipAddr := net.ParseIP(dnsAdd.Data)
 		if Force {
 			var dnsDel clitypes.DNSDelType
-			dnsDel.Init(Verbose, JSONOutput, Backend, DNSProviderID, DNSProviderSecret, DNSUseTresor, args)
+			dnsDel.Init(Verbose, JSONOutput, Backend, DNSProviderID, DNSProviderSecret, DNSUsePWSafe, args)
 			err := dnsDel.P.DeleteRecordA(dnsDel.FQDN)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "NOTE: DNS ADD This error occures due to Flag force \n which force a delete of the A Record \n this delete fails '%v' continue with add\n", err.Error())
@@ -132,7 +132,6 @@ func DNSAddCmdCb(ccmd *cobra.Command, args []string) {
 				fmt.Fprintf(os.Stderr, "ERROR: DNS ADD DNS record A deleted due to Flag force\n")
 			}
 		}
-		// fmt.Println(ipAddr)
 		err := dnsAdd.P.SetRecordA(dnsAdd.FQDN, uint32(dnsAdd.Seconds), ipAddr)
 		if err != nil {
 			fmt.Fprintf(os.Stdout, "FAIL\n DNS record '%s' not added \n'%v'\n", dnsAdd.FQDN, err.Error())
@@ -162,7 +161,7 @@ func DNSDelCmdCb(ccmd *cobra.Command, args []string) {
 		return
 	}
 	var dnsDel clitypes.DNSDelType
-	dnsDel.Init(Verbose, JSONOutput, Backend, DNSProviderID, DNSProviderSecret, DNSUseTresor, args)
+	dnsDel.Init(Verbose, JSONOutput, Backend, DNSProviderID, DNSProviderSecret, DNSUsePWSafe, args)
 	dnsDel.PrintParams()
 	if !dnsDel.CheckParams() {
 		if nil != ccmd.Usage() {
@@ -173,8 +172,6 @@ func DNSDelCmdCb(ccmd *cobra.Command, args []string) {
 	// see dnsTypeList in file util.go
 	// Ip-Address -> type "a"
 	if dnsDel.Type == string("a") {
-		// ipAddr := net.ParseIP(dnsDel.Data)
-		// fmt.Println(ipAddr)
 		err := dnsDel.P.DeleteRecordA(dnsDel.FQDN)
 		if err != nil {
 			fmt.Fprintf(os.Stdout, "FAIL\n DNS record '%s' not deleted  \n'%v'\n", dnsDel.FQDN, err.Error())
@@ -231,7 +228,7 @@ func DNSQueryCmdCb(ccmd *cobra.Command, args []string) {
 		return
 	}
 	var dnsQuery = clitypes.DNSQueryType{Verbose: Verbose, JSONOutput: JSONOutput,
-		Backend: Backend, User: DNSProviderID, Pass: DNSProviderSecret, UseTresor: DNSUseTresor, FQDN: args[0]}
+		Backend: Backend, User: DNSProviderID, Pass: DNSProviderSecret, UsePWSafe: DNSUsePWSafe, FQDN: args[0]}
 	dnsQuery.PrintParams()
 	if !dnsQuery.CheckParams() {
 		if nil != ccmd.Usage() {
@@ -278,11 +275,12 @@ func initDNS() {
 	// backend
 	DNSCommand.PersistentFlags().StringVarP(&Backend, "backend", "b", vip.GetString("dns.backend"), "points to the configuration for this DNS backend [$DNS3L_DNS_BACKEND]")
 	DNSCommand.PersistentFlags().Lookup("backend").NoOptDefVal = backendDefaultNoOpt
-	// If
+	// DNSProvider
 	DNSCommand.PersistentFlags().StringVarP(&DNSProviderID, "id", "i", vip.GetString("dns.id"), " Id / User of the DNS backend [$DNS3L_DNS_ID]")
 	DNSCommand.PersistentFlags().StringVarP(&DNSProviderSecret, "secret", "s", vip.GetString("dns.secret"), "Secret e.g. password of the DNS backend [$DNS3L_DNS_SECRET]")
 
-	LoginCommand.PersistentFlags().BoolVarP(&DNSUseTresor, "tresor", "", false, "Use the Password or Secret of the tresor in case of Linux(Keyring) Windows(not implemented)")
-	// DNSCommand.PersistentFlags().Lookup("tresor").NoOptDefVal = "true"
+	LoginCommand.PersistentFlags().BoolVarP(&DNSUsePWSafe, "PWSafe", "", false, "Use the Password or Secret of the PasswordSafe in case of Linux(Keyring) Windows(not implemented)")
+	// we want no NoOptdefault !
+	// DNSCommand.PersistentFlags().Lookup("PWSafe").NoOptDefVal = "true"
 
 }

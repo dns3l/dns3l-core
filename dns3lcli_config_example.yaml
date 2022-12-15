@@ -17,7 +17,7 @@ dns:
       host: infoblox01v.example.com
       port: 443 
       version: 2.10
-      DNSView: DNS_Access_4.0
+      DNSView: DNS_EXAMPLE_VIEW
       SSLVerify: false
       auth: #endpoint specific
         user: test

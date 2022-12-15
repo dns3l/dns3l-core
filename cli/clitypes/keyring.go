@@ -11,7 +11,6 @@ import (
 
 // CachePassword - Saves a secret to the User Session Keyring.
 // It will cache the secret for a given number of seconds.
-//
 // To invalidate a password, save it with a 1 second timeout.
 func CachePassword(name, password string, timeoutSeconds uint, verbose bool) error {
 	// Create session

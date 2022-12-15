@@ -43,7 +43,7 @@ func LoginDNSCb(ccmd *cobra.Command, args []string) {
 // DNSQueryCommand DNS query cobra command
 var LoginDNS = &cobra.Command{
 	Use:   "dns",
-	Short: "store the login data of the DNS backend into a password tresor (supported  linux keyring) ",
+	Short: "store the login data of the DNS backend into a PasswordSafe (supported  linux keyring) ",
 	Long:  ``,
 	Run:   LoginDNSCb,
 }
@@ -70,7 +70,7 @@ func LoginACMECb(ccmd *cobra.Command, args []string) {
 // DNSQueryCommand DNS query cobra command
 var LoginACME = &cobra.Command{
 	Use:   "acme",
-	Short: "store the login data of the ACME application into a password tresor (supported linux keyring) ",
+	Short: "store the login data of the ACME application into a PasswordSafe (supported linux keyring) ",
 	Long:  ``,
 	Run:   LoginACMECb,
 }
@@ -79,7 +79,7 @@ var LoginACME = &cobra.Command{
 // keyring Add HEAD COMMAND without a subcommand
 var LoginCommand = &cobra.Command{
 	Use:   "login",
-	Short: "store secrets of DNS backend / ACME in a password tresor, lifetime(this session)  (supported linux keyring)",
+	Short: "store secrets of DNS backend / ACME in a PasswordSafe, lifetime(this session)  (supported linux keyring)",
 	Long:  ``,
 	Run:   LoginCmdCb,
 }
@@ -104,12 +104,10 @@ func initLogin() {
 	LoginCommand.PersistentFlags().Lookup("stdout").NoOptDefVal = "true"
 	LoginCommand.PersistentFlags().BoolVarP(&GetPasswordFromTerminal, "terminal", "", false, "Force the output of the token to stdout")
 	LoginCommand.PersistentFlags().Lookup("terminal").NoOptDefVal = "true"
-	// -id == --user
 	// ACME
 	LoginACME.PersistentFlags().StringVarP(&LoginACMEID, "id", "i", vip.GetString("acme.user"), "Id/User of ACME [$DNS3L_ACME_ID] ")
 	LoginACME.PersistentFlags().StringVarP(&LoginACMESecret, "secret", "s", vip.GetString("acme.pass"), " Secret/password of ACME [$DNS3L_ACME_SECRET] ")
 	// DNS
-	// DELETE 2 Zeilen
 	LoginDNS.PersistentFlags().StringVarP(&LoginDNSID, "id", "i", vip.GetString("dns.id"), "Id/User of DNS backend [$DNS3L_DNS_ID] ")
 	LoginDNS.PersistentFlags().StringVarP(&LoginDNSSecret, "secret", "s", vip.GetString("dns.secret"), "Secret/pass of  DNS Backend [$DNS3L_DNS_SECRET] ")
 	LoginDNS.PersistentFlags().StringVarP(&LoginDNSBackend, "backend", "b", vip.GetString("dns.backend"), "points to the configuration for this DNS backend [$DNS3L_DNS_BACKEND]")

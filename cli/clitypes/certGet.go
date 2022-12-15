@@ -93,7 +93,6 @@ func (CertGet *CertGetType) PrintParams() {
 		fmt.Fprintf(os.Stderr, "Mode          	     '%s' \n", Mode2String(CertGet.Mode))
 		fmt.Fprintf(os.Stderr, "FQDN                 '%s' is OK '%t' \n", CertGet.FQDN, CheckTypeOfFQDN(CertGet.FQDN))
 	}
-	// fmt.Printf("THIS COMMAND IS NOT IMPLEMENTED YET\n")
 }
 
 // CheckParams prints the parameters of the command cert get
@@ -124,7 +123,6 @@ func (CertGet *CertGetType) DoCommand() {
 	if CertGet.Verbose {
 		fmt.Fprintf(os.Stderr, "INFO: Command CERT GET: API-END_POINT'%v' \n", getCertPemUrl)
 	}
-	// nih durch ioReader ersetzen
 	req, err := http.NewRequest("GET", getCertPemUrl, nil)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "ERROR: Command cert get full chain: url='%v' Error'%v' \n", getCertPemUrl, err.Error())
@@ -164,9 +162,7 @@ func (CertGet *CertGetType) DoCommand() {
 	default:
 		outData = aPEMFullChain.Fullchain
 	}
-	// output ??? may cause some Problems in pipeline processing
-	// fmt.Fprintf(os.Stdout, "%v\n", resp.StatusCode)
-	//Json Output
+	// create Json Output
 	outDataJSON, _ := json.MarshalIndent(outData, "\t", "\t")
 	// Screen oder JSON File output
 	if CertGet.JSONOutput {

@@ -26,7 +26,7 @@ type DNSDelType struct {
 	Backend    string
 	ID         string
 	Secret     string
-	UseTresor  bool
+	UsePWSafe  bool
 	FQDN       string
 	Type       string
 	Data       string
@@ -34,18 +34,18 @@ type DNSDelType struct {
 }
 
 // Init inits the parameters of the command dns del
-func (dnsDel *DNSDelType) Init(verbose bool, jsonOutput bool, backend string, id string, secret string, useTresor bool, args []string) {
+func (dnsDel *DNSDelType) Init(verbose bool, jsonOutput bool, backend string, id string, secret string, usePWSafe bool, args []string) {
 	dnsDel.Verbose = verbose
 	dnsDel.JSONOutput = jsonOutput
 	dnsDel.Backend = backend
 	dnsDel.ID = id
 	dnsDel.Secret = secret
-	dnsDel.UseTresor = useTresor
+	dnsDel.UsePWSafe = usePWSafe
 	dnsDel.FQDN = args[0]
 	dnsDel.Type = args[1]
 	dnsDel.Data = args[2]
 	// viper read the config from the requested DNS provider from the yaml file with the help of viper
-	dnsDel.P = setProvider(backend, id, secret, useTresor, verbose)
+	dnsDel.P = setProvider(backend, id, secret, usePWSafe, verbose)
 
 }
 
@@ -58,7 +58,7 @@ func (dnsDel *DNSDelType) PrintParams() {
 		fmt.Fprintf(os.Stderr, "Backend  	'%s' \n", dnsDel.Backend)
 		fmt.Fprintf(os.Stderr, "User / Id 	      '%s' \n", dnsDel.ID)
 		fmt.Fprintf(os.Stderr, "Password / Secret '%s' \n", dnsDel.Secret)
-		fmt.Fprintf(os.Stderr, "Use Tresor	'%v' \n", dnsDel.UseTresor)
+		fmt.Fprintf(os.Stderr, "Use Password Safe	'%v' \n", dnsDel.UsePWSafe)
 		fmt.Fprintf(os.Stderr, "dnsFQDN         '%s' Check:='%t' \n", dnsDel.FQDN, CheckTypeOfFQDN(dnsDel.FQDN))
 		fmt.Fprintf(os.Stderr, "dnsType         '%s' Check:='%t'\n", dnsDel.Type, CheckTypeOfDNSRecord(dnsDel.Type))
 		fmt.Fprintf(os.Stderr, "dnsData         '%s' Check:='%t'\n", dnsDel.Data, CheckTypeOfData(dnsDel.Data, dnsDel.Type))
