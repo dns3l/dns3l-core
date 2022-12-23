@@ -49,6 +49,8 @@ SERVICE_TIMEOUT=${SERVICE_TIMEOUT:-300s} # wait for dependencies
 
 echo Running: "$@"
 
+export DNS3L_FQDN=${DNS3L_FQDN:-localhost}
+
 export DNS3L_URL=${DNS3L_URL:-"https://localhost"}
 export DNS3L_EMAIL=${DNS3L_EMAIL:-'["info@example.com"]'}
 export DNS3L_AUTH_URL=${DNS3L_AUTH_URL:-"https://auth:5554/auth"}
@@ -79,6 +81,16 @@ fi
 # Avoid destroying bootstrapping by simple start/stop
 if [[ ! -e ${DNS3LPATH}/.bootstrapped ]]; then
   ### list none idempotent code blocks, here...
+
+  # make frontnet auth endpoint(s) available via backnet
+  ingress=$(getent hosts ingress | cut -f1 -d' ')
+  if [ -n $ingress ]; then
+    for h in ${DNS3L_FQDN}; do
+      echo "$ingress $h" | sudo tee -a /etc/hosts >/dev/null
+    done
+  else
+    echo Oooops. Discovering ingress IP failed.
+  fi
 
   touch ${DNS3LPATH}/.bootstrapped
 fi
