@@ -49,6 +49,8 @@ SERVICE_TIMEOUT=${SERVICE_TIMEOUT:-300s} # wait for dependencies
 
 echo Running: "$@"
 
+export DNS3L_FQDN=${DNS3L_FQDN:-localhost}
+
 export DNS3L_URL=${DNS3L_URL:-"https://localhost"}
 export DNS3L_EMAIL=${DNS3L_EMAIL:-'["info@example.com"]'}
 export DNS3L_AUTH_URL=${DNS3L_AUTH_URL:-"https://auth:5554/auth"}
@@ -71,10 +73,24 @@ production=false
 if [[ ${ENVIRONMENT,,} == "production" ]]; then
   production=true
 fi
+renewal=true
+if [[ ${DNS3L_RENEWAL,,} == "false" ]]; then
+  renewal=false
+fi
 
 # Avoid destroying bootstrapping by simple start/stop
 if [[ ! -e ${DNS3LPATH}/.bootstrapped ]]; then
   ### list none idempotent code blocks, here...
+
+  # make frontnet auth endpoint(s) available via backnet
+  ingress=$(getent hosts ingress | cut -f1 -d' ')
+  if [ -n "$ingress" ]; then
+    for h in ${DNS3L_FQDN}; do
+      echo "$ingress $h" | sudo tee -a /etc/hosts >/dev/null
+    done
+  else
+    echo Oooops. Discovering ingress IP failed.
+  fi
 
   touch ${DNS3LPATH}/.bootstrapped
 fi
@@ -134,7 +150,11 @@ fi
 /dckrz -wait tcp://${DNS3L_DB_HOST}:3306 -timeout ${SERVICE_TIMEOUT} -- /app/dns3ld dbcreate
 
 if [[ `basename ${1}` == "dns3ld" ]]; then # prod
+  if [ "${renewal}" == "true" ]; then
     exec "$@" </dev/null #>/dev/null 2>&1
+  else
+    exec /app/dns3ld --renew=false -s :8880 -c ${DNS3LPATH}/config.yaml </dev/null #>/dev/null 2>&1
+  fi
 else # dev
     /app/dns3ld -s :8880 -c ${DNS3LPATH}/config.yaml || true
 fi
