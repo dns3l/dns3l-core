@@ -156,6 +156,8 @@ auth:
       #immediately. Otherwise, will retry on first request.
       force_on_startup: false
 
+      #Time until a TCP handshake fails (optional)
+      #tcp_timeout: 3s
   # https://other.issuer.com/auth
   #   ...
 

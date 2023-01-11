@@ -5,9 +5,11 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/coreos/go-oidc"
 	"github.com/dns3l/dns3l-core/common"
@@ -31,9 +33,10 @@ type OIDCHandler struct {
 }
 
 type OIDCBinding struct {
-	ClientID               string `yaml:"client_id" validate:"required"`
-	HTTPInsecureSkipVerify bool   `yaml:"http_insecure_skip_verify"`
-	ForceOnStartup         bool   `yaml:"force_on_startup"`
+	ClientID               string        `yaml:"client_id" validate:"required"`
+	HTTPInsecureSkipVerify bool          `yaml:"http_insecure_skip_verify"`
+	ForceOnStartup         bool          `yaml:"force_on_startup"`
+	TCPTimeout             time.Duration `yaml:"tcp_timeout"`
 
 	provider *oidc.Provider
 	verifier *oidc.IDTokenVerifier
@@ -47,8 +50,19 @@ type ClaimsInfo struct {
 }
 
 func createNewOIDCBinding(binding *OIDCBinding, issuer string, onStartup bool) error {
+
+	var dialContext func(ctx context.Context, network string, addr string) (net.Conn, error)
+
+	if binding.TCPTimeout != 0 {
+		dialContext = (&net.Dialer{
+			Timeout:   binding.TCPTimeout,
+			KeepAlive: 30 * time.Second,
+		}).DialContext
+	}
+
 	myClient := &http.Client{
 		Transport: &http.Transport{
+			DialContext:     dialContext,
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: binding.HTTPInsecureSkipVerify},
 		},
 	}
