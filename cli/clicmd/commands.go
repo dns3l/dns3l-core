@@ -122,7 +122,7 @@ func init() {
 	// becasue that we can set the default values for the cobra flags during intitalisation
 	// but we need this otherwise we get an ERROR from cobra
 	rootCmd.PersistentFlags().StringVarP(&ConfigDummy, "config", "c", "", "Configuration  yaml file ")
-	rootCmd.PersistentFlags().Lookup("config").NoOptDefVal = "Value_is_never_used"
+	rootCmd.PersistentFlags().Lookup("config").NoOptDefVal = "dns3lcli.yaml"
 	// global flags are implemented as persistent flags on the rootCmd
 	// the settings behind the command has a higher priority than the shell variable
 	rootCmd.PersistentFlags().BoolVarP(&Verbose, "debug", "v", vip.GetBool("debug"), "Enable more output")
@@ -194,7 +194,7 @@ func initViperConfig() {
 	if Verbose {
 		fmt.Fprintf(os.Stderr, "INFO: Using config file: '%s' \n", Config)
 	}
-	if !parseCommandLineForHelp() {
+	if !(parseCommandLineForHelp() || parseCommandLineForVersionCommand()) {
 		vip.SetConfigName(Config) // name of config file (without extension)
 		err := vip.ReadInConfig() // Find and read the config file
 		if err != nil {           // Handle errors reading the config file
@@ -241,6 +241,16 @@ func parseCommandLineForConfig() (string, bool) {
 func parseCommandLineForHelp() bool {
 	for _, v := range os.Args {
 		if strings.EqualFold(v, "-h") || strings.EqualFold(v, "--help") {
+			return true
+		}
+	}
+	return false
+}
+
+// parse version
+func parseCommandLineForVersionCommand() bool {
+	for _, v := range os.Args {
+		if strings.EqualFold(v, "version") || strings.EqualFold(v, "Version") {
 			return true
 		}
 	}

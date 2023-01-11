@@ -102,7 +102,7 @@ func initLogin() {
 
 	LoginCommand.PersistentFlags().BoolVarP(&LoginForceOStream, "stdout", "", false, "Force the output of the token to stdout")
 	LoginCommand.PersistentFlags().Lookup("stdout").NoOptDefVal = "true"
-	LoginCommand.PersistentFlags().BoolVarP(&GetPasswordFromTerminal, "terminal", "", false, "Force the output of the token to stdout")
+	LoginCommand.PersistentFlags().BoolVarP(&GetPasswordFromTerminal, "terminal", "", false, "Force the input of the password/token from stdin")
 	LoginCommand.PersistentFlags().Lookup("terminal").NoOptDefVal = "true"
 	// ACME
 	LoginACME.PersistentFlags().StringVarP(&LoginACMEID, "id", "i", vip.GetString("acme.user"), "Id/User of ACME [$DNS3L_ACME_ID] ")
