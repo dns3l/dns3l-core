@@ -137,9 +137,6 @@ func DNSAddCmdCb(ccmd *cobra.Command, args []string) {
 			fmt.Fprintf(os.Stdout, "FAIL\n DNS record '%s' not added \n'%v'\n", dnsAdd.FQDN, err.Error())
 		} else {
 			fmt.Fprintf(os.Stdout, "OK\n Add DNS record := '%v'", dnsAdd.FQDN)
-			if Verbose {
-				fmt.Fprintf(os.Stderr, "SUCCESS: DNS record added %s  %s %d\n", dnsAdd.FQDN, ipAddr.String(), dnsAdd.Seconds)
-			}
 		}
 	}
 }

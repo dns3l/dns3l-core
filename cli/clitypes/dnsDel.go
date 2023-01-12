@@ -29,7 +29,6 @@ type DNSDelType struct {
 	UsePWSafe  bool
 	FQDN       string
 	Type       string
-	Data       string
 	P          types.DNSProvider
 }
 
@@ -43,7 +42,6 @@ func (dnsDel *DNSDelType) Init(verbose bool, jsonOutput bool, backend string, id
 	dnsDel.UsePWSafe = usePWSafe
 	dnsDel.FQDN = args[0]
 	dnsDel.Type = args[1]
-	dnsDel.Data = args[2]
 	// viper read the config from the requested DNS provider from the yaml file with the help of viper
 	dnsDel.P = setProvider(backend, id, secret, usePWSafe, verbose)
 
@@ -61,7 +59,6 @@ func (dnsDel *DNSDelType) PrintParams() {
 		fmt.Fprintf(os.Stderr, "Use Password Safe	'%v' \n", dnsDel.UsePWSafe)
 		fmt.Fprintf(os.Stderr, "dnsFQDN         '%s' Check:='%t' \n", dnsDel.FQDN, CheckTypeOfFQDN(dnsDel.FQDN))
 		fmt.Fprintf(os.Stderr, "dnsType         '%s' Check:='%t'\n", dnsDel.Type, CheckTypeOfDNSRecord(dnsDel.Type))
-		fmt.Fprintf(os.Stderr, "dnsData         '%s' Check:='%t'\n", dnsDel.Data, CheckTypeOfData(dnsDel.Data, dnsDel.Type))
 		PrintDNSProvider(dnsDel.P)
 	}
 }
@@ -76,10 +73,6 @@ func (dnsDel *DNSDelType) CheckParams() bool {
 	if !CheckTypeOfDNSRecord(dnsDel.Type) {
 		OK = false
 		fmt.Fprintf(os.Stderr, "ERROR: Command DNS DEL dnsType  '%s'  is not valid \n", dnsDel.Type)
-	}
-	if !CheckTypeOfData(dnsDel.Data, dnsDel.Type) {
-		OK = false
-		fmt.Fprintf(os.Stderr, "ERROR: Command DNS DEL dnsData  '%s'  is not valid \n", dnsDel.Data)
 	}
 	vip := viper.GetViper()
 	host := vip.GetString("dns.providers." + dnsDel.Backend + ".host")
