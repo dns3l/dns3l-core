@@ -185,7 +185,7 @@ func initViperConfig() {
 	vip.BindEnv("cert.wildcard", viperShellPrefix+"_CERT_WILDCARD") //nolint:errcheck
 	vip.BindEnv("cert.autodns", viperShellPrefix+"_CERT_AUTODNS")   //nolint:errcheck
 	vip.BindEnv("cert.modeFull", viperShellPrefix+"_CERT_MODE")     //nolint:errcheck
-	vip.BindEnv("cert.api", viperShellPrefix+"_CERT__API")          //nolint:errcheck
+	vip.BindEnv("cert.api", viperShellPrefix+"_CERT_API")           //nolint:errcheck
 
 	// if in the commandline was no --config
 	if Config == "" {

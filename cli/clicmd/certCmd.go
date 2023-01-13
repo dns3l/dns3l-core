@@ -55,8 +55,8 @@ push  ... FQDN CRT.pem CHN.pem
 		CHN.pem		Concatenated intermediate and root cert chain PEM
 ============================================
 Flags for aLL commands
-	-a, --api   	| DNS3L API endpoint [$DNS3L_API]
-	-c, --ca        | Claim from a specific ACME CA [$DNS3L_CA]
+	-a, --api   	| DNS3L API endpoint [$DNS3L_CERT_API]
+	-c, --ca        | Claim from a specific ACME CA [$DNS3L_CERT_CA]
 	-t, --tok       | Access token for ACME
 
 
@@ -69,7 +69,7 @@ All Arguments
 */
 
 // CertAPIEndPoint DNS3L backend API endpoint
-// -a, --api       | DNS backend API endpoint [$DNS3L_CERT_DNSAPI]
+// -a, --api       | DNS backend API endpoint [$DNS3L_CERT_API]
 var CertAPIEndPoint string
 
 // CertAPIEndPointDefaultNoOpt DNS backend API endpoint noOpt default
