@@ -13,7 +13,7 @@ import (
 
 // AccountData holds a the data for accessing DNS3l via DEX
 type ClientAppData struct {
-	OicdUrl      string `json:"oicd_url"`
+	OidcUrl      string `json:"oidc_url"`
 	ClientId     string `json:"client_id"`
 	ClientSecret string `json:"client_scret"`
 }
@@ -54,7 +54,7 @@ type LoginACMEType struct {
 }
 
 func (loginData *LoginACMEType) GetOpenIdConfiguration() (*OpenIdInfo, error) {
-	resp, err := http.Get(loginData.ClientInfo.OicdUrl)
+	resp, err := http.Get(loginData.ClientInfo.OidcUrl)
 	// make sure to close the body
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "ERROR: Request for OpenIdConfiguration of the ACME failed\n")
@@ -122,7 +122,7 @@ func (loginData *LoginACMEType) GetDEXToken(msg *OpenIdInfo) (*TokenInfo, error)
 func (loginData *LoginACMEType) Init(verbose bool, id string, pass string, forceOStream bool, fromTerminal bool) {
 	vip := viper.GetViper()
 	var clientInfoViper ClientAppData
-	clientInfoViper.OicdUrl = vip.GetString("acme.oicdUrl")
+	clientInfoViper.OidcUrl = vip.GetString("acme.oidcUrl")
 	clientInfoViper.ClientId = vip.GetString("acme.clientId") // Anwendung
 	clientInfoViper.ClientSecret = vip.GetString("acme.clientSecret")
 	// this are the values out of VIPER  Config and ENVIROMENT of SHELL
@@ -149,8 +149,8 @@ func (loginData *LoginACMEType) PrintParams() {
 		} else {
 			fmt.Fprintf(os.Stderr, "INFO: ACMEProviderSecret '%v'\n", loginData.ACMEProviderPASS[0:2])
 		}
-		fmt.Fprintf(os.Stderr, "INFO: DATA READ FROM KONFIG FILE / ENVIROMENT ==========================\n")
-		fmt.Fprintf(os.Stderr, "INFO: acme.OicdUrl='%v'\n", loginData.ClientInfo.OicdUrl)
+		fmt.Fprintf(os.Stderr, "INFO: DATA READ FROM KONFIG FILE / ENVIROMENT \n")
+		fmt.Fprintf(os.Stderr, "INFO: acme.OicdUrl='%v'\n", loginData.ClientInfo.OidcUrl)
 		fmt.Fprintf(os.Stderr, "INFO: acme.ClientId='%v'\n", loginData.ClientInfo.ClientId) // Anwendung
 		fmt.Fprintf(os.Stderr, "INFO: acme.ClientSecret='%v'\n", loginData.ClientInfo.ClientSecret)
 	}
@@ -158,7 +158,7 @@ func (loginData *LoginACMEType) PrintParams() {
 
 func (loginData *LoginACMEType) CheckParams() bool {
 	// || accountInfo.ClientSecret == ""
-	if loginData.ClientInfo.OicdUrl == "" ||
+	if loginData.ClientInfo.OidcUrl == "" ||
 		loginData.ClientInfo.ClientId == "" ||
 		loginData.ACMEProviderID == "" ||
 		(loginData.ACMEProviderPASS == "" && !loginData.FromTerminal) {

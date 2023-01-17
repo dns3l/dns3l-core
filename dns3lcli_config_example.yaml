@@ -50,7 +50,7 @@ cert:
   modefull: true
   accessToken: 
 acme:
-  oicdUrl: https://acme.example.com/auth/.well-known/openid-configuration
+  oidcUrl: https://acme.example.com/auth/.well-known/openid-configuration
   clientId: dns3l-example-app   # token for this application is requested
   clientSecret: ""
   user: acmeUser

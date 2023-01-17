@@ -43,7 +43,7 @@ func (CertPush *CertPushType) PrintParams() {
 		fmt.Fprintf(os.Stderr, "CRT.pem      '%s' \n", CertPush.CRTpem)
 		fmt.Fprintf(os.Stderr, "CHN.pem,     '%s' \n", CertPush.CHNpem)
 	}
-	fmt.Fprintf(os.Stderr, "THIS COMMAND IS NOT IMPLEMENTED YET\n")
+	fmt.Fprintf(os.Stderr, "this command is not implemented yet\n")
 }
 
 // CheckParams prints the parameters of the command cert push

@@ -16,7 +16,7 @@ import (
 
 // NotImplemented print the message NOT IMPLENENTED
 func NotImplemented() {
-	fmt.Fprintf(os.Stderr, "\n\n===================================\nTHIS COMMAND IS NOT IMPLEMENTED YET\n===================================\n\n")
+	fmt.Fprintf(os.Stderr, "THIS COMMAND IS NOT IMPLEMENTED YET\n")
 
 }
 
@@ -85,7 +85,7 @@ func setProvider(dnsbackend string, id string, secret string, usePWSafe bool, ve
 		if verbose {
 			fmt.Fprintf(os.Stderr, "INFO setProvider() processing case infblk\n")
 		}
-		influxProvider := infblx.DNSProvider{}
+		infblxProvider := infblx.DNSProvider{}
 		infblxConfig := infblx.Config{}
 		infblxConfig.Name = vip.GetString(providerPath + "name")
 		infblxConfig.Host = vip.GetString(providerPath + "host")
@@ -146,9 +146,9 @@ func setProvider(dnsbackend string, id string, secret string, usePWSafe bool, ve
 		if infblxConfig.DNSView == "" || infblxConfig.SSLVerify == "" {
 			return nil
 		}
-		influxProvider.C = &infblxConfig
+		infblxProvider.C = &infblxConfig
 		// infblx-Provider eine Interface zuweisen
-		dns = &influxProvider
+		dns = &infblxProvider
 		return dns
 	} else if providerT == "otc" {
 		fmt.Fprintf(os.Stderr, "case otc\n")
