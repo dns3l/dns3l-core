@@ -1,0 +1,6 @@
+*.log
+*.txt
+!help.txt
+**.vscode
+dns3lcli
+dns3lcli.exe
