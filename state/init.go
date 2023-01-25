@@ -39,7 +39,14 @@ CREATE TABLE IF NOT EXISTS ` + dbProv.DBName("keycerts") + ` (
 
 func getSQLCreateStatementMySQL(db *sql.DB, dbProv SQLDBProvider) error {
 
-	_, err := db.Exec(`CREATE TABLE IF NOT EXISTS ` + dbProv.DBName("acmeusers") + ` (
+	// Ensure sql_mode is set correctly
+	// Default for MariaDB >= 10.2.4
+	_, err := db.Exec("SET sql_mode = 'STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION';")
+	if err != nil {
+		return err
+	}
+
+	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS ` + dbProv.DBName("acmeusers") + ` (
 	user_id CHAR(255),
 	ca_id CHAR(64),
 	privatekey TEXT,
