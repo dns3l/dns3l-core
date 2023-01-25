@@ -45,6 +45,10 @@ func (c *SQLDBProviderDefault) GetNewDBConn() (*sql.DB, error) {
 	if err != nil {
 		return nil, err
 	}
+	err = c.executeDriverSpecificInit(db)
+	if err != nil {
+		return nil, err
+	}
 	if c.PreExecFunc != nil {
 		err := c.PreExecFunc(db)
 		if err != nil {
@@ -52,6 +56,11 @@ func (c *SQLDBProviderDefault) GetNewDBConn() (*sql.DB, error) {
 		}
 	}
 	return db, nil
+}
+
+func (c *SQLDBProviderDefault) executeDriverSpecificInit(db *sql.DB) error {
+	//Nothing to do at the moment
+	return nil
 }
 
 // TestDBConn connects to the database and sends a sql.DB.Ping() once
