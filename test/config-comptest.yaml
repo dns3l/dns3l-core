@@ -1,0 +1,65 @@
+url: https://foobar.example.com
+adminemail:
+  - admin1@example.com
+  - admin2@example.net
+dns:
+  providers:
+    otc:
+      type: otc
+      name: DNS3L Labs Inc. OTC tenant
+      auth:
+        authurl: https://iam.eu-de.otc.t-systems.com/v3
+        projectname: #omitted
+        projectid: #omitted
+        ak: accesskeyID
+        sk: secretaccesskey
+      ttl:
+        challenge: 60
+        autodns: 3600
+      os-region: eu-de
+      precheck:
+        enabled: true
+        checkNameservers:
+          - 1.2.3.4:53
+          - 5.6.7.8:53
+        precheckInterval: 2s
+        precheckTimeout: 2m
+ca:
+  providers:
+    le-staging:
+      type: acme
+      name: Let's Encrypt
+      catype: public
+      api: https://acme-v02-staging.api.letsencrypt.org/directory
+      url: https://letsencrypt.org
+      roots: https://letsencrypt.org/certificates/
+      description: "Let's Encrypt Staging"
+      logopath: "/images/logo.png"
+      daysRenewBeforeExpiry: 30
+    bogus:
+      type: bogus
+      name: Bogus certificates to test the database
+      catype: public
+      url: https://bogus.org
+      roots: https://bogus.org/certificates/
+      description: "BOGUS certificates"
+      logopath: "/images/bogus.png"
+rtzn:
+  - root: sub1.test.example.com.
+    autodns: otc
+    acmedns: otc
+    ca: ['*'] 
+  - root: sub2.test.example.com.
+    autodns: otc
+    acmedns: otc
+    ca: ['*']
+db:
+  type: mysql
+  url: johndoe:@unix(testdata/db.sock)/dns3ld?parseTime=true
+  dbprefix: dns3l
+
+auth: # will be stubbed. Stub cannot be initiated via
+      # config but only via code,
+      # shall prevent accidental insecure config.
+
+renew: #is disabled

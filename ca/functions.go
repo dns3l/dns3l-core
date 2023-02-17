@@ -11,7 +11,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-//Provides API-close functions with
+// Provides API-close functions with
 type CAFunctionHandler struct {
 	Config *Config
 	State  types.CAStateManager
@@ -60,7 +60,7 @@ func (h *CAFunctionHandler) RenewCertificate(cinfo *types.CertificateRenewInfo) 
 
 }
 
-//if caID is "", list for all CAs
+// if caID is "", list for all CAs
 func (h *CAFunctionHandler) DeleteCertificate(caID, keyID string) error {
 
 	err := common.ValidateKeyName(keyID)
@@ -134,7 +134,12 @@ func (h *CAFunctionHandler) getResourcesNoUpd(keyID, caID string) (*types.Certif
 	}
 	defer sess.Close()
 
-	res, domains, err := sess.GetResources(keyID, caID, "priv_key", "cert", "issuer_cert")
+	domains, err := sess.GetDomains(keyID, caID)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := sess.GetResources(keyID, caID, "priv_key", "cert", "issuer_cert")
 
 	if err != nil {
 		return nil, err
@@ -169,10 +174,15 @@ func (h *CAFunctionHandler) getResourceNoUpd(keyID, caID, objectType string) (*c
 	}
 	defer sess.Close()
 
+	domains, err := sess.GetDomains(keyID, caID)
+	if err != nil {
+		return nil, err
+	}
+
 	switch objectType {
 	case "key":
 		//"resourceName" of sess.GetResource must never be user input > not validated!
-		res, domains, err := sess.GetResource(keyID, caID, "priv_key")
+		res, err := sess.GetResource(keyID, caID, "priv_key")
 		if err != nil {
 			return nil, err
 		}
@@ -182,7 +192,7 @@ func (h *CAFunctionHandler) getResourceNoUpd(keyID, caID, objectType string) (*c
 			Domains:     domains,
 		}, nil
 	case "crt":
-		res, domains, err := sess.GetResource(keyID, caID, "cert")
+		res, err := sess.GetResource(keyID, caID, "cert")
 		if err != nil {
 			return nil, err
 		}
@@ -192,7 +202,7 @@ func (h *CAFunctionHandler) getResourceNoUpd(keyID, caID, objectType string) (*c
 			Domains:     domains,
 		}, nil
 	case "issuer-cert":
-		res, domains, err := sess.GetResource(keyID, caID, "issuer_cert")
+		res, err := sess.GetResource(keyID, caID, "issuer_cert")
 		if err != nil {
 			return nil, err
 		}
@@ -202,7 +212,7 @@ func (h *CAFunctionHandler) getResourceNoUpd(keyID, caID, objectType string) (*c
 			Domains:     domains,
 		}, nil
 	case "fullchain":
-		res, domains, err := sess.GetResources(keyID, caID, "cert", "issuer_cert")
+		res, err := sess.GetResources(keyID, caID, "cert", "issuer_cert")
 		if err != nil {
 			return nil, err
 		}
@@ -217,7 +227,7 @@ func (h *CAFunctionHandler) getResourceNoUpd(keyID, caID, objectType string) (*c
 }
 
 func (h *CAFunctionHandler) GetCertificateInfos(caID string, keyID string,
-	rzFilter []string, pginfo *util.PaginationInfo) ([]types.CACertInfo, error) {
+	authzedDomains []string, pginfo *util.PaginationInfo) ([]types.CACertInfo, error) {
 
 	sess, err := h.State.NewSession()
 	if err != nil {
@@ -225,7 +235,7 @@ func (h *CAFunctionHandler) GetCertificateInfos(caID string, keyID string,
 	}
 	defer sess.Close()
 
-	return sess.ListCACerts(keyID, caID, rzFilter, pginfo)
+	return sess.ListCACerts(keyID, caID, authzedDomains, "", pginfo) //TODO extend api with user query
 
 }
 

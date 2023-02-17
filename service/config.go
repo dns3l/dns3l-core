@@ -19,7 +19,7 @@ type Config struct {
 	CA         *ca.Config                  `yaml:"ca" validate:"required"`
 	RootZones  dns.RootZones               `yaml:"rtzn" validate:"required,dive"`
 	DB         *state.SQLDBProviderDefault `yaml:"db" validate:"required"`   //SQL hard-coded (only here)
-	Auth       *auth.OIDCHandler           `yaml:"auth" validate:"required"` //OIDC hard-coded (only here)
+	Auth       auth.AuthConfig             `yaml:"auth" validate:"required"` //OIDC hard-coded (only here)
 	URL        string                      `yaml:"url" validate:"required,url"`
 	AdminEMail []string                    `yaml:"adminemail" validate:"required,dive,email"`
 	Renew      *RenewConfig                `yaml:"renew"`
@@ -40,7 +40,7 @@ func (c *Config) FromYamlBytes(bytes []byte) error {
 	return yaml.Unmarshal(bytes, c)
 }
 
-//Must be executed after config struct initialization
+// Must be executed after config struct initialization
 func (c *Config) Initialize() error {
 
 	err := defaults.Set(c)

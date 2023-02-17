@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/go-sql-driver/mysql"
 	//_ "github.com/mattn/go-sqlite3"
-	_ "github.com/go-sql-driver/mysql"
 )
 
 // DBProvider provides new sql.DB connections on request. On GetNewDBConn()
@@ -17,6 +17,7 @@ type SQLDBProvider interface {
 	SetDBPreExec(func(*sql.DB) error)
 	DBName(name string) string
 	GetType() string
+	CreateDB() error
 }
 
 // DBProviderDefault is the default database provider. Type and URL must be given,
@@ -30,6 +31,46 @@ type SQLDBProviderDefault struct {
 
 func (c *SQLDBProviderDefault) GetType() string {
 	return c.Type
+}
+
+func getAnonDBDSN(inputdsn string) (string, string, error) {
+	dsn, err := mysql.ParseDSN(inputdsn) //is mysql code, but should work with all DSN-based SQL DBs
+	if err != nil {
+		return "", "", err
+	}
+	oldDBName := dsn.DBName
+	dsn.DBName = "" //because it does not yet exist we cannot connect to the future DB
+	return dsn.FormatDSN(), oldDBName, nil
+}
+
+// Creates the database before setting tables.
+// Returns no error if database already exists.
+func (c *SQLDBProviderDefault) CreateDB() error {
+
+	//DB creation cannot be done over the go MySQL abstraction so we need a quirks here.
+	anondsn, dbname, err := getAnonDBDSN(c.URL)
+	if err != nil {
+		return err
+	}
+
+	dbprov := &SQLDBProviderDefault{
+		Type:        c.Type,
+		URL:         anondsn,
+		PreExecFunc: c.PreExecFunc,
+		DBPrefix:    c.DBPrefix,
+	}
+
+	conn, err := dbprov.GetNewDBConn()
+	if err != nil {
+		return err
+	}
+
+	_, err = conn.Exec(`CREATE DATABASE IF NOT EXISTS ` + dbname + `;`)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // SetDBPreExec sets a function which is executed every time a new database connection is created.

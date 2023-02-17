@@ -22,7 +22,7 @@ import (
 
 const keyBitLength = 2048
 
-//The Engine is created to have a consistent, object-based handle for Autokey operations
+// The Engine is created to have a consistent, object-based handle for Autokey operations
 type Engine struct {
 	CAID    string
 	Conf    *Config
@@ -33,11 +33,11 @@ type Engine struct {
 	RecalcRenewalDate bool
 }
 
-//TriggerUpdate ensures that a key/certificate pair of the given line is available. It expects that the user
-//is authenticated and authorized for the requested domain.
-//It will look up the current state of the user and the key/certificate and ensures that the user and
-//the requested key/cert is present.
-func (e *Engine) TriggerUpdate(acmeuser string, keyname string, keyrz string, domains []string, issuedBy, issuedByEmail string) error {
+// TriggerUpdate ensures that a key/certificate pair of the given line is available. It expects that the user
+// is authenticated and authorized for the requested domain.
+// It will look up the current state of the user and the key/certificate and ensures that the user and
+// the requested key/cert is present.
+func (e *Engine) TriggerUpdate(acmeuser string, keyname string, domains []string, issuedBy, issuedByEmail string) error {
 
 	keyMustExist := acmeuser == "" || len(domains) <= 0
 
@@ -205,8 +205,12 @@ func (e *Engine) TriggerUpdate(acmeuser string, keyname string, keyrz string, do
 	}
 	issuerCertStr := string(certificates.IssuerCertificate)
 
-	return castate.PutCACertData(!noKey, keyname, keyrz, e.CAID, info,
-		certStr, issuerCertStr)
+	if noKey {
+		return castate.PutCACertData(keyname, e.CAID, info, certStr, issuerCertStr)
+	}
+
+	return castate.UpdateCACertData(keyname, e.CAID, info.RenewedTime, info.NextRenewalTime,
+		info.ValidStartTime, info.ValidEndTime, certStr, issuerCertStr)
 
 }
 
@@ -227,12 +231,12 @@ func sanitizeDomains(domains []string) ([]string, error) {
 	return domains, nil
 }
 
-//NewDNSProviderOTC is a factory function for creating a new DNSProviderDNS3L
+// NewDNSProviderOTC is a factory function for creating a new DNSProviderDNS3L
 func (e *Engine) NewDNSProviderDNS3L(ctx types.ProviderConfigurationContext) *DNSProviderWrapper {
 	return &DNSProviderWrapper{Context: ctx}
 }
 
-//The DNSProviderWrapper implements lego's DNS01 validation hook with acmeotc
+// The DNSProviderWrapper implements lego's DNS01 validation hook with acmeotc
 type DNSProviderWrapper struct {
 	Context types.ProviderConfigurationContext
 }

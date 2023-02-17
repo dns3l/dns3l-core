@@ -72,7 +72,7 @@ var dbCreateCmd = &cobra.Command{
 			panic(err)
 		}
 
-		err = state.CreateSQLDB(conf.DB)
+		err = state.CreateSQLTables(conf.DB, false)
 		if err != nil {
 			panic(err)
 		}

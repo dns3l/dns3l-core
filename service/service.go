@@ -1,9 +1,11 @@
 package service
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/dns3l/dns3l-core/service/apiv1"
+	"github.com/dns3l/dns3l-core/service/auth"
 	"github.com/gorilla/mux"
 )
 
@@ -11,6 +13,13 @@ type Service struct {
 	Config  *Config
 	Socket  string
 	NoRenew bool
+
+	server  *http.Server
+	router  *mux.Router
+	running bool
+	runerr  error
+
+	AuthStub auth.RESTAPIAuthProvider
 }
 
 func (s *Service) GetV1() *V1 {
@@ -19,6 +28,52 @@ func (s *Service) GetV1() *V1 {
 
 func (s *Service) Run() error {
 
+	err := s.prepare()
+	if err != nil {
+		return err
+	}
+
+	log.Info("Service starting...")
+
+	return s.runRaw(s.router)
+}
+
+func (s *Service) RunAsync() error {
+
+	err := s.prepare()
+	if err != nil {
+		return err
+	}
+
+	go func() {
+		err := s.runRaw(s.router)
+		if err != nil {
+			if err != http.ErrServerClosed {
+				log.WithError(err).Error("Error occurred while running dns3ld service")
+			} else {
+				log.Info("HTTP server closed")
+			}
+		}
+	}()
+
+	return nil
+
+}
+
+func (s *Service) Stop() error {
+	return s.server.Shutdown(context.Background())
+}
+
+func (s *Service) runRaw(r *mux.Router) error {
+	s.running = true
+	s.server = &http.Server{Addr: s.Socket, Handler: r}
+	err := s.server.ListenAndServe()
+	s.runerr = err
+	s.running = false
+	return err
+}
+
+func (s *Service) prepare() error {
 	if s.NoRenew {
 		log.Info("Disabling automatic cert renewal as per user request.")
 	} else if s.Config.Renew != nil {
@@ -34,14 +89,14 @@ func (s *Service) Run() error {
 
 	r := mux.NewRouter().StrictSlash(true)
 
-	err := s.Config.Auth.Init()
+	err := s.Config.Auth.Provider.Init()
 	if err != nil {
 		return err
 	}
 
 	v1hdlr := &apiv1.RestV1Handler{
 		Service: s.GetV1(),
-		Auth:    s.Config.Auth,
+		Auth:    s.Config.Auth.Provider,
 	}
 	v1hdlr.RegisterHandle(r.PathPrefix("/api/v1").Subrouter())
 	v1hdlr.RegisterHandle(r.PathPrefix("/api").Subrouter())
@@ -51,10 +106,13 @@ func (s *Service) Run() error {
 		return err
 	}
 
-	log.Info("Service starting...")
+	s.router = r
 
-	return http.ListenAndServe(s.Socket, r)
+	return nil
+}
 
+func (s *Service) GetRouter() *mux.Router {
+	return s.router
 }
 
 func (s *Service) startRenewer() error {
