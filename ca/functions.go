@@ -222,7 +222,7 @@ func (h *CAFunctionHandler) getResourceNoUpd(keyID, caID, objectType string) (*c
 			Domains:     domains,
 		}, nil
 	}
-	return nil, &cmn.NotFoundError{RequestedResource: keyID}
+	return nil, &cmn.NotFoundError{RequestedResource: objectType}
 
 }
 

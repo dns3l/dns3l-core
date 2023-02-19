@@ -1,15 +1,16 @@
 package main
 
 import (
-	"fmt"
+	"errors"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"time"
 
 	"github.com/dns3l/dns3l-core/service"
-	"github.com/dns3l/dns3l-core/test/apiv1"
-	testauth "github.com/dns3l/dns3l-core/test/auth"
 	"github.com/dns3l/dns3l-core/test/comp"
+	"github.com/dns3l/dns3l-core/test/runs"
+	"github.com/dns3l/dns3l-core/util"
 	"github.com/sirupsen/logrus"
 )
 
@@ -25,7 +26,9 @@ func main() {
 
 	if os.Args[1] == "tryout" {
 
-		comptest := comp.ComponentTest{}
+		comptest := comp.ComponentTest{
+			TestConfig: filepath.Join(util.GetExecDir(), "test", "config-comptest.yaml"),
+		}
 
 		err := comptest.Exec(func(srv *service.Service) error {
 			time.Sleep(500 * time.Millisecond)
@@ -36,73 +39,50 @@ func main() {
 			panic(err)
 		}
 
-	} else if os.Args[1] == "simplest" {
+	} else if os.Args[1] == "dbfull" {
+
+		testconf := filepath.Join(util.GetExecDir(), "test", "config-comptest.yaml")
+
+		runs.RunDBFull(testconf, "bogus", "test.example.com.", true)
+
+	} else if os.Args[1] == "le-staging" {
+
+		rootdomain := os.Getenv("DNS3L_TEST_ROOTDOMAIN")
+		if rootdomain == "" {
+			panic(errors.New("DNS3L_TEST_ROOTDOMAIN not set"))
+		}
+
+		testconf := os.Getenv("DNS3L_TESTCONFIG")
+		if rootdomain == "" {
+			panic(errors.New("DNS3L_TESTCONFIG not set"))
+		}
+
+		runs.RunDBFull(testconf, "le-staging", rootdomain, false)
+
+	} else if os.Args[1] == "renewexisting" {
 
 		comptest := comp.ComponentTest{
-			StubUsers: map[string]testauth.AuthStubUser{
-				"alice": {
-					Name:  "Alice Doe",
-					Email: "alice@example.com",
-					DomainsAllowed: []string{
-						"sub1.test.example.com.",
-						"sub2.test.example.com.",
-					},
-					WriteAllowed: true,
-					ReadAllowed:  true,
-				},
-				"bob": {
-					Name:  "Alice Doe",
-					Email: "alice@example.com",
-					DomainsAllowed: []string{
-						"sub1.test.example.com.",
-						"bar.sub2.test.example.com.",
-					},
-					WriteAllowed: true,
-					ReadAllowed:  true,
-				},
-				"kilgore": {
-					Name:  "Kilgore Trout",
-					Email: "ktrout@example.com",
-					DomainsAllowed: []string{
-						"sub1.test.example.com.",
-						"sub2.test.example.com.",
-					},
-					WriteAllowed: false,
-					ReadAllowed:  true,
-				},
-			},
+			TestConfig: filepath.Join(util.GetExecDir(), "test", "config-comptest.yaml"),
 		}
 
 		err := comptest.Exec(func(srv *service.Service) error {
+			time.Sleep(500 * time.Millisecond)
 
-			// apiv1.CreateKey("1st key", srv, "alice", "foo.bar.sub1.test.example.com", []string{
-			// 	"alt.foo.bar.sub1.test.example.com",
-			// 	"alt2.foo.bar.sub2.test.example.com",
-			// })
+			certs, err := srv.Config.CA.Functions.ListCertsToRenew(10000)
+			if err != nil {
+				panic(err)
+			}
 
-			// apiv1.CreateKey("2nd key", srv, "alice", "foo.bar.sub2.test.example.com", []string{
-			// 	"alt.foo.bar.sub2.test.example.com",
-			// 	"alt2.foo.bar.sub1.test.example.com",
-			// })
+			if len(certs) <= 0 {
+				log.Warn("No certificates to renew.")
+			}
 
-			// apiv1.CreateKey("3rd key", srv, "bob", "test1.1337.sub1.test.example.com", []string{
-			// 	"alt.test1.1337.sub1.test.example.com",
-			// 	"alt2.test1.1337.sub1.test.example.com",
-			// })
-
-			// log.Infof("Create key 1")
-			// apiv1.CreateKey(srv, "alice", "test2.1337.sub2.test.example.com", []string{
-			// 	"alt.foo.bar.sub2.test.example.com",
-			// 	"alt2.foo.bar.sub1.test.example.com",
-			// })
-
-			log.Infof("List keys")
-			fmt.Println(apiv1.ListKeys(srv, "kilgore"))
-
-			log.Infof("Get Key by ID")
-			fmt.Println(apiv1.GetKeyById(srv, "bob", "foo.bar.sub2.test.example.com"))
-
-			waitUntilSigInt()
+			for i := range certs {
+				err := srv.Config.CA.Functions.RenewCertificate(&certs[i])
+				if err != nil {
+					panic(err)
+				}
+			}
 
 			return nil
 		})

@@ -14,7 +14,7 @@ dns:
         ak: accesskeyID
         sk: secretaccesskey
       ttl:
-        challenge: 60
+        challenge: 300
         autodns: 3600
       os-region: eu-de
       precheck:
@@ -28,14 +28,15 @@ ca:
   providers:
     le-staging:
       type: acme
-      name: Let's Encrypt
+      name: Let's Encrypt Staging
       catype: public
-      api: https://acme-v02-staging.api.letsencrypt.org/directory
+      api: https://acme-staging-v02.api.letsencrypt.org/directory
       url: https://letsencrypt.org
       roots: https://letsencrypt.org/certificates/
       description: "Let's Encrypt Staging"
       logopath: "/images/logo.png"
       daysRenewBeforeExpiry: 30
+      acmeRegisterWithoutEmail: true
     bogus:
       type: bogus
       name: Bogus certificates to test the database
@@ -43,6 +44,14 @@ ca:
       url: https://bogus.org
       roots: https://bogus.org/certificates/
       description: "BOGUS certificates"
+      logopath: "/images/bogus.png"
+    bogus2:
+      type: bogus
+      name: Bogus 2 certificates to test the database
+      catype: public
+      url: https://bogus.org
+      roots: https://bogus.org/certificates/
+      description: "BOGUS 2 certificates"
       logopath: "/images/bogus.png"
 rtzn:
   - root: sub1.test.example.com.

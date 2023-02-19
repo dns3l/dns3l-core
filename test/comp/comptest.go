@@ -1,8 +1,6 @@
 package comp
 
 import (
-	"path/filepath"
-
 	"github.com/dns3l/dns3l-core/service"
 	"github.com/dns3l/dns3l-core/state"
 	testauth "github.com/dns3l/dns3l-core/test/auth"
@@ -13,7 +11,8 @@ import (
 const MariaDB_Port = 15234
 
 type ComponentTest struct {
-	StubUsers map[string]testauth.AuthStubUser
+	TestConfig string
+	StubUsers  map[string]testauth.AuthStubUser
 }
 
 func (c *ComponentTest) Exec(testfn func(*service.Service) error) error {
@@ -58,7 +57,7 @@ func (c *ComponentTest) Exec(testfn func(*service.Service) error) error {
 
 func (c *ComponentTest) prepareTestConfig() (*service.Config, error) {
 
-	confTemplate := filepath.Join(util.GetExecDir(), "test", "config-comptest.yaml")
+	confTemplate := c.TestConfig
 
 	conf := &service.Config{}
 	err := conf.FromFile(confTemplate)

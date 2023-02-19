@@ -223,7 +223,7 @@ func (s *CAStateManagerSQLSession) DelCACertByID(keyID string, caID string) erro
 		util.LogDefer(log, tx.Rollback())
 	}()
 
-	res, err := tx.Exec(`DELETE FROM "+s.prov.Prov.DBName("keycerts")+" WHERE key_name=? AND ca_id=? LIMIT 1;`, keyID, caID)
+	res, err := tx.Exec(`DELETE FROM `+s.prov.Prov.DBName("keycerts")+` WHERE key_name=? AND ca_id=? LIMIT 1;`, keyID, caID)
 	if err != nil {
 		return err
 	}
@@ -232,7 +232,7 @@ func (s *CAStateManagerSQLSession) DelCACertByID(keyID string, caID string) erro
 		return err
 	}
 
-	res, err = s.db.Exec(`DELETE FROM "+s.prov.Prov.DBName("domains")+" WHERE key_name=? AND ca_id=?;`, keyID, caID)
+	res, err = s.db.Exec(`DELETE FROM `+s.prov.Prov.DBName("domains")+` WHERE key_name=? AND ca_id=?;`, keyID, caID)
 	if err != nil {
 		return err
 	}
@@ -302,7 +302,7 @@ func (s *CAStateManagerSQLSession) PutCACertData(keyname string, caid string, in
 	for i, domain := range info.Domains {
 		_, err := tx.Exec(`INSERT INTO `+s.prov.Prov.DBName("domains")+` (dom_name_rev, key_name, ca_id, is_first_domain) `+
 			`VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE key_name=key_name;`,
-			util.StringReverse(domain), keyname, caid, i == 0)
+			util.StringReverse(util.GetDomainFQDNDot(domain)), keyname, caid, i == 0)
 		if err != nil {
 			return err
 		}
@@ -394,7 +394,7 @@ func (s *CAStateManagerSQLSession) DeleteCertAllCA(keyID string) error {
 		util.LogDefer(log, tx.Rollback())
 	}()
 
-	res, err := tx.Exec(`DELETE FROM "+s.prov.Prov.DBName("keycerts")+" WHERE key_name=?;`, keyID)
+	res, err := tx.Exec(`DELETE FROM `+s.prov.Prov.DBName("keycerts")+` WHERE key_name=?;`, keyID)
 	if err != nil {
 		return err
 	}
@@ -403,7 +403,7 @@ func (s *CAStateManagerSQLSession) DeleteCertAllCA(keyID string) error {
 		return err
 	}
 
-	res, err = s.db.Exec(`DELETE FROM "+s.prov.Prov.DBName("domains")+" WHERE key_name=?;`, keyID)
+	res, err = s.db.Exec(`DELETE FROM `+s.prov.Prov.DBName("domains")+` WHERE key_name=?;`, keyID)
 	if err != nil {
 		return err
 	}

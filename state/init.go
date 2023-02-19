@@ -149,3 +149,23 @@ func CreateSQLTables(dbProv SQLDBProvider, createdb bool) error {
 
 	return nil
 }
+
+// Called during the tests
+func Truncate(dbProv SQLDBProvider) error {
+
+	db, err := dbProv.GetNewDBConn()
+	if err != nil {
+		return err
+	}
+
+	for _, table := range []string{"acmeusers", "keycerts", "domains"} {
+		_, err = db.Exec(`TRUNCATE TABLE ` + dbProv.DBName(table) + `;`)
+		if err != nil {
+			return err
+		}
+
+	}
+
+	return nil
+
+}
