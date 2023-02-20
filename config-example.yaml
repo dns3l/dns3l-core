@@ -73,7 +73,10 @@ ca: #ACME and none ACME CA
       url: https://www.telesec.de
       eab: # External Account Bindings
         kid: EAB_KeyId
-        hmac: EAB_HMAC
+        # Note that the HMAC must be given in base64, but in the URL-friendly
+        # safe alphabet according to RFC 4648 Section 5.
+        # Change / to _ and + to -, remove any padding =
+        hmac: AaBbCc_Dd_EfGHiJK
       roots: https://www.telesec.de/en/root-program/root-program/overview/
       description: "Telesec Trust Center ACME Staging"
       logopath: "../logo.png"
