@@ -14,6 +14,19 @@ import (
 
 /* Sub commands dns
 remark: the -h, --help  | Show this message and exit works for all, because there is an auto help!
+
+
+With the help of CreateObject from IBConnector
+CreateObject(ibclient.
+	NewRecordA(p.C.DNSView,"", util.GetDomainNoFQDNDot(domainName), addr.String(), ttl, true, "Created by dns3l", make(ibclient.EA), ""))
+func NewRecordA( view string, zone string, name string, ipAddr string, ttl uint32, useTTL bool, comment string, eas EA, ref string) *RecordA
+NewRecordPTR( dnsView string, ptrdname string, useTtl bool, ttl uint32, comment string, ea EA) *RecordPTR
+
+With IBOObjectManager
+CreateARecord(		netView string, dnsView string, name     string, cidr string,
+	ipAddr string, ttl uint32, useTTL bool, comment string, ea EA) (*RecordA, error)
+CreatePTRRecord(networkView string, dnsView string, ptrdname string, recordName string, cidr string,
+	ipAddr string, useTtl bool, ttl uint32, comment string, eas EA) (*RecordPTR, error)
 -----------------------------------------------------------------------------------------
 dns:
    add     	Add A, CNAME, TXT, ... to DNS backend
@@ -127,9 +140,10 @@ func DNSAddCmdCb(ccmd *cobra.Command, args []string) {
 			dnsDel.Init(Verbose, JSONOutput, Backend, DNSProviderID, DNSProviderSecret, DNSUsePWSafe, args)
 			err := dnsDel.P.DeleteRecordA(dnsDel.FQDN)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "NOTE: DNS ADD This error occures due to Flag force \n which force a delete of the A Record \n this delete fails '%v' continue with add\n", err.Error())
+				fmt.Fprintf(os.Stderr, "Info: DNS ADD Delete of the A Record fails '%v' continue with add\n", err.Error())
+				fmt.Fprintf(os.Stderr, "Info: DNS ADD This occures due to Flag force, which try to delete the record")
 			} else {
-				fmt.Fprintf(os.Stderr, "ERROR: DNS ADD DNS record A deleted due to Flag force\n")
+				fmt.Fprintf(os.Stderr, "INFO: DNS ADD DNS record A deleted successfully due to Flag force\n")
 			}
 		}
 		err := dnsAdd.P.SetRecordA(dnsAdd.FQDN, uint32(dnsAdd.Seconds), ipAddr)
