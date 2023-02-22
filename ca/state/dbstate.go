@@ -24,7 +24,7 @@ type CAStateManagerSQLSession struct {
 }
 
 func (m *CAStateManagerSQL) NewSession() (types.CAStateManagerSession, error) {
-	db, err := m.Prov.GetNewDBConn()
+	db, err := m.Prov.GetDBConn()
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +32,8 @@ func (m *CAStateManagerSQL) NewSession() (types.CAStateManagerSession, error) {
 }
 
 func (s *CAStateManagerSQLSession) Close() error {
-	return s.db.Close()
+	//Nothing to do
+	return nil
 }
 
 var caCertsQueryColumns = []string{
@@ -219,9 +220,7 @@ func (s *CAStateManagerSQLSession) DelCACertByID(keyID string, caID string) erro
 	if err != nil {
 		return err
 	}
-	defer func() {
-		util.LogDefer(log, tx.Rollback())
-	}()
+	defer util.RollbackIfNotCommitted(log, tx)
 
 	res, err := tx.Exec(`DELETE FROM `+s.prov.Prov.DBName("keycerts")+` WHERE key_name=? AND ca_id=? LIMIT 1;`, keyID, caID)
 	if err != nil {
@@ -281,9 +280,7 @@ func (s *CAStateManagerSQLSession) PutCACertData(keyname string, caid string, in
 	if err != nil {
 		return err
 	}
-	defer func() {
-		util.LogDefer(log, tx.Rollback())
-	}()
+	defer util.RollbackIfNotCommitted(log, tx)
 
 	log.Debugf("Storing new cert/key pair '%s' for user '%s' in database",
 		keyname, info.ACMEUser)

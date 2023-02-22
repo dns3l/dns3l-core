@@ -74,6 +74,14 @@ func (s *Service) runRaw(r *mux.Router) error {
 }
 
 func (s *Service) prepare() error {
+
+	db := s.Config.DB
+
+	err := db.Init()
+	if err != nil {
+		return err
+	}
+
 	if s.NoRenew {
 		log.Info("Disabling automatic cert renewal as per user request.")
 	} else if s.Config.Renew != nil {
@@ -89,7 +97,7 @@ func (s *Service) prepare() error {
 
 	r := mux.NewRouter().StrictSlash(true)
 
-	err := s.Config.Auth.Provider.Init()
+	err = s.Config.Auth.Provider.Init()
 	if err != nil {
 		return err
 	}

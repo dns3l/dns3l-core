@@ -32,6 +32,11 @@ func (c *ComponentTest) Exec(testfn func(*service.Service) error) error {
 		return err
 	}
 
+	err = conf.DB.Init()
+	if err != nil {
+		return err
+	}
+
 	err = state.CreateSQLTables(conf.DB, true)
 	if err != nil {
 		return err

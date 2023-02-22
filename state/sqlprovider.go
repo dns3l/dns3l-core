@@ -2,6 +2,7 @@ package state
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
@@ -13,7 +14,7 @@ import (
 // an object *sql.DB is returned.
 // Optionally, if set, executes the function provided in SetDBPreExec() first.
 type SQLDBProvider interface {
-	GetNewDBConn() (*sql.DB, error)
+	GetDBConn() (*sql.DB, error)
 	SetDBPreExec(func(*sql.DB) error)
 	DBName(name string) string
 	GetType() string
@@ -27,6 +28,43 @@ type SQLDBProviderDefault struct {
 	URL         string `yaml:"url" validate:"required"`
 	PreExecFunc func(*sql.DB) error
 	DBPrefix    string `yaml:"dbprefix" validate:"alphanumUnderscoreDashDot"`
+
+	db *sql.DB
+}
+
+func (c *SQLDBProviderDefault) Init() error {
+
+	if c.db != nil {
+		log.Warn("Unnecessary init, DB already inited.")
+		return nil
+	}
+
+	db, err := sql.Open(c.Type, c.URL)
+	if err != nil {
+		return err
+	}
+	err = c.executeDriverSpecificInit(db)
+	if err != nil {
+		return err
+	}
+
+	c.db = db
+	return nil
+
+}
+
+func (c *SQLDBProviderDefault) checkInited() error {
+	if c.db == nil {
+		return errors.New("Database has not been initialized before first use")
+	}
+	return nil
+}
+
+func (c *SQLDBProviderDefault) GetStats() (sql.DBStats, error) {
+	if err := c.checkInited(); err != nil {
+		return sql.DBStats{}, err
+	}
+	return c.db.Stats(), nil
 }
 
 func (c *SQLDBProviderDefault) GetType() string {
@@ -60,7 +98,12 @@ func (c *SQLDBProviderDefault) CreateDB() error {
 		DBPrefix:    c.DBPrefix,
 	}
 
-	conn, err := dbprov.GetNewDBConn()
+	err = dbprov.Init()
+	if err != nil {
+		return err
+	}
+
+	conn, err := dbprov.GetDBConn()
 	if err != nil {
 		return err
 	}
@@ -81,22 +124,18 @@ func (c *SQLDBProviderDefault) SetDBPreExec(preExecFunc func(*sql.DB) error) {
 
 // GetNewDBConn returns a freshly opened sql.DB object. Optionally, if set, executes the function
 // set with SetDBPreExec() which can do modifications on sql.DB before it returns the database object.
-func (c *SQLDBProviderDefault) GetNewDBConn() (*sql.DB, error) {
-	db, err := sql.Open(c.Type, c.URL)
-	if err != nil {
+func (c *SQLDBProviderDefault) GetDBConn() (*sql.DB, error) {
+	if err := c.checkInited(); err != nil {
 		return nil, err
 	}
-	err = c.executeDriverSpecificInit(db)
-	if err != nil {
-		return nil, err
-	}
+
 	if c.PreExecFunc != nil {
-		err := c.PreExecFunc(db)
+		err := c.PreExecFunc(c.db)
 		if err != nil {
 			return nil, fmt.Errorf("error while executing pre-execution function in database connection: %v", err)
 		}
 	}
-	return db, nil
+	return c.db, nil
 }
 
 func (c *SQLDBProviderDefault) executeDriverSpecificInit(db *sql.DB) error {
@@ -107,7 +146,7 @@ func (c *SQLDBProviderDefault) executeDriverSpecificInit(db *sql.DB) error {
 // TestDBConn connects to the database and sends a sql.DB.Ping() once
 func (c *SQLDBProviderDefault) TestDBConn() error {
 	log.Debug("Testing DB connection...")
-	db, err := c.GetNewDBConn()
+	db, err := c.GetDBConn()
 	if err != nil {
 		return fmt.Errorf("problems while obtaining established database connection: %v", err)
 	}

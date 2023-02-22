@@ -43,7 +43,7 @@ func main() {
 
 		testconf := filepath.Join(util.GetExecDir(), "test", "config-comptest.yaml")
 
-		runs.RunDBFull(testconf, "bogus", "test.example.com.", true)
+		runs.RunDBFull(testconf, "bogus", "test.example.com.", true, 100)
 
 	} else if os.Args[1] == "le-staging" {
 
@@ -57,7 +57,7 @@ func main() {
 			panic(errors.New("DNS3L_TESTCONFIG not set"))
 		}
 
-		runs.RunDBFull(testconf, "le-staging", rootdomain, false)
+		runs.RunDBFull(testconf, "le-staging", rootdomain, false, 1)
 
 	} else if os.Args[1] == "renewexisting" {
 

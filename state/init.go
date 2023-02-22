@@ -126,7 +126,7 @@ func createWithMySQL(db *sql.DB, dbProv SQLDBProvider, createdb bool) error {
 
 func CreateSQLTables(dbProv SQLDBProvider, createdb bool) error {
 
-	db, err := dbProv.GetNewDBConn()
+	db, err := dbProv.GetDBConn()
 	if err != nil {
 		return err
 	}
@@ -153,7 +153,7 @@ func CreateSQLTables(dbProv SQLDBProvider, createdb bool) error {
 // Called during the tests
 func Truncate(dbProv SQLDBProvider) error {
 
-	db, err := dbProv.GetNewDBConn()
+	db, err := dbProv.GetDBConn()
 	if err != nil {
 		return err
 	}

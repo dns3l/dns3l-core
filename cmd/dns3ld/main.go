@@ -58,7 +58,7 @@ var rootCmd = &cobra.Command{
 var dbCreateCmd = &cobra.Command{
 	Use:   "dbcreate",
 	Short: "Create database structure",
-	Long: `Creates the database structure given the database driver and DB
+	Long: `Creates the database and the table structure given the database driver and DB
 	connection information in the config file`,
 	Run: func(cmd *cobra.Command, args []string) {
 
@@ -66,13 +66,24 @@ var dbCreateCmd = &cobra.Command{
 		if err != nil {
 			panic(err)
 		}
+
+		tablesonly, err := cmd.PersistentFlags().GetBool("tablesonly")
+		if err != nil {
+			panic(err)
+		}
+
 		conf := service.Config{}
 		err = conf.FromFile(confPath)
 		if err != nil {
 			panic(err)
 		}
 
-		err = state.CreateSQLTables(conf.DB, false)
+		err = conf.DB.Init()
+		if err != nil {
+			panic(err)
+		}
+
+		err = state.CreateSQLTables(conf.DB, !tablesonly)
 		if err != nil {
 			panic(err)
 		}
@@ -87,6 +98,10 @@ func Execute() error {
 	rootCmd.PersistentFlags().BoolP("renew", "r", true,
 		`Whether automatic cert renewal jobs should run. Useful if multiple instances run on the
 		same DB and you want to disable renewal for the replicas, which is not yet thread-safe.`)
+
+	dbCreateCmd.PersistentFlags().BoolP("tablesonly", "t", false,
+		`Do not try to attempt creating the DB, only create the tables`)
+
 	rootCmd.AddCommand(dbCreateCmd)
 	return rootCmd.Execute()
 }
