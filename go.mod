@@ -4,7 +4,6 @@ go 1.18
 
 require (
 	github.com/Masterminds/squirrel v1.5.3
-	github.com/arriqaaq/art v0.1.2
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/creasty/defaults v1.6.0
 	github.com/go-acme/lego/v4 v4.7.0
