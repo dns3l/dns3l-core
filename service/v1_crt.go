@@ -10,7 +10,6 @@ import (
 	cacommon "github.com/dns3l/dns3l-core/ca/common"
 	"github.com/dns3l/dns3l-core/ca/types"
 	"github.com/dns3l/dns3l-core/common"
-	"github.com/dns3l/dns3l-core/dns"
 	dnstypes "github.com/dns3l/dns3l-core/dns/types"
 	"github.com/dns3l/dns3l-core/service/apiv1"
 	"github.com/dns3l/dns3l-core/service/auth"
@@ -18,7 +17,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func (s *V1) ClaimCertificate(caID string, cinfo *apiv1.CertClaimInfo, authz *auth.AuthorizationInfo) error {
+func (s *V1) ClaimCertificate(caID string, cinfo *apiv1.CertClaimInfo, authz auth.AuthorizationInfo) error {
 	fu := s.Service.Config.CA.Functions
 
 	s.logAction(authz, fmt.Sprintf("ClaimCertificate %s", caID))
@@ -38,7 +37,7 @@ func (s *V1) ClaimCertificate(caID string, cinfo *apiv1.CertClaimInfo, authz *au
 
 	domains := append([]string{firstDomain}, cinfo.SubjectAltNames...)
 
-	err := checkAllowedToUseDomains(s.Service.Config.RootZones, authz, domains, false, true)
+	err := authz.CheckAllowedToAccessDomains(domains, false, true)
 	if err != nil {
 		return err
 	}
@@ -85,7 +84,7 @@ func (s *V1) ClaimCertificate(caID string, cinfo *apiv1.CertClaimInfo, authz *au
 
 	}
 
-	if strings.TrimSpace(authz.Email) == "" {
+	if strings.TrimSpace(authz.GetEmail()) == "" {
 		return &common.UnauthzedError{Msg: "the user's email address has not been provided by the auth provider, required for claiming certificate"}
 	}
 
@@ -93,8 +92,8 @@ func (s *V1) ClaimCertificate(caID string, cinfo *apiv1.CertClaimInfo, authz *au
 		Name:          cinfo.Name,
 		NameRZ:        namerz.Root,
 		Domains:       domains,
-		IssuedBy:      authz.Name,
-		IssuedByEmail: authz.Email,
+		IssuedBy:      authz.GetName(),
+		IssuedByEmail: authz.GetEmail(),
 	})
 
 	if err != nil {
@@ -116,7 +115,7 @@ func (s *V1) ClaimCertificate(caID string, cinfo *apiv1.CertClaimInfo, authz *au
 
 }
 
-func (s *V1) DeleteCertificate(caID, crtID string, authz *auth.AuthorizationInfo) error {
+func (s *V1) DeleteCertificate(caID, crtID string, authz auth.AuthorizationInfo) error {
 
 	s.logAction(authz, fmt.Sprintf("DeleteCertificate %s %s", caID, crtID))
 
@@ -125,7 +124,7 @@ func (s *V1) DeleteCertificate(caID, crtID string, authz *auth.AuthorizationInfo
 	fu := s.Service.Config.CA.Functions
 
 	// SANs are not checked for deletion permission at the moment...
-	err := checkAllowedToUseDomain(s.Service.Config.RootZones, authz, crtID, false, true)
+	err := authz.CheckAllowedToAccessDomain(crtID, false, true)
 	if err != nil {
 		return err
 	}
@@ -134,7 +133,7 @@ func (s *V1) DeleteCertificate(caID, crtID string, authz *auth.AuthorizationInfo
 
 }
 
-func (s *V1) GetCertificateResource(caID, crtID, obj string, authz *auth.AuthorizationInfo) (string, string, error) {
+func (s *V1) GetCertificateResource(caID, crtID, obj string, authz auth.AuthorizationInfo) (string, string, error) {
 
 	s.logAction(authz, fmt.Sprintf("GetCertificateResource %s %s %s", caID, crtID, obj))
 
@@ -147,7 +146,7 @@ func (s *V1) GetCertificateResource(caID, crtID, obj string, authz *auth.Authori
 	}
 
 	//GetCertificateResource does not modify anything, so check permissions after request...
-	err = checkAllowedToUseDomains(s.Service.Config.RootZones, authz, res.Domains, true, false)
+	err = authz.CheckAllowedToAccessDomains(res.Domains, true, false)
 	if err != nil {
 		return "", "", err
 	}
@@ -156,7 +155,7 @@ func (s *V1) GetCertificateResource(caID, crtID, obj string, authz *auth.Authori
 
 }
 
-func (s *V1) GetAllCertResources(caID, crtID string, authz *auth.AuthorizationInfo) (*apiv1.CertResources, error) {
+func (s *V1) GetAllCertResources(caID, crtID string, authz auth.AuthorizationInfo) (*apiv1.CertResources, error) {
 
 	s.logAction(authz, fmt.Sprintf("GetAllCertResources %s %s", caID, crtID))
 
@@ -169,8 +168,8 @@ func (s *V1) GetAllCertResources(caID, crtID string, authz *auth.AuthorizationIn
 		return nil, err
 	}
 
-	//GetCertificateResources does not modify anything, so check permissions after request...
-	err = checkAllowedToUseDomains(s.Service.Config.RootZones, authz, r.Domains, true, false)
+	//GetCertificateResources does not modify anything, so check permissions after request when we know the domains...
+	err = authz.CheckAllowedToAccessDomains(r.Domains, true, false)
 	if err != nil {
 		return nil, err
 	}
@@ -184,9 +183,9 @@ func (s *V1) GetAllCertResources(caID, crtID string, authz *auth.AuthorizationIn
 	}, nil
 }
 
-//if caID and/or crtID is "", infos will not be filtered on that value.
+// if caID and/or crtID is "", infos will not be filtered on that value.
 // Cannot filter for both
-func (s *V1) GetCertificateInfos(caID string, crtID string, authz *auth.AuthorizationInfo, pginfo *util.PaginationInfo) ([]apiv1.CertInfo, error) {
+func (s *V1) GetCertificateInfos(caID string, crtID string, authz auth.AuthorizationInfo, pginfo *util.PaginationInfo) ([]apiv1.CertInfo, error) {
 
 	s.logAction(authz, fmt.Sprintf("GetCertificateInfos %s %s", caID, crtID))
 
@@ -198,13 +197,13 @@ func (s *V1) GetCertificateInfos(caID string, crtID string, authz *auth.Authoriz
 
 	fu := s.Service.Config.CA.Functions
 
-	rz := authz.GetRootzones()
+	doms := authz.GetDomainsAllowed()
 
-	if len(rz) <= 0 && !authz.AuthorizationDisabled {
-		return nil, &common.UnauthzedError{Msg: "No authorization for any rootzones"}
+	if len(doms) <= 0 && !authz.IsAuthzDisabled() {
+		return nil, &common.UnauthzedError{Msg: "No authorization for any domains"}
 	}
 
-	r, err := fu.GetCertificateInfos(caID, crtID, rz, pginfo)
+	r, err := fu.GetCertificateInfos(caID, crtID, doms, pginfo)
 	if err != nil {
 		return nil, err
 	}
@@ -220,7 +219,7 @@ func (s *V1) GetCertificateInfos(caID string, crtID string, authz *auth.Authoriz
 
 }
 
-func (s *V1) GetCertificateInfo(caID string, crtID string, authz *auth.AuthorizationInfo) (*apiv1.CertInfo, error) {
+func (s *V1) GetCertificateInfo(caID string, crtID string, authz auth.AuthorizationInfo) (*apiv1.CertInfo, error) {
 
 	s.logAction(authz, fmt.Sprintf("GetCertificateInfo %s %s", caID, crtID))
 
@@ -228,8 +227,8 @@ func (s *V1) GetCertificateInfo(caID string, crtID string, authz *auth.Authoriza
 
 	fu := s.Service.Config.CA.Functions
 
-	//GetCertificateResources does not modify anything, so check permissions after request...
-	err := checkAllowedToUseDomain(s.Service.Config.RootZones, authz, crtID, true, false)
+	// TODO: do we need to implement SAN permissions check?
+	err := authz.CheckAllowedToAccessDomain(crtID, true, false)
 	if err != nil {
 		return nil, err
 	}
@@ -253,7 +252,7 @@ func (s *V1) GetCertificateInfo(caID string, crtID string, authz *auth.Authoriza
 
 }
 
-func (s *V1) DeleteCertificatesAllCA(crtID string, authz *auth.AuthorizationInfo) error {
+func (s *V1) DeleteCertificatesAllCA(crtID string, authz auth.AuthorizationInfo) error {
 
 	s.logAction(authz, fmt.Sprintf("DeleteCertificatesAllCA %s", crtID))
 
@@ -261,7 +260,7 @@ func (s *V1) DeleteCertificatesAllCA(crtID string, authz *auth.AuthorizationInfo
 
 	fu := s.Service.Config.CA.Functions
 
-	err := checkAllowedToUseDomain(s.Service.Config.RootZones, authz, crtID, false, true)
+	err := authz.CheckAllowedToAccessDomain(crtID, false, true)
 	if err != nil {
 		return err
 	}
@@ -302,48 +301,9 @@ func isValid(cinfo *types.CACertInfo) bool {
 	return now.Before(cinfo.ValidEndTime) && now.After(cinfo.ValidStartTime)
 }
 
-//This is defined as having
 func isWildcard(domains []string) bool {
 	if len(domains) <= 0 {
 		return false
 	}
 	return util.IsWildcard(domains[0])
-}
-
-func checkAllowedToUseDomains(zones dns.RootZones, authz *auth.AuthorizationInfo, domains []string,
-	read bool, write bool) error {
-
-	rzs, err := getRootZonesForDomains(zones, domains)
-	if err != nil {
-		return err
-	}
-
-	return authz.CheckAllowedToAccessZones(rzs, read, write)
-
-}
-
-func checkAllowedToUseDomain(zones dns.RootZones, authz *auth.AuthorizationInfo, domain string,
-	read bool, write bool) error {
-
-	rz, err := zones.GetLowestRZForDomain(domain)
-	if err != nil {
-		return err
-	}
-
-	return authz.CheckAllowedToAccessZone(rz.Root, read, write)
-
-}
-
-func getRootZonesForDomains(zones dns.RootZones, domains []string) ([]string, error) {
-	result := make([]string, len(domains))
-	for i, domain := range domains {
-		lowest_rz, err := zones.GetLowestRZForDomain(domain)
-		if err != nil {
-			return nil, err
-		}
-		result[i] = lowest_rz.Root
-	}
-
-	return result, nil
-
 }

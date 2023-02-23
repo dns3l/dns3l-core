@@ -24,7 +24,7 @@ type CAStateManagerSQLSession struct {
 }
 
 func (m *CAStateManagerSQL) NewSession() (types.CAStateManagerSession, error) {
-	db, err := m.Prov.GetNewDBConn()
+	db, err := m.Prov.GetDBConn()
 	if err != nil {
 		return nil, err
 	}
@@ -32,20 +32,9 @@ func (m *CAStateManagerSQL) NewSession() (types.CAStateManagerSession, error) {
 }
 
 func (s *CAStateManagerSQLSession) Close() error {
-	return s.db.Close()
+	//Nothing to do
+	return nil
 }
-
-const caCertsQueryElements = `key_name,
-priv_key,
-acme_user,
-issued_by,
-issued_by_email,
-domains,
-claim_time,
-renewed_time,
-valid_start_time,
-valid_end_time,
-cert`
 
 var caCertsQueryColumns = []string{
 	"key_name",
@@ -53,7 +42,6 @@ var caCertsQueryColumns = []string{
 	"acme_user",
 	"issued_by",
 	"issued_by_email",
-	"domains",
 	"claim_time",
 	"renewed_time",
 	"valid_start_time",
@@ -62,7 +50,8 @@ var caCertsQueryColumns = []string{
 }
 
 func (s *CAStateManagerSQLSession) GetCACertByID(keyname string, caid string) (*types.CACertInfo, error) {
-	rows, err := s.db.Query(`SELECT `+caCertsQueryElements+`
+
+	rows, err := s.db.Query(`SELECT `+strings.Join(caCertsQueryColumns, ",")+`
 	FROM `+s.prov.Prov.DBName("keycerts")+` 
 	WHERE key_name=? AND ca_id=? LIMIT 1;`,
 		keyname, caid)
@@ -75,36 +64,118 @@ func (s *CAStateManagerSQLSession) GetCACertByID(keyname string, caid string) (*
 	if !rows.Next() {
 		return nil, nil
 	}
-	err = s.rowToCACertInfo(rows, info)
+	err = rows.Scan(&info.Name, &info.PrivKey, &info.ACMEUser, &info.IssuedByUser, &info.IssuedByEmail,
+		&info.ClaimTime, &info.RenewedTime, &info.ValidStartTime, &info.ValidEndTime, &info.CertPEM)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	} else if err != nil {
 		return nil, err
 	}
+
+	info.Domains, err = s.GetDomains(keyname, caid)
+	if err != nil {
+		if _, ok := err.(*common.NotFoundError); ok {
+			return nil, fmt.Errorf("no domains found for requested keyname %s: %w", keyname, err)
+		}
+		return nil, err
+	}
+
 	return info, nil
 
 }
 
-func (s *CAStateManagerSQLSession) ListCACerts(keyName string, caid string, rzFilter []string,
-	pginfo *util.PaginationInfo) ([]types.CACertInfo, error) {
-	q := squirrel.Select(caCertsQueryColumns...).From(s.prov.Prov.DBName("keycerts"))
-	filters := make(squirrel.Eq, 0)
+func domainToReverseQueryForm(domain string) string {
+
+	ndomain := util.StringReverse(util.GetDomainFQDNDot(domain))
+	//ensure backend standard form and then reverse
+
+	if strings.HasSuffix(ndomain, ".") {
+		return ndomain
+	}
+	return ndomain + ".%" //thus we cannot break out to equal-suffixed higher-level domains
+
+}
+
+func domainReverseDBFormToNormal(domainRev string) string {
+	return util.StringReverse(domainRev)
+}
+
+func constructListCACertsQuery(dbn func(name string) string, keyName string, caid string,
+	authzFilter []string, queryFilter string, pginfo *util.PaginationInfo) (string, []interface{}) {
+
+	//Note that we will never filter for keyName and caid at the same time.
+	//It will just ignore one of the filters
+
+	filters := make([]string, 0, 10)
+	filterParams := make([]interface{}, 0, 10)
+
 	if keyName != "" {
-		filters["key_name"] = keyName
+		filters = append(filters, "key_name = ?")
+		filterParams = append(filterParams, keyName)
 	}
 	if caid != "" {
-		filters["ca_id"] = caid
-	}
-	if len(rzFilter) > 0 {
-		filters["key_rz"] = rzFilter
-	}
-	q = q.Where(filters)
-	if pginfo != nil {
-		q = q.Limit(pginfo.Limit).Offset(pginfo.Offset)
+		filters = append(filters, "ca_id = ?")
+		filterParams = append(filterParams, caid)
 	}
 
-	rows, err := q.RunWith(s.db).Query()
+	if queryFilter != "" {
+		filters = append(filters, "dom_name_rev LIKE ?")
+		filterParams = append(filterParams, domainToReverseQueryForm(queryFilter))
+	}
+
+	if len(authzFilter) > 0 {
+		filterAuth := make([]string, 0, 10)
+		for _, elem := range authzFilter {
+			filterAuth = append(filterAuth, "dom_name_rev LIKE ?")
+			filterParams = append(filterParams, domainToReverseQueryForm(elem))
+		}
+		filters = append(filters, fmt.Sprintf("(%s)", strings.Join(filterAuth, " OR ")))
+	}
+
+	filtersStr := strings.Join(filters, " AND ")
+
+	if filtersStr != "" {
+		filtersStr = "AND " + filtersStr
+	}
+
+	var paginationsql string
+	if pginfo != nil {
+		paginationsql = pginfo.MakeSQL()
+	} else {
+		paginationsql = ""
+	}
+
+	return `SELECT
+		` + keycertsDistinctQueryStr(dbn) + `
+		GROUP_CONCAT(` + dbn("domains") + `.dom_name_rev)
+		FROM ` + dbn("domains") + ` JOIN ` + dbn("keycerts") + ` USING (key_name, ca_id) WHERE
+		(` + dbn("keycerts") + `.key_name, ` + dbn("keycerts") + `.ca_id) IN (
+				select key_name, ca_id FROM ` + dbn("domains") + ` WHERE
+					is_first_domain=true ` + filtersStr + `
+				GROUP BY key_name, ca_id
+				ORDER BY is_first_domain desc, ` + dbn("domains") + `.dom_name_rev
+			)
+		GROUP BY key_name, ca_id` + paginationsql + `;`, filterParams
+}
+
+func keycertsDistinctQueryStr(dbn func(name string) string) string {
+	myQCString := ""
+	qcprefix := dbn("keycerts") + "."
+	for i := range caCertsQueryColumns {
+		myQCString += qcprefix + caCertsQueryColumns[i] + ","
+	}
+	return myQCString
+}
+
+func (s *CAStateManagerSQLSession) ListCACerts(keyName string, caid string, authzFilter []string,
+	queryFilter string, pginfo *util.PaginationInfo) ([]types.CACertInfo, error) {
+
+	q, params := constructListCACertsQuery(s.prov.Prov.DBName, keyName, caid,
+		authzFilter, queryFilter, pginfo)
+
+	rows, err := s.db.Query(q, params...)
 	if err != nil {
+		log.Debugf("Failing query was %s", q)
 		return nil, err
 	}
 	defer rows.Close()
@@ -127,133 +198,232 @@ func (s *CAStateManagerSQLSession) ListCACerts(keyName string, caid string, rzFi
 }
 
 func (s *CAStateManagerSQLSession) rowToCACertInfo(rows *sql.Rows, info *types.CACertInfo) error {
-	var domainsStr string
+	var domainsRevStr string
 	err := rows.Scan(&info.Name, &info.PrivKey, &info.ACMEUser, &info.IssuedByUser, &info.IssuedByEmail,
-		&domainsStr, &info.ClaimTime, &info.RenewedTime, &info.ValidStartTime, &info.ValidEndTime, &info.CertPEM)
+		&info.ClaimTime, &info.RenewedTime, &info.ValidStartTime, &info.ValidEndTime, &info.CertPEM, &domainsRevStr)
 	if err != nil {
 		return err
 	}
 
-	info.Domains = strings.Split(domainsStr, ",")
+	info.Domains = strings.Split(domainsRevStr, ",")
+
+	for i := range info.Domains {
+		info.Domains[i] = domainReverseDBFormToNormal(info.Domains[i])
+	}
 
 	return nil
 }
 
 func (s *CAStateManagerSQLSession) DelCACertByID(keyID string, caID string) error {
-	res, err := s.db.Exec("DELETE FROM "+s.prov.Prov.DBName("keycerts")+" WHERE key_name=? AND ca_id=?;",
-		keyID, caID)
-	//TODO "LIMIT 1" not working in sqlite3
 
-	if err == nil {
-		count, err := res.RowsAffected()
-		if err != nil {
-			return err
-		}
-		if count <= 0 {
-			return &common.NotFoundError{RequestedResource: keyID}
-		}
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer util.RollbackIfNotCommitted(log, tx)
+
+	res, err := tx.Exec(`DELETE FROM `+s.prov.Prov.DBName("keycerts")+` WHERE key_name=? AND ca_id=? LIMIT 1;`, keyID, caID)
+	if err != nil {
+		return err
+	}
+	affected1, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	res, err = s.db.Exec(`DELETE FROM `+s.prov.Prov.DBName("domains")+` WHERE key_name=? AND ca_id=?;`, keyID, caID)
+	if err != nil {
+		return err
+	}
+	affected2, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if affected1 <= 0 && affected2 <= 0 {
+		return &common.NotFoundError{RequestedResource: keyID}
+	}
+	if (affected1 > 0) != (affected2 > 0) {
+		log.Error("Entry has been in keycerts but not in domains table or vice versa - " +
+			"this should not happen. Deleted certificate's remains.")
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return err
 	}
 
 	return err
 
 }
 
-func (s *CAStateManagerSQLSession) PutCACertData(update bool, keyname string, keyrz string, caid string, info *types.CACertInfo,
-	certStr, issuerCertStr string) error {
-	domainsStr := strings.Join(info.Domains, ",")
+func (s *CAStateManagerSQLSession) UpdateCACertData(keyname string, caid string, renewedTime, nextRenewalTime,
+	validStartTime, validEndTime time.Time, certStr, issuerCertStr string) error {
 
-	if update {
-		log.Debugf("Updating certificate data for key '%s' in database",
-			keyname)
-		_, err := s.db.Exec(`UPDATE `+s.prov.Prov.DBName("keycerts")+` SET cert=?, issuer_cert=?, `+
-			`acme_user=?, issued_by=?, issued_by_email=?, domains=?, renewed_time=?, next_renewal_time=?, valid_start_time=?,
-			valid_end_time=?, renew_count = renew_count + 1 WHERE key_name=? AND ca_id=?;`,
-			certStr, issuerCertStr, info.ACMEUser, info.IssuedByUser, info.IssuedByEmail, domainsStr,
-			info.RenewedTime.UTC(), info.NextRenewalTime.UTC(), info.ValidStartTime.UTC(),
-			info.ValidEndTime.UTC(), keyname, caid)
-		if err != nil {
-			return fmt.Errorf("problem while storing new cert for existing key in database: %v",
-				err)
-		}
-		return nil
+	log.Debugf("Updating certificate data for key '%s' in database",
+		keyname)
+	_, err := s.db.Exec(`UPDATE `+s.prov.Prov.DBName("keycerts")+` SET cert=?, issuer_cert=?, `+
+		`renewed_time=?, next_renewal_time=?, valid_start_time=?,
+				valid_end_time=?, renew_count = renew_count + 1 WHERE key_name=? AND ca_id=?;`,
+		certStr, issuerCertStr, renewedTime, nextRenewalTime, validStartTime, validEndTime, keyname, caid)
+	if err != nil {
+		return fmt.Errorf("problem while storing new cert for existing key in database: %w",
+			err)
 	}
+	return nil
+}
+
+func (s *CAStateManagerSQLSession) PutCACertData(keyname string, caid string, info *types.CACertInfo,
+	certStr, issuerCertStr string) error {
+
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer util.RollbackIfNotCommitted(log, tx)
 
 	log.Debugf("Storing new cert/key pair '%s' for user '%s' in database",
 		keyname, info.ACMEUser)
-	_, err := s.db.Exec(`INSERT INTO `+s.prov.Prov.DBName("keycerts")+` (key_name, key_rz, ca_id,`+
-		`acme_user, issued_by, issued_by_email, priv_key, cert, issuer_cert, domains, claim_time,
-		renewed_time, next_renewal_time, valid_start_time, valid_end_time, renew_count) `+
-		`values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0);`,
-		keyname, keyrz, caid, info.ACMEUser, info.IssuedByUser, info.IssuedByEmail,
+	_, err = tx.Exec(`INSERT INTO `+s.prov.Prov.DBName("keycerts")+` (key_name, ca_id,`+
+		`acme_user, issued_by, issued_by_email, priv_key, cert, issuer_cert, claim_time,
+	renewed_time, next_renewal_time, valid_start_time, valid_end_time, renew_count) `+
+		`values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0);`,
+		keyname, caid, info.ACMEUser, info.IssuedByUser, info.IssuedByEmail,
 		info.PrivKey, certStr,
-		issuerCertStr, domainsStr, info.ClaimTime.UTC(), info.RenewedTime.UTC(),
+		issuerCertStr, info.ClaimTime.UTC(), info.RenewedTime.UTC(),
 		info.NextRenewalTime.UTC(), info.ValidStartTime.UTC(), info.ValidEndTime.UTC())
 	if err != nil {
-		return fmt.Errorf("problem while storing new key and cert in database: %v", err)
+		return fmt.Errorf("problem while storing new key and cert in database: %w", err)
 	}
 
-	return nil
+	for i, domain := range info.Domains {
+		_, err := tx.Exec(`INSERT INTO `+s.prov.Prov.DBName("domains")+` (dom_name_rev, key_name, ca_id, is_first_domain) `+
+			`VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE key_name=key_name;`,
+			util.StringReverse(util.GetDomainFQDNDot(domain)), keyname, caid, i == 0)
+		if err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
 
 }
 
-func (s *CAStateManagerSQLSession) GetResource(keyName, caid, resourceName string) (string, []string, error) {
+// Needed for authz
+func (s *CAStateManagerSQLSession) GetDomains(keyName, caid string) ([]string, error) {
 
-	returns, domains, err := s.GetResources(keyName, caid, resourceName)
+	rows, err := s.db.Query(`SELECT dom_name_rev FROM `+s.prov.Prov.DBName("domains")+` 
+	WHERE key_name=? AND ca_id=? ORDER BY is_first_domain DESC;`, keyName, caid)
 	if err != nil {
-		return "", nil, err
+		return nil, err
+	}
+
+	defer func() {
+		util.LogDefer(log, rows.Close())
+	}()
+
+	domains := make([]string, 0, 10)
+	for rows.Next() {
+		domainsRevStr := ""
+		err := rows.Scan(&domainsRevStr)
+		if err != nil {
+			return nil, err
+		}
+		domains = append(domains, domainReverseDBFormToNormal(domainsRevStr))
+	}
+
+	err = rows.Err()
+	if err != nil {
+		return nil, err
+	}
+
+	if len(domains) <= 0 {
+		return nil, &common.NotFoundError{RequestedResource: keyName}
+	}
+
+	return domains, nil
+}
+
+func (s *CAStateManagerSQLSession) GetResource(keyName, caid, resourceName string) (string, error) {
+
+	returns, err := s.GetResources(keyName, caid, resourceName)
+	if err != nil {
+		return "", err
 	}
 	if returns == nil {
-		return "", nil, nil
+		return "", nil
 	}
-	return returns[0], domains, nil
+	return returns[0], nil
 }
 
-func (s *CAStateManagerSQLSession) GetResources(keyName, caid string, resourceNames ...string) ([]string, []string, error) {
-
-	var domainsStr string
+func (s *CAStateManagerSQLSession) GetResources(keyName, caid string, resourceNames ...string) ([]string, error) {
 
 	returns := make([]string, len(resourceNames))
-	returnsPtr := make([]interface{}, len(resourceNames)+1)
+	returnsPtr := make([]interface{}, len(resourceNames))
 	for i := range returnsPtr {
 		//hackity hack
-		if i == 0 {
-			returnsPtr[0] = &domainsStr
-		} else {
-			returnsPtr[i] = &returns[i-1]
-		}
+		returnsPtr[i] = &returns[i]
 	}
 
 	// TODO: validate -> just to be sure it is not wrongly used in the future.
 	// #nosec G202 (dbFieldName is never user input!)
-	row := s.db.QueryRow(`SELECT domains,`+strings.Join(resourceNames, ",")+` FROM `+s.prov.Prov.DBName("keycerts")+` WHERE key_name=? 
-	AND ca_id=? LIMIT 1`, keyName, caid)
+	row := s.db.QueryRow(`SELECT `+strings.Join(resourceNames, ",")+` FROM `+s.prov.Prov.DBName("keycerts")+` 
+	WHERE key_name=? AND ca_id=? LIMIT 1;`, keyName, caid)
 
 	err := row.Scan(returnsPtr...)
 	if err == sqlraw.ErrNoRows {
-		return nil, nil, &common.NotFoundError{RequestedResource: keyName}
+		return nil, &common.NotFoundError{RequestedResource: keyName}
 	}
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	return returns, strings.Split(domainsStr, ","), nil
+	return returns, nil
 }
 
 func (s *CAStateManagerSQLSession) DeleteCertAllCA(keyID string) error {
-	res, err := s.db.Exec("DELETE FROM "+s.prov.Prov.DBName("keycerts")+" WHERE key_name=?;",
-		keyID)
 
-	if err == nil {
-		count, err := res.RowsAffected()
-		if err != nil {
-			return err
-		}
-		if count <= 0 {
-			return &common.NotFoundError{RequestedResource: keyID}
-		}
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer func() {
+		util.LogDefer(log, tx.Rollback())
+	}()
+
+	res, err := tx.Exec(`DELETE FROM `+s.prov.Prov.DBName("keycerts")+` WHERE key_name=?;`, keyID)
+	if err != nil {
+		return err
+	}
+	affected1, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	res, err = s.db.Exec(`DELETE FROM `+s.prov.Prov.DBName("domains")+` WHERE key_name=?;`, keyID)
+	if err != nil {
+		return err
+	}
+	affected2, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if affected1 <= 0 && affected2 <= 0 {
+		return &common.NotFoundError{RequestedResource: keyID}
+	}
+	if (affected1 > 0) != (affected2 > 0) {
+		log.Error("Entry has been in keycerts but not in domains table or vice versa - " +
+			"this should not happen. Deleted certificate's remains.")
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return err
 	}
 
 	return err
+
 }
 
 func (s *CAStateManagerSQLSession) GetNumberOfCerts(caID string,

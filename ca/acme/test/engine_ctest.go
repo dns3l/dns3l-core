@@ -95,7 +95,7 @@ func TestWithLEStaging() {
 		State: casm,
 	}
 
-	err = state.CreateSQLDB(dbprov)
+	err = state.CreateSQLTables(dbprov, true)
 	if err != nil {
 		panic(err)
 	}
@@ -105,7 +105,7 @@ func TestWithLEStaging() {
 	acmeuser := "testacmeuser1"
 	issuedByEmail := "leo@nobach.net"
 
-	domainName1, zone1, err := dnscommon.MakeNewDomainName4Test(c.DNSTest.TestableZones[dnsProvider].Zones)
+	domainName1, _, err := dnscommon.MakeNewDomainName4Test(c.DNSTest.TestableZones[dnsProvider].Zones)
 	if err != nil {
 		panic(err)
 	}
@@ -114,7 +114,7 @@ func TestWithLEStaging() {
 		panic(err)
 	}
 
-	err = e.TriggerUpdate(acmeuser, domainName1, zone1, []string{domainName1, domainName2},
+	err = e.TriggerUpdate(acmeuser, domainName1, []string{domainName1, domainName2},
 		issuedBy, issuedByEmail)
 	if err != nil {
 		var norenew *acme.NoRenewalDueError
@@ -127,7 +127,7 @@ func TestWithLEStaging() {
 	}
 
 	//this should trigger updating the existing key while getting details from database
-	err = e.TriggerUpdate("", domainName1, "", nil, "", "")
+	err = e.TriggerUpdate("", domainName1, nil, "", "")
 	if err != nil {
 		var norenew *acme.NoRenewalDueError
 		if errors.As(err, &norenew) {

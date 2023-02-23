@@ -193,8 +193,6 @@ func (p *DNSProvider) getHighestPrefixZoneFor(c ibclient.IBConnector, dnsView,
 		return nil, fmt.Errorf("no appropriate zone could be found for domain name %s", domainName)
 	}
 
-	fmt.Println(longestZone.Fqdn)
-
 	return longestZone, nil
 
 }

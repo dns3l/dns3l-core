@@ -86,7 +86,7 @@ func (hdlr *RestV1Handler) GetCA(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id, idSet := vars["id"]
 	if !idSet {
-		httpError(w, r, 500, "'id' not set")
+		httpError(w, r, 400, "'id' not set")
 		return
 	}
 
@@ -106,7 +106,7 @@ func (hdlr *RestV1Handler) HandleCAAnonCert(w http.ResponseWriter, r *http.Reque
 	vars := mux.Vars(r)
 	caID, idSet := vars["id"]
 	if !idSet {
-		httpError(w, r, 500, "'caID' not set")
+		httpError(w, r, 400, "'caID' not set")
 		return
 	}
 
@@ -146,14 +146,14 @@ func (hdlr *RestV1Handler) HandleCAAnonCert(w http.ResponseWriter, r *http.Reque
 
 		err = hdlr.Service.ClaimCertificate(caID, cinfo, authz)
 		if err != nil {
-			httpError(w, r, 500, err.Error())
+			httpErrorFromErr(w, r, err)
 			return
 		}
 		w.WriteHeader(200)
 		success(w, r)
 		return
 	} else {
-		httpError(w, r, 500, "Wrong method")
+		httpError(w, r, 400, "Wrong method")
 		return
 	}
 
@@ -164,12 +164,12 @@ func (hdlr *RestV1Handler) HandleCANamedCert(w http.ResponseWriter, r *http.Requ
 	vars := mux.Vars(r)
 	caID, idSet := vars["caID"]
 	if !idSet {
-		httpError(w, r, 500, "'caID' not set")
+		httpError(w, r, 400, "'caID' not set")
 		return
 	}
 	crtID, idSet := vars["crtID"]
 	if !idSet {
-		httpError(w, r, 500, "'crtID' not set")
+		httpError(w, r, 400, "'crtID' not set")
 		return
 	}
 
@@ -202,7 +202,7 @@ func (hdlr *RestV1Handler) HandleCANamedCert(w http.ResponseWriter, r *http.Requ
 		success(w, r)
 		return
 	} else {
-		httpError(w, r, 500, "Wrong method")
+		httpError(w, r, 400, "Wrong method")
 		return
 	}
 
@@ -213,12 +213,12 @@ func (hdlr *RestV1Handler) HandleCertObjs(w http.ResponseWriter, r *http.Request
 	vars := mux.Vars(r)
 	caID, idSet := vars["caID"]
 	if !idSet {
-		httpError(w, r, 500, "'caID' not set")
+		httpError(w, r, 400, "'caID' not set")
 		return
 	}
 	crtID, idSet := vars["crtID"]
 	if !idSet {
-		httpError(w, r, 500, "'crtID' not set")
+		httpError(w, r, 400, "'crtID' not set")
 		return
 	}
 
@@ -233,7 +233,7 @@ func (hdlr *RestV1Handler) HandleCertObjs(w http.ResponseWriter, r *http.Request
 
 		obj, err := hdlr.Service.GetAllCertResources(caID, crtID, authz)
 		if err != nil {
-			httpError(w, r, 500, err.Error())
+			httpErrorFromErr(w, r, err)
 			return
 		}
 
@@ -248,7 +248,7 @@ func (hdlr *RestV1Handler) HandleCertObjs(w http.ResponseWriter, r *http.Request
 		return
 
 	}
-	httpError(w, r, 500, "Wrong method")
+	httpError(w, r, 400, "Wrong method")
 }
 
 func (hdlr *RestV1Handler) HandleNamedCertObj(w http.ResponseWriter, r *http.Request) {
@@ -257,20 +257,20 @@ func (hdlr *RestV1Handler) HandleNamedCertObj(w http.ResponseWriter, r *http.Req
 	caID, set := vars["caID"]
 	if !set {
 		w.Header().Add("Content-Type", "application/json")
-		httpError(w, r, 500, "'caID' not set")
+		httpError(w, r, 400, "'caID' not set")
 		return
 	}
 	crtID, set := vars["crtID"]
 	if !set {
 		w.Header().Add("Content-Type", "application/json")
-		httpError(w, r, 500, "'crtID' not set")
+		httpError(w, r, 400, "'crtID' not set")
 		return
 	}
 
 	obj, set := vars["obj"]
 	if !set {
 		w.Header().Add("Content-Type", "application/json")
-		httpError(w, r, 500, "'obj' not set")
+		httpError(w, r, 400, "'obj' not set")
 		return
 	}
 
@@ -285,7 +285,7 @@ func (hdlr *RestV1Handler) HandleNamedCertObj(w http.ResponseWriter, r *http.Req
 		res, ctype, err := hdlr.Service.GetCertificateResource(caID, crtID, obj, authz)
 		if err != nil {
 			w.Header().Add("Content-Type", "application/json")
-			httpError(w, r, 500, err.Error())
+			httpErrorFromErr(w, r, err)
 			return
 		}
 
@@ -297,7 +297,7 @@ func (hdlr *RestV1Handler) HandleNamedCertObj(w http.ResponseWriter, r *http.Req
 		return
 	}
 	w.Header().Add("Content-Type", "application/json")
-	httpError(w, r, 500, "Wrong method")
+	httpError(w, r, 400, "Wrong method")
 
 }
 
@@ -323,7 +323,7 @@ func (hdlr *RestV1Handler) HandleAnonCert(w http.ResponseWriter, r *http.Request
 		success(w, r)
 		return
 	}
-	httpError(w, r, 500, "Wrong method")
+	httpError(w, r, 400, "Wrong method")
 
 }
 
@@ -365,7 +365,7 @@ func (hdlr *RestV1Handler) HandleNamedCert(w http.ResponseWriter, r *http.Reques
 		success(w, r)
 		return
 	} else {
-		httpError(w, r, 500, "Wrong method")
+		httpError(w, r, 400, "Wrong method")
 		return
 	}
 
