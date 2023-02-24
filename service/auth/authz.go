@@ -2,31 +2,58 @@ package auth
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/dns3l/dns3l-core/common"
 )
 
+type AuthorizationInfo interface {
+	CheckAllowedToAccessDomains(domains []string, read bool, write bool) error
+	CheckAllowedToAccessDomain(domain string, read bool, write bool) error
+	GetUserID() string
+	GetName() string
+	GetEmail() string
+	IsAuthzDisabled() bool
+	GetDomainsAllowed() []string
+}
+
 // Authorization info for a specific user, along with some personal data
-type AuthorizationInfo struct {
+type DefaultAuthorizationInfo struct {
 
 	//May be a full name (containing whitespaces and Unicode) or a M2M username
 	Name                  string
 	Username              string
 	Email                 string
-	RootzonesAllowed      map[string]bool
+	DomainsAllowed        []string
 	WriteAllowed          bool
 	ReadAllowed           bool
 	AuthorizationDisabled bool
 }
 
-func (i *AuthorizationInfo) CheckAllowedToAccessZones(zones []string, read bool, write bool) error {
+func (i *DefaultAuthorizationInfo) GetUserID() string {
+	return i.Username
+}
+
+func (i *DefaultAuthorizationInfo) GetName() string {
+	return i.Name
+}
+
+func (i *DefaultAuthorizationInfo) GetEmail() string {
+	return i.Email
+}
+
+func (i *DefaultAuthorizationInfo) IsAuthzDisabled() bool {
+	return i.AuthorizationDisabled
+}
+
+func (i *DefaultAuthorizationInfo) CheckAllowedToAccessDomains(domains []string, read bool, write bool) error {
 
 	if i.AuthorizationDisabled {
 		return nil
 	}
 
-	for _, zone := range zones {
-		if err := i.CheckAllowedToAccessZone(zone, read, write); err != nil {
+	for _, domain := range domains {
+		if err := i.CheckAllowedToAccessDomain(domain, read, write); err != nil {
 			return err
 		}
 	}
@@ -35,7 +62,7 @@ func (i *AuthorizationInfo) CheckAllowedToAccessZones(zones []string, read bool,
 
 }
 
-func (i *AuthorizationInfo) CheckAllowedToAccessZone(zone string, read bool, write bool) error {
+func (i *DefaultAuthorizationInfo) CheckAllowedToAccessDomain(domain string, read bool, write bool) error {
 
 	if i.AuthorizationDisabled {
 		return nil
@@ -47,22 +74,20 @@ func (i *AuthorizationInfo) CheckAllowedToAccessZone(zone string, read bool, wri
 	if !i.ReadAllowed && read {
 		return &common.UnauthzedError{Msg: "read requested but not allowed to read"}
 	}
-	if !i.RootzonesAllowed[zone] {
-		return &common.UnauthzedError{Msg: fmt.Sprintf("user has no permission for zone '%s'", zone)}
+
+	for _, domainAllowed := range i.DomainsAllowed {
+		if strings.HasSuffix(domain, domainAllowed) {
+			return nil
+		}
 	}
 
-	return nil
+	return &common.UnauthzedError{Msg: fmt.Sprintf("user has no permission for domain '%s'", domain)}
 }
 
-func (i *AuthorizationInfo) GetRootzones() []string {
+func (i *DefaultAuthorizationInfo) GetDomainsAllowed() []string {
 
 	if i.AuthorizationDisabled {
 		return nil
 	}
-
-	result := make([]string, 0, len(i.RootzonesAllowed))
-	for k := range i.RootzonesAllowed {
-		result = append(result, k)
-	}
-	return result
+	return i.DomainsAllowed
 }

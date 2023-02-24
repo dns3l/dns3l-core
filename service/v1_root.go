@@ -40,11 +40,14 @@ func (s *V1) GetServerInfo() *apiv1.ServerInfo {
   /crt/{crtName}:
 */
 
-func (s *V1) logAction(authz *auth.AuthorizationInfo, action string) {
+func (s *V1) logAction(authz auth.AuthorizationInfo, action string) {
 
 	u := "anonymous"
-	if authz != nil && authz.Username != "" {
-		u = authz.Username
+	if authz != nil {
+		userid := authz.GetUserID()
+		if userid != "" {
+			u = userid
+		}
 	}
 	log.WithField("username", u).Infof("API call for %s", action)
 }

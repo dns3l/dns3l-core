@@ -128,10 +128,10 @@ func (h *OIDCHandler) selectIssuer(token string) (*OIDCBinding, string, error) {
 
 }
 
-func (h *OIDCHandler) AuthnGetAuthzInfo(r *http.Request) (*AuthorizationInfo, error) {
+func (h *OIDCHandler) AuthnGetAuthzInfo(r *http.Request) (AuthorizationInfo, error) {
 
 	if h.AuthnDisabled {
-		return &AuthorizationInfo{
+		return &DefaultAuthorizationInfo{
 			AuthorizationDisabled: true,
 			Email:                 h.AuthnDisabledEmail,
 		}, nil
@@ -206,8 +206,8 @@ func (h *OIDCHandler) AuthnGetAuthzInfo(r *http.Request) (*AuthorizationInfo, er
 		}
 	}
 
-	authzinfo := &AuthorizationInfo{
-		RootzonesAllowed:      make(map[string]bool, 100),
+	authzinfo := &DefaultAuthorizationInfo{
+		DomainsAllowed:        make([]string, 100),
 		AuthorizationDisabled: h.AuthzDisabled,
 		ReadAllowed:           false,
 		WriteAllowed:          false,
@@ -234,7 +234,7 @@ func (h *OIDCHandler) AuthnGetAuthzInfo(r *http.Request) (*AuthorizationInfo, er
 			authzinfo.ReadAllowed = true
 			continue
 		}
-		authzinfo.RootzonesAllowed[util.GetDomainFQDNDot(domain)] = true
+		authzinfo.DomainsAllowed = append(authzinfo.DomainsAllowed, util.GetDomainFQDNDot(domain))
 	}
 
 	log.WithField("authzinfo", authzinfo).Debug("Authzinfo generated.")

@@ -13,7 +13,7 @@ type CAStateManager interface {
 type CAStateManagerSession interface {
 	Close() error
 
-	ListCACerts(keyName string, caid string, rzFilter []string,
+	ListCACerts(keyName string, caid string, authzedDomains []string, queryFilter string,
 		pginfo *util.PaginationInfo) ([]CACertInfo, error)
 
 	//returns privKey, expiryTime, error
@@ -21,11 +21,14 @@ type CAStateManagerSession interface {
 
 	DelCACertByID(keyID string, caID string) error
 
-	PutCACertData(update bool, keyname string, keyrz string, caid string, info *CACertInfo, certStr, issuerCertStr string) error
+	PutCACertData(keyname string, caid string, info *CACertInfo, certStr, issuerCertStr string) error
 
-	GetResource(keyID string, caid string, resourceName string) (string, []string, error)
+	UpdateCACertData(keyname string, caid string, renewedTime, nextRenewalTime,
+		validStartTime, validEndTime time.Time, certStr, issuerCertStr string) error
 
-	GetResources(keyID string, caid string, resourceNames ...string) ([]string, []string, error)
+	GetResource(keyID string, caid string, resourceName string) (string, error)
+
+	GetResources(keyID string, caid string, resourceNames ...string) ([]string, error)
 
 	GetNumberOfCerts(caID string, validonly bool, currentTime time.Time) (uint, error)
 
@@ -34,6 +37,8 @@ type CAStateManagerSession interface {
 	ListExpired(atTime time.Time, limit uint) ([]CertificateRenewInfo, error)
 
 	ListToRenew(atTime time.Time, limit uint) ([]CertificateRenewInfo, error)
+
+	GetDomains(keyName, caid string) ([]string, error)
 }
 
 type CACertInfo struct {

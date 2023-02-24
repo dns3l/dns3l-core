@@ -4,6 +4,8 @@ import (
 	"errors"
 	"io/ioutil"
 	"os"
+	"path/filepath"
+	"runtime"
 
 	"gopkg.in/yaml.v2"
 )
@@ -31,4 +33,9 @@ func ConfigFromYamlBytes(c interface{}, bytes []byte) error {
 		return nil
 	}
 	return nil
+}
+
+func GetExecDir() string {
+	_, b, _, _ := runtime.Caller(0)
+	return filepath.Dir(filepath.Dir(b))
 }

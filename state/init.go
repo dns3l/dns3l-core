@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-func getSQLCreateStatementSQLite(dbProv SQLDBProvider) string {
+func getSQLCreateStatementSQLite(dbProv SQLDBProvider, createdb bool) string {
 	return `
 CREATE TABLE IF NOT EXISTS ` + dbProv.DBName("acmeusers") + ` (
 	user_id TEXT,
@@ -37,7 +37,21 @@ CREATE TABLE IF NOT EXISTS ` + dbProv.DBName("keycerts") + ` (
 `
 }
 
-func getSQLCreateStatementMySQL(db *sql.DB, dbProv SQLDBProvider) error {
+func createWithMySQL(db *sql.DB, dbProv SQLDBProvider, createdb bool) error {
+
+	if createdb {
+
+		log.Info("Creating database...")
+		err := dbProv.CreateDB()
+		if err != nil {
+			log.WithError(err).Warn("Creating database failed. Maybe you already created it from an account with " +
+				"sufficient rights, then this message can be ignored.")
+		} else {
+			log.Info("Created database.")
+		}
+	}
+
+	log.Info("Setting or updating tables...")
 
 	// Ensure sql_mode is set correctly
 	// Default for MariaDB >= 10.2.4
@@ -59,7 +73,6 @@ func getSQLCreateStatementMySQL(db *sql.DB, dbProv SQLDBProvider) error {
 	}
 	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS ` + dbProv.DBName("keycerts") + ` (
 	key_name CHAR(255),
-	key_rz VARCHAR(255),
 	ca_id CHAR(63),
 	acme_user CHAR(255),
 	issued_by VARCHAR(255),
@@ -67,7 +80,6 @@ func getSQLCreateStatementMySQL(db *sql.DB, dbProv SQLDBProvider) error {
 	priv_key TEXT,
 	cert MEDIUMTEXT,
 	issuer_cert MEDIUMTEXT,
-	domains TEXT,
 	claim_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 	renewed_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 	next_renewal_time TIMESTAMP DEFAULT 0,
@@ -76,30 +88,84 @@ func getSQLCreateStatementMySQL(db *sql.DB, dbProv SQLDBProvider) error {
 	renew_count INTEGER,
 	PRIMARY KEY (key_name, ca_id)
 	);`)
-	return err
+	if err != nil {
+		return err
+	}
+
+	//Needed in a separate table to quickly filter for subdomains.
+	//We use the built-in MySQL prefix index, but then we need to
+	//reverse the characters in the domain names
+	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS ` + dbProv.DBName("domains") + ` (
+	dom_name_rev CHAR(255),
+	key_name CHAR(255),
+	ca_id VARCHAR(255),
+	is_first_domain BOOLEAN,
+	PRIMARY KEY (dom_name_rev, key_name, ca_id)
+	);`)
+	if err != nil {
+		return err
+	}
+
+	_, err = db.Exec(`CREATE INDEX IF NOT EXISTS ` + dbProv.DBName("suffix_domains_idx") + `
+	ON ` + dbProv.DBName("domains") + `(dom_name_rev(255));`)
+	if err != nil {
+		return err
+	}
+
+	_, err = db.Exec(`CREATE INDEX IF NOT EXISTS ` + dbProv.DBName("domains_per_key") + `
+	ON ` + dbProv.DBName("domains") + `(key_name, ca_id);`)
+	if err != nil {
+		return err
+	}
+
+	log.Info("Tables set or updated.")
+
+	return nil
+
 }
 
-func CreateSQLDB(dbProv SQLDBProvider) error {
+func CreateSQLTables(dbProv SQLDBProvider, createdb bool) error {
 
-	db, err := dbProv.GetNewDBConn()
+	db, err := dbProv.GetDBConn()
 	if err != nil {
 		return err
 	}
 
 	if dbProv.GetType() == "sqlite3" {
-		_, err = db.Exec(getSQLCreateStatementSQLite(dbProv))
+		//in sqlite, we don't need to create databases
+		_, err = db.Exec(getSQLCreateStatementSQLite(dbProv, createdb))
 		if err != nil {
 			return err
 		}
 	} else if dbProv.GetType() == "mysql" {
-		err = getSQLCreateStatementMySQL(db, dbProv)
+		err = createWithMySQL(db, dbProv, createdb)
 		if err != nil {
 			return err
 		}
 	} else {
 		return fmt.Errorf(
-			"creating DB for SQL type '%s' is unsupported", dbProv.GetType())
+			"creating tables for SQL type '%s' is unsupported", dbProv.GetType())
 	}
 
 	return nil
+}
+
+// Called during the tests
+func Truncate(dbProv SQLDBProvider) error {
+
+	db, err := dbProv.GetDBConn()
+	if err != nil {
+		return err
+	}
+
+	for _, table := range []string{"acmeusers", "keycerts", "domains"} {
+		_, err = db.Exec(`TRUNCATE TABLE ` + dbProv.DBName(table) + `;`)
+		if err != nil {
+			return err
+		}
+
+	}
+
+	return nil
+
 }

@@ -19,7 +19,7 @@ type ACMEStateManagerSQLSession struct {
 }
 
 func (m *ACMEStateManagerSQL) NewSession() (ACMEStateManagerSession, error) {
-	db, err := m.Prov.GetNewDBConn()
+	db, err := m.Prov.GetDBConn()
 	if err != nil {
 		return nil, err
 	}
@@ -27,7 +27,8 @@ func (m *ACMEStateManagerSQL) NewSession() (ACMEStateManagerSession, error) {
 }
 
 func (s *ACMEStateManagerSQLSession) Close() error {
-	return s.db.Close()
+	//Nothing to do
+	return nil
 }
 
 func (s *ACMEStateManagerSQLSession) GetACMEUserPrivkeyByID(userid string) (string, string, error) {
