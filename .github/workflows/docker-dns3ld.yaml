@@ -37,4 +37,4 @@ jobs:
           platforms: linux/amd64,linux/arm64
           file: docker/Dockerfile-dns3ld
           push: true
-          tags: ${{ env.dest_repo }}:${{ env.dest_tag }}
+          tags: ${{ env.dest_repo }}:${{ env.dest_tag }},${{ env.dest_repo }}:latest

@@ -64,7 +64,7 @@ rtzn:
     ca: ['*']
 db:
   type: mysql
-  url: johndoe:@unix(testdata/db.sock)/dns3ld?parseTime=true
+  url: johndoe:@unix(testdata/db.sock)/dns3ld?parseTime=true #replaced during comptest run
   dbprefix: dns3l
 
 auth: # will be stubbed. Stub cannot be initiated via
