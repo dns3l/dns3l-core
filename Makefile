@@ -30,9 +30,19 @@ service-docker:
 service-docker-simple:
 	$(DOCKER) build -t dns3ld-simple:$(DNS3LD_VERSION)-dev -f docker/Dockerfile-dns3ld-simple .
 
-test:
+test: unittest comptest
+
+unittest:
 	$(GOENV) go test $(GODIRS) -coverprofile coverage.out
 	$(GOENV) go tool cover -func=coverage.out
 
 comptest:
-	$(GOENV) go run ./test/.
+	$(GOENV) go run ./test/main.go dbfull
+
+comptest-docker:
+	$(DOCKER) run -v $(shell pwd):/workdir -t golang:1.19-alpine /workdir/docker/run-in-docker golang-alpine
+
+clean: comptest-clean
+
+comptest-clean:
+	rm -r testdata
