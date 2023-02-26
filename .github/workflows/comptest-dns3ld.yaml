@@ -1,6 +1,11 @@
 name: comptest
-on: push
-
+on:
+  push:
+    tags:
+      - "*"
+    branches:
+      - "*"
+  pull_request:
 jobs:
   comptest:
     runs-on: ubuntu-latest
