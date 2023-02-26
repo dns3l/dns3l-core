@@ -1,5 +1,10 @@
 #!/usr/bin/env sh
 
+# Docker launcher (not an entrypoint), currently only used
+# to run test in existing containers
+
+set -e
+
 case "$1" in 
   golang-alpine)
     apk add mariadb
