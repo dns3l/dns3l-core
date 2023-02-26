@@ -115,11 +115,15 @@ go test ./...
 
 ### Component tests
 
-Component tests will test with real (maybe non-production but staging) endpoints without
-using the Golang unit test framework. Therefore, credentials must be given in a config 
-derived from the `config-example.yaml` format.
+Component tests will test with real DB endpoints without
+using the Golang unit test framework.
 
 ```
-export DNS3L_TEST_CONFIG=/my/secret/folder/dns3l-config4test.yaml
 make comptest
+```
+
+You can also use the Docker version of the component tests:
+
+```
+make comptest-docker
 ```
