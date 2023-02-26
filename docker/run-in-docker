@@ -1,0 +1,12 @@
+#!/usr/bin/env sh
+
+case "$1" in 
+  golang-alpine)
+    apk add mariadb
+    echo "uut:x:1000:1000:uut:/go:/bin/ash" >> /etc/passwd
+    su uut -c 'cd /workdir; go run test/main.go dbfull'
+    ;;
+  *)
+    echo "No command given."
+    exit 1
+esac

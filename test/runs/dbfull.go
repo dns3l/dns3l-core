@@ -11,7 +11,7 @@ import (
 	testhttp "github.com/dns3l/dns3l-core/test/http"
 )
 
-func RunDBFull(testconfig, caid string, domain string, truncate bool, numReplicas uint) {
+func RunDBFull(testconfig, caid string, domain string, truncate bool, numReplicas uint, dump bool) {
 
 	comptest := comp.ComponentTest{
 		TestConfig: testconfig,
@@ -122,17 +122,33 @@ func RunDBFull(testconfig, caid string, domain string, truncate bool, numReplica
 						prefix + ".alt2.foo.bar.sub1." + domain,
 					}))
 
-			fmt.Println(testhttp.AssertSuccess("List keys",
-				apiv1.ListKeys(srv, caid, "kilgore")))
+			out := testhttp.AssertSuccess("List keys",
+				apiv1.ListKeys(srv, caid, "kilgore"))
 
-			fmt.Println(testhttp.AssertSuccess("List keys restricted",
-				apiv1.ListKeys(srv, caid, "clara"))) //key 4 should not be seen
+			if dump {
+				fmt.Println(out)
+			}
 
-			fmt.Println(testhttp.AssertSuccess("List all keys",
-				apiv1.ListAllKeys(srv, "kilgore")))
+			out = testhttp.AssertSuccess("List keys restricted",
+				apiv1.ListKeys(srv, caid, "clara")) //key 4 should not be seen
 
-			fmt.Println(testhttp.AssertSuccess("List key all CA",
-				apiv1.ListKeyAllCA(srv, "kilgore", prefix+".test1.bar.sub1."+domain)))
+			if dump {
+				fmt.Println(out)
+			}
+
+			out = testhttp.AssertSuccess("List all keys",
+				apiv1.ListAllKeys(srv, "kilgore"))
+
+			if dump {
+				fmt.Println(out)
+			}
+
+			out = testhttp.AssertSuccess("List key all CA",
+				apiv1.ListKeyAllCA(srv, "kilgore", prefix+".test1.bar.sub1."+domain))
+
+			if dump {
+				fmt.Println(out)
+			}
 
 			// These are the accesses that require checking all SANs for security
 			fmt.Println(testhttp.AssertSuccess("Get key 3 by alice",
