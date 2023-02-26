@@ -151,10 +151,18 @@ func RunDBFull(testconfig, caid string, domain string, truncate bool, numReplica
 			}
 
 			// These are the accesses that require checking all SANs for security
-			fmt.Println(testhttp.AssertSuccess("Get key 3 by alice",
-				apiv1.GetCertResources(srv, caid, "alice", prefix+".test1.bar.sub1."+domain)))
-			fmt.Println(testhttp.AssertSuccess("Get key 3 PEM key by alice",
-				apiv1.GetCertResource(srv, caid, "alice", prefix+".test1.bar.sub1."+domain, "key")))
+			out = testhttp.AssertSuccess("Get key 3 by alice",
+				apiv1.GetCertResources(srv, caid, "alice", prefix+".test1.bar.sub1."+domain))
+			if dump {
+				fmt.Println(out)
+			}
+
+			out = testhttp.AssertSuccess("Get key 3 PEM key by alice",
+				apiv1.GetCertResource(srv, caid, "alice", prefix+".test1.bar.sub1."+domain, "key"))
+			if dump {
+				fmt.Println(out)
+			}
+
 			testhttp.AssertStatusCode("Get key 3 by clara", 403,
 				apiv1.GetCertResources(srv, caid, "clara", prefix+".test1.bar.sub1."+domain))
 			testhttp.AssertStatusCode("Get key 3 PEM cert by clara", 403,
