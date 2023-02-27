@@ -5,6 +5,7 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
+	"errors"
 )
 
 func ConvertCertBundleToPEMStr(bundle []*x509.Certificate) (string, error) {
@@ -52,8 +53,41 @@ func ParseCertificatePEM(certificate []byte) ([]*x509.Certificate, error) {
 
 }
 
+var NoPEMFound error = errors.New("no pem data found")
+
+func ExtractRootCertPEM(certChain string) (string, error) {
+
+	var lastCert []byte = nil
+
+	decodeTodo := []byte(certChain)
+	for {
+		var block *pem.Block
+		block, decodeTodo = pem.Decode(decodeTodo)
+		if block == nil {
+			break
+		}
+		if block.Type == "CERTIFICATE" {
+			lastCert = block.Bytes
+		}
+	}
+
+	if lastCert == nil {
+		return "", NoPEMFound
+	}
+
+	var buf bytes.Buffer
+	err := pem.Encode(&buf, &pem.Block{Type: "CERTIFICATE", Bytes: lastCert})
+	if err != nil {
+		return "", err
+	}
+
+	return buf.String(), nil
+
+}
+
 type PEMResource struct {
 	PEMData     string
 	ContentType string
 	Domains     []string
+	CanBePublic bool
 }

@@ -190,6 +190,7 @@ func (h *CAFunctionHandler) getResourceNoUpd(keyID, caID, objectType string) (*c
 			PEMData:     res,
 			ContentType: "application/x-pem-file",
 			Domains:     domains,
+			CanBePublic: false,
 		}, nil
 	case "crt":
 		res, err := sess.GetResource(keyID, caID, "cert")
@@ -200,8 +201,9 @@ func (h *CAFunctionHandler) getResourceNoUpd(keyID, caID, objectType string) (*c
 			PEMData:     res,
 			ContentType: "application/x-pem-file",
 			Domains:     domains,
+			CanBePublic: true,
 		}, nil
-	case "issuer-cert":
+	case "chain":
 		res, err := sess.GetResource(keyID, caID, "issuer_cert")
 		if err != nil {
 			return nil, err
@@ -210,6 +212,22 @@ func (h *CAFunctionHandler) getResourceNoUpd(keyID, caID, objectType string) (*c
 			PEMData:     res,
 			ContentType: "application/x-pem-file",
 			Domains:     domains,
+			CanBePublic: true,
+		}, nil
+	case "root":
+		res, err := sess.GetResource(keyID, caID, "issuer_cert")
+		if err != nil {
+			return nil, err
+		}
+		root, err := common.ExtractRootCertPEM(res)
+		if err != nil {
+			return nil, err
+		}
+		return &common.PEMResource{
+			PEMData:     root,
+			ContentType: "application/x-pem-file",
+			Domains:     domains,
+			CanBePublic: true,
 		}, nil
 	case "fullchain":
 		res, err := sess.GetResources(keyID, caID, "cert", "issuer_cert")
@@ -220,6 +238,7 @@ func (h *CAFunctionHandler) getResourceNoUpd(keyID, caID, objectType string) (*c
 			PEMData:     res[0] + "\n" + res[1],
 			ContentType: "application/x-pem-file",
 			Domains:     domains,
+			CanBePublic: true,
 		}, nil
 	}
 	return nil, &cmn.NotFoundError{RequestedResource: objectType}

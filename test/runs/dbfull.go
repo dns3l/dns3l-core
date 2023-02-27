@@ -159,9 +159,15 @@ func RunDBFull(testconfig, caid string, domain string, truncate bool, numReplica
 
 			out = testhttp.AssertSuccess("Get key 3 PEM key by alice",
 				apiv1.GetCertResource(srv, caid, "alice", prefix+".test1.bar.sub1."+domain, "key"))
+			out2 := testhttp.AssertSuccess("Get key 3 PEM key by alice",
+				apiv1.GetCertResource(srv, caid, "alice", prefix+".test1.bar.sub1."+domain, "fullchain"))
+			out3 := testhttp.AssertSuccess("Get key 3 PEM key by alice",
+				apiv1.GetCertResource(srv, caid, "alice", prefix+".test1.bar.sub1."+domain, "root"))
 			if dump {
-				fmt.Println(out)
+				fmt.Println("key", out)
 			}
+			fmt.Println("fullchain", out2)
+			fmt.Println("root", out3)
 
 			testhttp.AssertStatusCode("Get key 3 by clara", 403,
 				apiv1.GetCertResources(srv, caid, "clara", prefix+".test1.bar.sub1."+domain))

@@ -37,7 +37,7 @@ func (s *V1) ClaimCertificate(caID string, cinfo *apiv1.CertClaimInfo, authz aut
 
 	domains := append([]string{firstDomain}, cinfo.SubjectAltNames...)
 
-	err := authz.CheckAllowedToAccessDomains(domains, false, true)
+	err := authz.ChkAuthWriteDomains(domains)
 	if err != nil {
 		return err
 	}
@@ -124,7 +124,7 @@ func (s *V1) DeleteCertificate(caID, crtID string, authz auth.AuthorizationInfo)
 	fu := s.Service.Config.CA.Functions
 
 	// SANs are not checked for deletion permission at the moment...
-	err := authz.CheckAllowedToAccessDomain(crtID, false, true)
+	err := authz.ChkAuthWriteDomain(crtID)
 	if err != nil {
 		return err
 	}
@@ -146,7 +146,12 @@ func (s *V1) GetCertificateResource(caID, crtID, obj string, authz auth.Authoriz
 	}
 
 	//GetCertificateResource does not modify anything, so check permissions after request...
-	err = authz.CheckAllowedToAccessDomains(res.Domains, true, false)
+	if res.CanBePublic {
+		err = authz.ChkAuthReadDomainsPublic(res.Domains)
+	} else {
+		err = authz.ChkAuthReadDomains(res.Domains)
+	}
+
 	if err != nil {
 		return "", "", err
 	}
@@ -169,7 +174,7 @@ func (s *V1) GetAllCertResources(caID, crtID string, authz auth.AuthorizationInf
 	}
 
 	//GetCertificateResources does not modify anything, so check permissions after request when we know the domains...
-	err = authz.CheckAllowedToAccessDomains(r.Domains, true, false)
+	err = authz.ChkAuthReadDomains(r.Domains)
 	if err != nil {
 		return nil, err
 	}
@@ -199,9 +204,11 @@ func (s *V1) GetCertificateInfos(caID string, crtID string, authz auth.Authoriza
 
 	doms := authz.GetDomainsAllowed()
 
-	if len(doms) <= 0 && !authz.IsAuthzDisabled() {
+	if len(doms) <= 0 && !authz.CanListPublicData() {
 		return nil, &common.UnauthzedError{Msg: "No authorization for any domains"}
 	}
+	// we can interpret a len(doms) <= 0 now as "permit all"
+	// note that this request just lists public info, no secrets
 
 	r, err := fu.GetCertificateInfos(caID, crtID, doms, pginfo)
 	if err != nil {
@@ -228,7 +235,7 @@ func (s *V1) GetCertificateInfo(caID string, crtID string, authz auth.Authorizat
 	fu := s.Service.Config.CA.Functions
 
 	// TODO: do we need to implement SAN permissions check?
-	err := authz.CheckAllowedToAccessDomain(crtID, true, false)
+	err := authz.ChkAuthReadDomain(crtID)
 	if err != nil {
 		return nil, err
 	}
@@ -260,7 +267,7 @@ func (s *V1) DeleteCertificatesAllCA(crtID string, authz auth.AuthorizationInfo)
 
 	fu := s.Service.Config.CA.Functions
 
-	err := authz.CheckAllowedToAccessDomain(crtID, false, true)
+	err := authz.ChkAuthWriteDomain(crtID)
 	if err != nil {
 		return err
 	}
