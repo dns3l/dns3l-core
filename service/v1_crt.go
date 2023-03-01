@@ -207,6 +207,11 @@ func (s *V1) GetCertificateInfos(caID string, crtID string, authz auth.Authoriza
 	if len(doms) <= 0 && !authz.CanListPublicData() {
 		return nil, &common.UnauthzedError{Msg: "No authorization for any domains"}
 	}
+
+	if authz.CanListPublicData() {
+		doms = nil
+	}
+
 	// we can interpret a len(doms) <= 0 now as "permit all"
 	// note that this request just lists public info, no secrets
 

@@ -28,6 +28,8 @@ type AuthorizationInfo interface {
 	GetName() string
 	GetEmail() string
 	IsAuthzDisabled() bool
+
+	String() string
 }
 
 // Authorization info for a specific user, along with some personal data
@@ -42,6 +44,12 @@ type DefaultAuthorizationInfo struct {
 	ReadAllowed           bool
 	ReadAnyPublicAllowed  bool //If this is set to true, no domain ACL check is done for public data!
 	AuthorizationDisabled bool //everything will be allowed, danger zone!
+}
+
+func (i *DefaultAuthorizationInfo) String() string {
+	return fmt.Sprintf("name=%s, username=%s, email=%s, domains=%s, write=%t, read=%t, readpub=%t, authzdis=%t",
+		i.Name, i.Username, i.Email, i.DomainsAllowed, i.WriteAllowed, i.ReadAllowed,
+		i.ReadAnyPublicAllowed, i.AuthorizationDisabled)
 }
 
 func (i *DefaultAuthorizationInfo) GetUserID() string {
@@ -78,10 +86,11 @@ func (i *DefaultAuthorizationInfo) ChkAuthReadDomainsPublic(domains []string) er
 		return nil
 	}
 
-	if !i.ReadAllowed {
-		return ReadNotAllowed
+	if i.ReadAnyPublicAllowed {
+		return nil //we override ACL check for public data
 	}
-	return i.checkAllowedToAccessDomains(domains)
+
+	return i.ChkAuthReadDomains(domains)
 }
 
 func (i *DefaultAuthorizationInfo) ChkAuthReadDomain(domain string) error {

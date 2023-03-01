@@ -11,7 +11,7 @@ import (
 	testhttp "github.com/dns3l/dns3l-core/test/http"
 )
 
-func RunSingleEntry(testconfig, caid string, domain string, truncate bool, numReplicas uint, dump bool) {
+func RunSingleEntry(testconfig, caid, domain string, truncate bool, replicaOffset, numReplicas uint, dump bool) {
 
 	comptest := comp.ComponentTest{
 		TestConfig: testconfig,
@@ -47,7 +47,7 @@ func RunSingleEntry(testconfig, caid string, domain string, truncate bool, numRe
 			}
 		}
 
-		for i := uint(0); i < numReplicas; i++ {
+		for i := replicaOffset; i < numReplicas; i++ {
 
 			prefix := fmt.Sprintf("node%d", i)
 

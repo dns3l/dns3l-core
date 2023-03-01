@@ -15,11 +15,12 @@ type AuthStub struct {
 }
 
 type AuthStubUser struct {
-	Name           string
-	Email          string
-	DomainsAllowed []string
-	WriteAllowed   bool
-	ReadAllowed    bool
+	Name                 string
+	Email                string
+	DomainsAllowed       []string
+	WriteAllowed         bool
+	ReadAllowed          bool
+	ReadAnyPublicAllowed bool
 }
 
 func (a *AuthStub) Init() error {
@@ -41,12 +42,13 @@ func (a *AuthStub) AuthnGetAuthzInfo(r *http.Request) (auth.AuthorizationInfo, e
 	}
 
 	authzinfo := &auth.DefaultAuthorizationInfo{
-		Name:           v.Name,
-		Username:       testusername,
-		Email:          v.Email,
-		DomainsAllowed: v.DomainsAllowed,
-		WriteAllowed:   v.WriteAllowed,
-		ReadAllowed:    v.ReadAllowed,
+		Name:                 v.Name,
+		Username:             testusername,
+		Email:                v.Email,
+		DomainsAllowed:       v.DomainsAllowed,
+		WriteAllowed:         v.WriteAllowed,
+		ReadAllowed:          v.ReadAllowed,
+		ReadAnyPublicAllowed: v.ReadAnyPublicAllowed,
 	}
 
 	return authzinfo, nil
