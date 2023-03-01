@@ -25,6 +25,7 @@ func TestAuthRW(t *testing.T) {
 	assert.Error(t, authzinfo1.ChkAuthReadDomain("foo.com."))
 	assert.Error(t, authzinfo1.ChkAuthWriteDomain("foo.com."))
 	assert.NoError(t, authzinfo1.ChkAuthReadDomain("test.doe.email."))
+	assert.Error(t, authzinfo1.ChkAuthReadDomain("somethingtest.doe.email.")) //prefix only of same domain part
 	assert.NoError(t, authzinfo1.ChkAuthReadDomain("foo.bar.test.doe.email."))
 	assert.NoError(t, authzinfo1.ChkAuthWriteDomain("foo.baz.test.doe.com."))
 	assert.Error(t, authzinfo1.ChkAuthWriteDomains([]string{"foo.baz.test.doe.com.", "foo.com."}))

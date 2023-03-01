@@ -241,7 +241,7 @@ func (h *OIDCHandler) authnGetAuthzInfoRaw(r *http.Request) (AuthorizationInfo, 
 	}
 
 	authzinfo := &DefaultAuthorizationInfo{
-		DomainsAllowed:        make([]string, 100),
+		DomainsAllowed:        make([]string, 0, 100),
 		AuthorizationDisabled: h.AuthzDisabled,
 		ReadAllowed:           false,
 		WriteAllowed:          false,
@@ -269,6 +269,12 @@ func (h *OIDCHandler) authnGetAuthzInfoRaw(r *http.Request) (AuthorizationInfo, 
 			authzinfo.ReadAllowed = true
 			continue
 		}
+
+		if domain == "" || domain == "." {
+			log.Warn("Permitting the root domain '.' to users is not allowed, dropping domain prefix for authz.")
+			continue
+		}
+
 		authzinfo.DomainsAllowed = append(authzinfo.DomainsAllowed, util.GetDomainFQDNDot(domain))
 	}
 

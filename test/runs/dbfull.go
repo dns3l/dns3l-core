@@ -138,7 +138,7 @@ func RunDBFull(testconfig, caid, domain string, truncate bool, replicaOffset, nu
 			if dump {
 				fmt.Println(out)
 			}
-			fmt.Printf("List keys: %d keys returned.", apiv1.CountJSONArray(out))
+			fmt.Printf("List keys: %d keys returned.\n", apiv1.CountJSONArray(out))
 
 			out = testhttp.AssertSuccess("List keys restricted",
 				apiv1.ListKeys(srv, caid, "clara")) //key 4 should not be seen
@@ -146,7 +146,7 @@ func RunDBFull(testconfig, caid, domain string, truncate bool, replicaOffset, nu
 			if dump {
 				fmt.Println(out)
 			}
-			fmt.Printf("List keys restricted: %d keys returned.", apiv1.CountJSONArray(out))
+			fmt.Printf("List keys restricted: %d keys returned.\n", apiv1.CountJSONArray(out))
 
 			out = testhttp.AssertSuccess("List keys publicly readable",
 				apiv1.ListKeys(srv, caid, "fquux"))
@@ -154,7 +154,7 @@ func RunDBFull(testconfig, caid, domain string, truncate bool, replicaOffset, nu
 			if dump {
 				fmt.Println(out)
 			}
-			fmt.Printf("List keys publicly readable: %d keys returned.", apiv1.CountJSONArray(out))
+			fmt.Printf("List keys publicly readable: %d keys returned.\n", apiv1.CountJSONArray(out))
 
 			out = testhttp.AssertSuccess("List all keys",
 				apiv1.ListAllKeys(srv, "kilgore"))
@@ -185,9 +185,9 @@ func RunDBFull(testconfig, caid, domain string, truncate bool, replicaOffset, nu
 				apiv1.GetCertResource(srv, caid, "alice", prefix+".test1.bar.sub1."+domain, "root"))
 			if dump {
 				fmt.Println("key", out)
+				fmt.Println("fullchain", out2)
+				fmt.Println("root", out3)
 			}
-			fmt.Println("fullchain", out2)
-			fmt.Println("root", out3)
 
 			testhttp.AssertStatusCode("Get key 3 by clara", 403,
 				apiv1.GetCertResources(srv, caid, "clara", prefix+".test1.bar.sub1."+domain))

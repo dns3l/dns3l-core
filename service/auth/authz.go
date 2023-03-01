@@ -166,8 +166,10 @@ func (i *DefaultAuthorizationInfo) checkAllowedToAccessDomains(domains []string)
 func (i *DefaultAuthorizationInfo) checkAllowedToAccessDomain(domain string) error {
 
 	for _, domainAllowed := range i.DomainsAllowed {
-		if strings.HasSuffix(domain, domainAllowed) {
-			return nil
+		if strings.HasSuffix(domain, "."+domainAllowed) {
+			return nil //prefix allowed
+		} else if domain == domainAllowed {
+			return nil //exact match also allowed
 		}
 	}
 
