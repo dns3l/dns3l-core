@@ -93,9 +93,9 @@ func RunSingleEntry(testconfig, caid, domain string, truncate bool, replicaOffse
 				apiv1.GetCertResource(srv, caid, "alice", prefix+".foo.bar.sub1."+domain, "root"))
 			if dump {
 				fmt.Println("key", out)
+				fmt.Println("fullchain", out2)
+				fmt.Println("root", out3)
 			}
-			fmt.Println("fullchain", out2)
-			fmt.Println("root", out3)
 
 			testhttp.AssertStatusCode("Get key 1 by bob", 403,
 				apiv1.GetCertResources(srv, caid, "bob", prefix+".foo.bar.sub1."+domain))
