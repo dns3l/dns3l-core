@@ -1,6 +1,7 @@
 package apiv1
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/dns3l/dns3l-core/service"
@@ -71,4 +72,15 @@ func DeleteKeyAllCAById(srv *service.Service, user string, key_id string) *httpt
 	return httptest.TestSendRequest(
 		srv.GetRouter(), httptest.CreateNewRequest("DELETE", fmt.Sprintf("/api/crt/%s", key_id), user, nil),
 	)
+}
+
+func CountJSONArray(jsonstr string) int {
+
+	var arr []any
+	err := json.Unmarshal([]byte(jsonstr), &arr)
+	if err != nil {
+		panic(err)
+	}
+	return len(arr)
+
 }
