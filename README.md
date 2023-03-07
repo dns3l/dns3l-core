@@ -9,7 +9,7 @@ Core parts of dns3l written in Go:
 - Backend daemon for [DNS3L](https://github.com/dta4/dns3l)
 - API/Libraries for DNS3L functionality
 
-**Requires go >= 1.18**
+**Requires go >= 1.20**
 
 ## Implementation Status
 

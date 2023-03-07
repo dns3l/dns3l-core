@@ -10,7 +10,6 @@ import (
 	cacommon "github.com/dns3l/dns3l-core/ca/common"
 	"github.com/dns3l/dns3l-core/ca/types"
 	"github.com/dns3l/dns3l-core/common"
-	dnstypes "github.com/dns3l/dns3l-core/dns/types"
 	"github.com/dns3l/dns3l-core/service/apiv1"
 	"github.com/dns3l/dns3l-core/service/auth"
 	"github.com/dns3l/dns3l-core/util"
@@ -48,7 +47,9 @@ func (s *V1) ClaimCertificate(caID string, cinfo *apiv1.CertClaimInfo, authz aut
 	}
 
 	var autodnsV4 net.IP
-	autodnsProvs := make(map[string]dnstypes.DNSProvider)
+
+	trl := make(util.TransactionalJobList, 0, 10)
+
 	if cinfo.AutoDNS != nil {
 		autodnsV4 = net.ParseIP(cinfo.AutoDNS.IPv4)
 		if autodnsV4 == nil {
@@ -79,7 +80,21 @@ func (s *V1) ClaimCertificate(caID string, cinfo *apiv1.CertClaimInfo, authz aut
 				return &common.InvalidInputError{Msg: fmt.Sprintf(
 					"AutoDNS provider '%s' configured for root zone '%s' not found", rz.DNSProvAutoDNS, rz.Root)}
 			}
-			autodnsProvs[domain] = autodnsProv.Prov
+
+			domain := domain //bump the scope
+
+			trl = append(trl, &util.TransactionalJobImpl{
+				DoFunc: func() error {
+					log.WithFields(logrus.Fields{"domain": domain, "prov": autodnsProv.Prov, "addr": autodnsV4}).Info(
+						"Setting AutoDNS entry")
+					return autodnsProv.Prov.SetRecordA(domain, autodnsProv.Prov.GetInfo().DefaultAutoDNSTTL, autodnsV4)
+				},
+				UndoFunc: func() error {
+					log.WithFields(logrus.Fields{"domain": domain, "prov": autodnsProv.Prov}).Info(
+						"Rolling back AutoDNS entry")
+					return autodnsProv.Prov.DeleteRecordA(domain)
+				},
+			})
 		}
 
 	}
@@ -88,30 +103,20 @@ func (s *V1) ClaimCertificate(caID string, cinfo *apiv1.CertClaimInfo, authz aut
 		return &common.UnauthzedError{Msg: "the user's email address has not been provided by the auth provider, required for claiming certificate"}
 	}
 
-	err = fu.ClaimCertificate(caID, &types.CertificateClaimInfo{
-		Name:          cinfo.Name,
-		NameRZ:        namerz.Root,
-		Domains:       domains,
-		IssuedBy:      authz.GetName(),
-		IssuedByEmail: authz.GetEmail(),
+	trl = append(trl, &util.TransactionalJobImpl{
+		DoFunc: func() error {
+			return fu.ClaimCertificate(caID, &types.CertificateClaimInfo{
+				Name:          cinfo.Name,
+				NameRZ:        namerz.Root,
+				Domains:       domains,
+				IssuedBy:      authz.GetName(),
+				IssuedByEmail: authz.GetEmail(),
+			})
+		},
+		UndoFunc: nil, //not needed because this is always the last thing that is executed
 	})
 
-	if err != nil {
-		return err
-	}
-
-	if cinfo.AutoDNS != nil {
-		for domain, prov := range autodnsProvs {
-			log.WithFields(logrus.Fields{"domain": domain, "prov": prov, "addr": autodnsV4}).Info(
-				"Setting AutoDNS entry")
-			err := prov.SetRecordA(domain, prov.GetInfo().DefaultAutoDNSTTL, autodnsV4)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
+	return trl.Commit()
 
 }
 
