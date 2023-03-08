@@ -120,7 +120,7 @@ var DNSUsePWSafe bool
 // net.IPv4allrouter.IsInterfaceLocalMulticast()
 func DNSAddCmdCb(ccmd *cobra.Command, args []string) error {
 	if len(args) != 4 {
-		return clitypes.NewValueError(1001, fmt.Errorf("DNS ADD requires 4 Arguments but found %d \n", len(args)))
+		return clitypes.NewValueError(1001, fmt.Errorf("dns Add requires 4 Arguments but found %d", len(args)))
 	}
 	var dnsAdd clitypes.DNSAddType
 	var err error
@@ -139,7 +139,10 @@ func DNSAddCmdCb(ccmd *cobra.Command, args []string) error {
 		ipAddr := net.ParseIP(dnsAdd.Data)
 		if Force {
 			var dnsDel clitypes.DNSDelType
-			dnsDel.Init(Verbose, JSONOutput, Backend, DNSProviderID, DNSProviderSecret, DNSUsePWSafe, args)
+			errInit := dnsDel.Init(Verbose, JSONOutput, Backend, DNSProviderID, DNSProviderSecret, DNSUsePWSafe, args)
+			if errInit != nil {
+				return clitypes.NewValueError(1002, fmt.Errorf("dns Add init data struct failed: %s", err.Error()))
+			}
 			err := dnsDel.P.DeleteRecordA(dnsDel.FQDN)
 			if err != nil {
 				// delete fails but the flag force is set and it is not an error

@@ -103,7 +103,7 @@ func (CertCa *CertCaType) DoCommand() error {
 	//Json Output
 	caListJson, errMarshal := json.MarshalIndent(aCAList, "\t", "\t")
 	if errMarshal != nil {
-		NewValueError(1140, fmt.Errorf("cert ca: json marshal fails '%v'", errMarshal.Error()))
+		return NewValueError(1140, fmt.Errorf("cert ca: json marshal fails '%v'", errMarshal.Error()))
 	}
 	// Screen oder JSON File output
 	if CertCa.JSONOutput {

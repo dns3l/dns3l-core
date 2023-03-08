@@ -87,7 +87,7 @@ func (CertDel *CertDelType) DoCommand() error {
 		PrintFullRespond("INFO: Command.CertDel: Request dump", resp)
 	}
 	if resp.StatusCode != 200 {
-		NewValueError(14403, fmt.Errorf("cert del: Request failed http Respond Status := '%v'", resp.StatusCode))
+		return NewValueError(14403, fmt.Errorf("cert del: Request failed http Respond Status := '%v'", resp.StatusCode))
 	}
 	return nil
 }

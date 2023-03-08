@@ -130,7 +130,7 @@ func (CertList *CertListType) DoCommand() error {
 	} else {
 		certListJson, err = json.MarshalIndent(aCertList, "\t", "\t")
 		if err != nil {
-			NewValueError(1140, fmt.Errorf("cert list: json marshal fails '%v'", err.Error()))
+			return NewValueError(1140, fmt.Errorf("cert list: json marshal fails '%v'", err.Error()))
 		}
 	}
 	// Screen oder JSON File output
