@@ -41,18 +41,21 @@ func (CertCSR *CertCSRType) PrintParams() {
 }
 
 // CheckParams  checks the parameters of the command cert csr
-func (CertCSR *CertCSRType) CheckParams() bool {
+func (CertCSR *CertCSRType) CheckParams() error {
 	// check api
 	// check CA
+	var errText string
 	OK := true
 	if !CheckTypeOfFQDN(CertCSR.FQDN) {
 		OK = false
-		fmt.Printf("Cert FQDN  '%s' is not valid \n", CertCSR.FQDN)
+		errText = fmt.Sprintf("Cert FQDN '%s' is not valid", CertCSR.FQDN)
 	}
 	if len(CertCSR.AccessToken) <= 4 {
 		OK = false
-		fmt.Fprintf(os.Stderr, "ERRORE: Cert AccessToken  heuristic check failed \n")
+		errText = "Cert AccessToken heuristic check failed"
 	}
-
-	return OK
+	if !OK {
+		return NewValueError(15301, fmt.Errorf(errText))
+	}
+	return nil
 }

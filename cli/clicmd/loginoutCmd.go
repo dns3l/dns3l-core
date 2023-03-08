@@ -2,7 +2,6 @@ package clicmd
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/dns3l/dns3l-core/cli/clitypes"
 	"github.com/spf13/cobra"
@@ -23,21 +22,19 @@ var GetPasswordFromTerminal bool
 
 // DNSQueryCmdCb ------------------------------------
 // implementation of [dns query]
-func LoginDNSCb(ccmd *cobra.Command, args []string) {
+func LoginDNSCb(ccmd *cobra.Command, args []string) error {
 	if len(args) != 0 {
-		fmt.Fprintf(os.Stderr, "ERROR: store login DNS backend requires 0 Arguments but found %d \n", len(args))
-		return
+		// fmt.Fprintf(os.Stderr, "ERROR: store login DNS backend requires 0 Arguments but found %d \n", len(args))
+		return clitypes.NewValueError(501, fmt.Errorf("Login DNS backend requires 0 Arguments but found %d \n", len(args)))
 	}
 	var loginDNS clitypes.LoginDNSType
 	loginDNS.Init(Verbose, LoginDNSBackend, LoginDNSID, LoginDNSSecret, LoginForceOStream, GetPasswordFromTerminal)
 	loginDNS.PrintParams()
-	if !loginDNS.CheckParams() {
-		if nil != ccmd.Usage() {
-			fmt.Fprintf(os.Stderr, "ERROR: store login DNS backend!   Internal Error in ccmd.Usage()")
-		}
-		return
+	err := loginDNS.CheckParams()
+	if err != nil {
+		return err
 	}
-	loginDNS.DoCommand()
+	return loginDNS.DoCommand()
 }
 
 // DNSQueryCommand DNS query cobra command
@@ -45,26 +42,23 @@ var LoginDNS = &cobra.Command{
 	Use:   "dns",
 	Short: "store the login data of the DNS backend into a PasswordSafe (supported  linux keyring) ",
 	Long:  ``,
-	Run:   LoginDNSCb,
+	RunE:  LoginDNSCb,
 }
 
 // DNSQueryCmdCb ------------------------------------
 // implementation of [dns query]
-func LoginACMECb(ccmd *cobra.Command, args []string) {
+func LoginACMECb(ccmd *cobra.Command, args []string) error {
 	if len(args) != 0 {
-		fmt.Fprintf(os.Stderr, "ERROR: store login ACME: requires 0 Arguments but found %d \n %v \n", len(args), args)
-		return
+		return clitypes.NewValueError(601, fmt.Errorf("login ACME: requires 0 Arguments but found %d \n %v \n", len(args), args))
 	}
 	var loginACME clitypes.LoginACMEType
 	loginACME.Init(Verbose, LoginACMEID, LoginACMESecret, LoginForceOStream, GetPasswordFromTerminal)
 	loginACME.PrintParams()
-	if !loginACME.CheckParams() {
-		if nil != ccmd.Usage() {
-			fmt.Fprintf(os.Stderr, "ERROR: store login ACME: Internal Error in ccmd.Usage()")
-		}
-		return
+	err := loginACME.CheckParams()
+	if err != nil {
+		return err
 	}
-	loginACME.DoCommand()
+	return loginACME.DoCommand()
 }
 
 // DNSQueryCommand DNS query cobra command
@@ -72,7 +66,7 @@ var LoginACME = &cobra.Command{
 	Use:   "acme",
 	Short: "store the login data of the ACME application into a PasswordSafe (supported linux keyring) ",
 	Long:  ``,
-	Run:   LoginACMECb,
+	RunE:  LoginACMECb,
 }
 
 // KeyringAddCommand ------------------------------------
@@ -81,17 +75,13 @@ var LoginCommand = &cobra.Command{
 	Use:   "login",
 	Short: "store secrets of DNS backend / ACME in a PasswordSafe, lifetime(this session)  (supported linux keyring)",
 	Long:  ``,
-	Run:   LoginCmdCb,
+	RunE:  LoginCmdCb,
 }
 
 // KeyringAddCmdCb this is only called if subcommand is missing!!!!
 // and this is not allowed -> exit
-func LoginCmdCb(ccmd *cobra.Command, args []string) {
-	fmt.Fprintf(os.Stderr, "ERROR!  reason: command is used without necessary subcommand  \n ")
-	if nil != ccmd.Usage() {
-		fmt.Fprintf(os.Stderr, "ERROR: login command: Internal Error in ccmd.Usage()")
-	}
-	os.Exit(1)
+func LoginCmdCb(ccmd *cobra.Command, args []string) error {
+	return clitypes.NewValueError(3, fmt.Errorf("Reason: command is used without necessary subcommand \n "))
 }
 
 func initLogin() {

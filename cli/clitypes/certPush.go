@@ -47,20 +47,23 @@ func (CertPush *CertPushType) PrintParams() {
 }
 
 // CheckParams prints the parameters of the command cert push
-func (CertPush *CertPushType) CheckParams() bool {
+func (CertPush *CertPushType) CheckParams() error {
 	// check api
 	// check CA
 	// check CRT.pem
 	// check CHN.pem
+	var errText string
 	OK := true
 	if !CheckTypeOfFQDN(CertPush.FQDN) {
 		OK = false
-		fmt.Printf("Cert FQDN  '%s' is not valid \n", CertPush.FQDN)
+		errText = fmt.Sprintf("cert push FQDN  '%s' is not valid ", CertPush.FQDN)
 	}
 	if len(CertPush.AccessToken) <= 4 {
 		OK = false
-		fmt.Fprintf(os.Stderr, "ERRORE: Cert AccessToken  heuristic check failed \n")
+		errText = "cert push AccessToken  heuristic check failed"
 	}
-
-	return OK
+	if !OK {
+		return NewValueError(16301, fmt.Errorf(errText))
+	}
+	return nil
 }

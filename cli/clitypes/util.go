@@ -14,6 +14,23 @@ import (
 	"github.com/spf13/viper"
 )
 
+// custom error handling
+type ExitValueError struct {
+	Value int
+	Err   error
+}
+
+func NewValueError(value int, err error) *ExitValueError {
+	return &ExitValueError{
+		Value: value,
+		Err:   err,
+	}
+}
+
+func (ve *ExitValueError) Error() string {
+	return fmt.Sprintf("%s", ve.Err)
+}
+
 // NotImplemented print the message NOT IMPLENENTED
 func NotImplemented() {
 	fmt.Fprintf(os.Stderr, "THIS COMMAND IS NOT IMPLEMENTED YET\n")
@@ -70,7 +87,7 @@ func getProviderData(dnsbackend string, verbose bool) (string, string) {
 	return user, secret
 }
 
-func setProvider(dnsbackend string, id string, secret string, usePWSafe bool, verbose bool) types.DNSProvider {
+func setProvider(dnsbackend string, id string, secret string, usePWSafe bool, verbose bool) (types.DNSProvider, error) {
 	var dns types.DNSProvider
 	vip := viper.GetViper()
 	providerPath := "dns.providers." + dnsbackend + "."
@@ -92,7 +109,7 @@ func setProvider(dnsbackend string, id string, secret string, usePWSafe bool, ve
 		infblxConfig.Port = vip.GetString(providerPath + "port")
 		infblxConfig.Version = vip.GetString(providerPath + "version")
 		if infblxConfig.Name == "" || infblxConfig.Host == "" || infblxConfig.Port == "" || infblxConfig.Version == "" {
-			return nil
+			return nil, NewValueError(1101, fmt.Errorf("function Setprovider() failed due to missing config parameters"))
 		}
 		if verbose {
 			fmt.Fprintf(os.Stderr, "INFO setProvider()  User ID := %s\n", id)
@@ -107,8 +124,7 @@ func setProvider(dnsbackend string, id string, secret string, usePWSafe bool, ve
 				fmt.Fprintf(os.Stderr, "INFO  setProvider() User:= %s ", infblxConfig.Auth.User)
 			}
 			if infblxConfig.Auth.User == "" {
-				fmt.Fprintf(os.Stderr, "ERROR:  setProvider() User/ID is empty command failed -- > exit")
-				return nil
+				return nil, NewValueError(1102, fmt.Errorf("fuction SetProvider() failed: User/ID is empty"))
 			}
 		}
 		// resolve the secret
@@ -119,12 +135,12 @@ func setProvider(dnsbackend string, id string, secret string, usePWSafe bool, ve
 				fmt.Fprintf(os.Stderr, "INFO setProvider(): User %s and password from safe \n", infblxConfig.Auth.User)
 			}
 			if sec, err = GetPasswordfromRing(infblxConfig.Auth.User, verbose); err != nil {
-				fmt.Fprintf(os.Stderr, "ERROR setProvider(), no secret provided in the Keyring for DNSBackend '%v' and ID:= '%v'\n", dnsbackend, infblxConfig.Auth.User)
 				infblxConfig.Auth.Pass = ""
+				return nil, NewValueError(1103, fmt.Errorf("fucntion SetProvider() failed: no secret found in the Keyring for '%v' and ID:= '%v'", dnsbackend, infblxConfig.Auth.User))
 			} else {
 				infblxConfig.Auth.Pass = string(sec)
 				if verbose {
-					fmt.Fprintf(os.Stderr, "INFO setProvider() Secret provided by Keyring for DNSBackend '%v' and ID:= '%v''\n", dnsbackend, infblxConfig.Auth.User)
+					fmt.Fprintf(os.Stderr, "INFO setProvider() Secret provided by Keyring for DNSBackend '%v' and ID:= '%v'\n", dnsbackend, infblxConfig.Auth.User)
 				}
 			}
 		} else {
@@ -144,12 +160,12 @@ func setProvider(dnsbackend string, id string, secret string, usePWSafe bool, ve
 		infblxConfig.DNSView = vip.GetString(providerPath + "dnsview")
 		infblxConfig.SSLVerify = vip.GetString(providerPath + "sslverify")
 		if infblxConfig.DNSView == "" || infblxConfig.SSLVerify == "" {
-			return nil
+			return nil, NewValueError(1104, fmt.Errorf("function SetProvider() failed:DNSView or and SSLVerify is empty"))
 		}
 		infblxProvider.C = &infblxConfig
 		// infblx-Provider eine Interface zuweisen
 		dns = &infblxProvider
-		return dns
+		return dns, nil
 	} else if providerT == "otc" {
 		fmt.Fprintf(os.Stderr, "case otc\n")
 		otcProvider := otc.DNSProvider{}
@@ -161,15 +177,14 @@ func setProvider(dnsbackend string, id string, secret string, usePWSafe bool, ve
 		otcConfig.Auth.SecretKey = vip.GetString(providerPath + "auth.secretkey")
 		otcConfig.OSRegion = vip.GetString(providerPath + "osregion")
 		if otcConfig.Name == "" || otcConfig.Auth.AuthURL == "" || otcConfig.Auth.ProjectName == "" || otcConfig.Auth.AccessKey == "" || otcConfig.Auth.SecretKey == "" || otcConfig.OSRegion == "" {
-			return nil
+			return nil, NewValueError(1105, fmt.Errorf("function SetProvider() failed due to missing config parameters"))
 		}
 		otcProvider.C = &otcConfig
 		// otc-Provider eine Interface zuweisen
 		dns = &otcProvider
-		return dns
+		return dns, nil
 	}
-	fmt.Fprintf(os.Stderr, "not match for %s %s \n", dnsbackend, providerT)
-	return nil
+	return nil, NewValueError(1106, fmt.Errorf("function SetProvider() not match for %s %s", dnsbackend, providerT))
 }
 
 func SetCertClaimHints(hintsSection string) hintsType {

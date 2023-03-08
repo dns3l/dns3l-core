@@ -62,18 +62,22 @@ func (CertList *CertListType) PrintParams() {
 }
 
 // CheckParams prints the parameters of the command cert list
-func (CertList *CertListType) CheckParams() bool {
+func (CertList *CertListType) CheckParams() error  {
 	// check api
 	// check CA
+	var errText string
 	OK := true
 	if len(CertList.AccessToken) <= 4 {
 		OK = false
-		fmt.Fprintf(os.Stderr, "ERRORE: Cert AccessToken  heuristic check failed \n")
+		errText = "cert AccessToken  heuristic check failed"
 	}
-	return OK
+	if !OK {
+		return NewValueError(11301, fmt.Errorf(errText))
+	}
+	return nil
 }
 
-func (CertList *CertListType) DoCommand() {
+func (CertList *CertListType) DoCommand() error {
 	client := &http.Client{}
 	var listCaUrl string
 	if CertList.APIEndPoint[len(CertList.APIEndPoint)-1] == byte('/') {
@@ -86,7 +90,7 @@ func (CertList *CertListType) DoCommand() {
 	}
 	req, err := http.NewRequest(http.MethodGet, listCaUrl, nil)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "ERROR: Command.certList: url='%v' Error'%v' \n", listCaUrl, err.Error())
+		return NewValueError(11401, fmt.Errorf("cert list: url='%v' Error'%v'", listCaUrl, err.Error()))
 	}
 	qVals := req.URL.Query()
 	qVals.Add("search", CertList.Filter)
@@ -98,33 +102,36 @@ func (CertList *CertListType) DoCommand() {
 	req.Header.Add("Authorization", bearer)
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "ERROR: Command.certList: Request failed Error:= '%v' \n", err.Error())
-		return
+		return NewValueError(11402, fmt.Errorf("cert list: Request failed Error:= '%v'", err.Error()))
 	}
 	defer resp.Body.Close()
 	if CertList.Verbose {
-		PrintFullRespond("INFO: Command.certList: Request dump", resp)
+		PrintFullRespond("INFO: Cert List: Request dump", resp)
 	}
 	var aCertList []CertInfo
 	if err = json.NewDecoder(resp.Body).Decode(&aCertList); err != nil {
-		fmt.Fprintf(os.Stderr, "ERROR: Command.certList: decoding Error '%v' \n  No Data received ?? \n ", err.Error())
-		return
+		return NewValueError(11403, fmt.Errorf("cert list: decoding Error '%v' No Data received", err.Error()))
 	}
 	var certListJson []byte
 	filteredList := make([]CertInfo, 0, len(aCertList))
-	pattern, compileErr := regexp.Compile(CertList.Filter)
-	if compileErr == nil {
-		for _, aVal := range aCertList {
-			if pattern.MatchString(aVal.SubjectCN) {
-				filteredList = append(filteredList, aVal)
+	if CertList.Filter !="" {
+		pattern, compileErr := regexp.Compile(CertList.Filter)
+		if compileErr == nil {
+			for _, aVal := range aCertList {
+				if pattern.MatchString(aVal.SubjectCN) {
+					filteredList = append(filteredList, aVal)
+				}
 			}
+			certListJson, _ = json.MarshalIndent(filteredList, "\t", "\t")
+			aCertList = filteredList
+		} else {
+			return NewValueError(11405, fmt.Errorf("cert list: can not compile search pattern Error '%v'", compileErr.Error()))
 		}
-		certListJson, _ = json.MarshalIndent(filteredList, "\t", "\t")
-		aCertList = filteredList
 	} else {
-		//Json Output
-		fmt.Fprintf(os.Stderr, "ERROR: Command.certList: can not compile search pattern Error '%v' \n", compileErr.Error())
-		certListJson, _ = json.MarshalIndent(aCertList, "\t", "\t")
+		certListJson, err = json.MarshalIndent(aCertList, "\t", "\t")
+		if err != nil {
+			NewValueError(1140, fmt.Errorf("cert list: json marshal fails '%v'", err.Error()))
+		}
 	}
 	// Screen oder JSON File output
 	if CertList.JSONOutput {
@@ -132,4 +139,5 @@ func (CertList *CertListType) DoCommand() {
 	} else {
 		fmt.Fprintf(os.Stdout, "%v\n", aCertList)
 	}
+	return nil
 }

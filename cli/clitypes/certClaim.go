@@ -216,44 +216,51 @@ func (CertClaim *CertClaimType) PrintParams() {
 }
 
 // CheckParams  checks the parameters of the command cert claim
-func (CertClaim *CertClaimType) CheckParams() bool {
+func (CertClaim *CertClaimType) CheckParams() error {
 	// check api
 	// check CA
 	// Wildcard & AutoDNS are mutually exclusive
 	// SAN
+	var errText string
 	OK := true
 	if !CheckTypeOfFQDN(CertClaim.FQDN) {
 		OK = false
-		fmt.Printf("Cert FQDN  '%s' is not valid \n", CertClaim.FQDN)
+		errText = fmt.Sprintf("cert claim FQDN  '%s' is not valid", CertClaim.FQDN)
 	}
 	if CertClaim.AutoDNS != "" && !regExIPv4.MatchString(CertClaim.AutoDNS) {
 		OK = false
-		fmt.Fprintf(os.Stderr, "ERROR: Cert AutoDNS.IP4_ADDR  is not empty or a valid IP4 address  '%s'\n", CertClaim.AutoDNS)
+		errText = fmt.Sprintf("cert claim AutoDNS.IP4_ADDR is not empty or a valid IP4 address  '%s'", CertClaim.AutoDNS)
 	}
 	if len(CertClaim.AccessToken) <= 4 {
 		OK = false
-		fmt.Fprintf(os.Stderr, "ERROR: Cert AccessToken  heuristic check failed \n")
+		errText = "cert claim AccessToken heuristic check failed"
 	}
 	//
 	// do not check this values if they are empty!!
 	if !checkKty(CertClaim.Hints.Kty) {
+		errText = "cert claim Kty check failed"
 		OK = false
 	}
 	if !checkCrv(CertClaim.Hints.Crv) {
+		errText = "cert claim Crv check failed"
 		OK = false
 	}
 	if !checkKeyUsage(CertClaim.Hints.KeyUsage) {
+		errText = "cert claim Key usage check failed"
 		OK = false
 	}
 	if !checkExtKeyUsage(CertClaim.Hints.ExtKeyUsage) {
+		errText = "cert claim Key extended usage check failed"
 		OK = false
 	}
 	// TTL  string e.g.  30d
-
-	return OK
+	if !OK {
+		return NewValueError(12301, fmt.Errorf(errText))
+	}
+	return nil
 }
 
-func (CertClaim *CertClaimType) DoCommand() {
+func (CertClaim *CertClaimType) DoCommand() error {
 	// json body des requests erzeugen
 	var claimRequest claimRequestType
 	claimRequest.Name = CertClaim.FQDN
@@ -274,7 +281,7 @@ func (CertClaim *CertClaimType) DoCommand() {
 	jBody, _ := json.MarshalIndent(claimRequest, "\t", "\t")
 	req, err := http.NewRequest(http.MethodPost, postCertClaimUrl, bytes.NewReader(jBody))
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "ERROR: Command cert get full chain: url='%v' Error'%v' \n", postCertClaimUrl, err.Error())
+		return NewValueError(12401, fmt.Errorf("cert claim chain: url='%v' Error'%v'", postCertClaimUrl, err.Error()))
 	}
 	req.Header.Set("Accept", "application/json")
 	// Create a Bearer string by appending string access token
@@ -286,12 +293,15 @@ func (CertClaim *CertClaimType) DoCommand() {
 	}
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "ERROR: Command CERT CLAIM : Request failed Error:= '%v' \n", err.Error())
-		return
+		return NewValueError(11402, fmt.Errorf("cert claim: Request failed Error:= '%v'", err.Error()))
 	}
 	defer resp.Body.Close()
 
-	if CertClaim.Verbose || resp.StatusCode != 200 {
+	if CertClaim.Verbose {
 		PrintFullRespond("INFO: Command CERT GET full chain: Request dump", resp)
 	}
+	if resp.StatusCode != 200 {
+		return NewValueError(11403, fmt.Errorf("cert claim: Request failed Error:= '%v'", resp.StatusCode))
+	}
+	return nil
 }

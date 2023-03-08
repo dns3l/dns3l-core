@@ -40,7 +40,7 @@ type DNSAddType struct {
 }
 
 // Init inits the parameters of the command dns add
-func (dnsAdd *DNSAddType) Init(verbose bool, jsonOutput bool, backend string, force bool, id string, secret string, usePWSafe bool, args []string) {
+func (dnsAdd *DNSAddType) Init(verbose bool, jsonOutput bool, backend string, force bool, id string, secret string, usePWSafe bool, args []string) error {
 	dnsAdd.Verbose = verbose
 	dnsAdd.JSONOutput = jsonOutput
 	dnsAdd.Backend = backend
@@ -54,12 +54,12 @@ func (dnsAdd *DNSAddType) Init(verbose bool, jsonOutput bool, backend string, fo
 	if val, err := strconv.Atoi(args[3]); err == nil {
 		dnsAdd.Seconds = val
 	} else {
-		fmt.Fprintf(os.Stderr, "ERROR: Command DNS ADD Argument for Seconds is not valid!! Set to 3000 \n")
-		dnsAdd.Seconds = 3000
+		return NewValueError(1302, fmt.Errorf("cmd DNS ADD Argument for TTL is not valid"))
 	}
+	var err error
 	// viper read the config from the requested DNS provider from the yaml file with the help of viper
-	dnsAdd.P = setProvider(backend, id, secret, usePWSafe, verbose)
-
+	dnsAdd.P, err = setProvider(backend, id, secret, usePWSafe, verbose)
+	return err
 }
 
 // PrintParams prints the parameters of the command dns add
@@ -83,28 +83,32 @@ func (dnsAdd *DNSAddType) PrintParams() {
 }
 
 // CheckParams prints the parameters of the command dns add
-func (dnsAdd *DNSAddType) CheckParams() bool {
+func (dnsAdd *DNSAddType) CheckParams() error {
 	// check provider
 	// check api
 	OK := true
+	var errText string
 	if !CheckTypeOfFQDN(dnsAdd.FQDN) {
 		OK = false
-		fmt.Fprintf(os.Stderr, "ERROR: Command DNS ADD parameter dnsFQDN  '%s' is not valid \n", dnsAdd.FQDN)
+		errText = fmt.Sprintf("command DNS ADD parameter dnsFQDN  '%s' is not valid", dnsAdd.FQDN)
 	}
 	if !CheckTypeOfDNSRecord(dnsAdd.Type) {
 		OK = false
-		fmt.Fprintf(os.Stderr, "ERROR: Command DNS ADD parameter dnsType  '%s'  is not valid \n", dnsAdd.Type)
+		errText = fmt.Sprintf("command DNS ADD parameter dnsType  '%s'  is not valid", dnsAdd.Type)
 	}
 	if !CheckTypeOfData(dnsAdd.Data, dnsAdd.Type) {
 		OK = false
-		fmt.Fprintf(os.Stderr, "ERROR: Command DNS ADD parameter dnsData  '%s'  is not valid \n", dnsAdd.Data)
+		errText = fmt.Sprintf("command DNS ADD parameter dnsData  '%s'  is not valid", dnsAdd.Data)
 	}
 	// dnsAdd.Provider
 	vip := viper.GetViper()
 	host := vip.GetString("dns.providers." + dnsAdd.Backend + ".host")
 	if host == "" {
-		fmt.Fprintf(os.Stderr, "ERROR DNS ADD dns provider not in config '%s' \n", "dns.providers."+dnsAdd.Backend+".host")
+		errText = fmt.Sprintf("cmd DNS ADD dns provider not in config '%s'", "dns.providers."+dnsAdd.Backend+".host")
 		OK = false
 	}
-	return OK
+	if !OK {
+		return NewValueError(1301, fmt.Errorf(errText))
+	}
+	return nil
 }

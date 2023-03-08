@@ -15,22 +15,22 @@ import (
 func CachePassword(name, password string, timeoutSeconds uint, verbose bool) error {
 	// Create session
 	if password == "" {
-		return fmt.Errorf("function cachePassword(): empty secret")
+		return fmt.Errorf("function cachePassword(): name:%s empty secret", name)
 	}
 	keyring, err := keyctl.SessionKeyring()
 	if err != nil {
-		return fmt.Errorf("function cachePassword(): couldn't create keyring session: %v", err)
+		return fmt.Errorf("function cachePassword(): name:%s couldn't create keyring session: %v", name, err)
 	}
 	// Store key
 	keyring.SetDefaultTimeout(timeoutSeconds)
 	key, err := keyring.Add(name, []byte(password))
 	if err != nil {
-		return fmt.Errorf("function cachePassword(): couldn't store '%s': %v", name, err)
+		return fmt.Errorf("function cachePassword(): name:%s couldn't store '%s'", name, err)
 	}
 	// OK case
 	if verbose {
 		info, _ := key.Info()
-		fmt.Fprintf(os.Stderr, "Function CachePassword(): key: %+v\n", info)
+		fmt.Fprintf(os.Stderr, "Function CachePassword():name:%s key: %+v\n", name, info)
 	}
 	return nil
 }

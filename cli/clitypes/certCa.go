@@ -55,17 +55,21 @@ func (CertCa *CertCaType) PrintParams() {
 }
 
 // CheckParams  checks the parameters of the command cert ca
-func (CertCa *CertCaType) CheckParams() bool {
+func (CertCa *CertCaType) CheckParams() error {
 	// check CertCA
+	var errText string
 	OK := true
 	if len(CertCa.AccessToken) <= 4 {
-		fmt.Fprintf(os.Stderr, "ERRORE: Cert AccessToken  heuristic check failed \n")
+		errText = "cert ca: AccessToken  heuristic check failed"
 		OK = false
 	}
-	return OK
+	if !OK {
+		return NewValueError(10101, fmt.Errorf(errText))
+	}
+	return nil
 }
 
-func (CertCa *CertCaType) DoCommand() {
+func (CertCa *CertCaType) DoCommand() error {
 	var listCaUrl string
 	if CertCa.APIEndPoint[len(CertCa.APIEndPoint)-1] == byte('/') {
 		listCaUrl = CertCa.APIEndPoint + "ca"
@@ -74,7 +78,7 @@ func (CertCa *CertCaType) DoCommand() {
 	}
 	req, err := http.NewRequest("GET", listCaUrl, nil)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "ERROR: Command.certCA: url='%v' Error'%v' \n", listCaUrl, err.Error())
+		return NewValueError(10401, fmt.Errorf("cert ca:: url='%v' Error'%v'", listCaUrl, err.Error()))
 	}
 	req.Header.Set("Accept", "application/json")
 	// Create a Bearer string by appending string access token
@@ -83,8 +87,7 @@ func (CertCa *CertCaType) DoCommand() {
 	req.Header.Add("Authorization", bearer)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "ERROR: Command.certCA: Request failed Error:= '%v' \n", err.Error())
-		return
+		return NewValueError(10402, fmt.Errorf("cert ca: Request failed Error:= '%v'", err.Error()))
 	}
 	defer resp.Body.Close()
 	if CertCa.Verbose {
@@ -92,16 +95,21 @@ func (CertCa *CertCaType) DoCommand() {
 	}
 	var aCAList []CAInfo
 	if err = json.NewDecoder(resp.Body).Decode(&aCAList); err != nil {
-		fmt.Fprintf(os.Stderr, "ERROR: Command.certCA: decoding error, no data received ?? '%v' \n ", err.Error())
-		return
+		return NewValueError(11403, fmt.Errorf("cert ca: decoding Error '%v' No Data received", err.Error()))
 	}
-	fmt.Fprintf(os.Stdout, "%v\n", resp.StatusCode)
+	if CertCa.Verbose {
+		fmt.Fprintf(os.Stdout, "%v\n", resp.StatusCode)
+	}
 	//Json Output
-	caListJson, _ := json.MarshalIndent(aCAList, "\t", "\t")
+	caListJson, errMarshal := json.MarshalIndent(aCAList, "\t", "\t")
+	if errMarshal != nil {
+		NewValueError(1140, fmt.Errorf("cert ca: json marshal fails '%v'", errMarshal.Error()))
+	}
 	// Screen oder JSON File output
 	if CertCa.JSONOutput {
 		fmt.Fprintf(os.Stdout, "%v\n", string(caListJson))
 	} else {
 		fmt.Fprintf(os.Stdout, "%v\n", aCAList)
 	}
+	return nil
 }

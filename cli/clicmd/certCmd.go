@@ -2,7 +2,6 @@ package clicmd
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/dns3l/dns3l-core/cli/clitypes"
 	"github.com/spf13/cobra"
@@ -119,25 +118,23 @@ var certCaCommand = &cobra.Command{
 	Use:   "ca",
 	Short: "List all certificate authorities (CA) utilized by DNS3L",
 	Long:  ``,
-	Run:   certCaCmdCb,
+	RunE:  certCaCmdCb,
 }
 
-func certCaCmdCb(ccmd *cobra.Command, args []string) {
+func certCaCmdCb(ccmd *cobra.Command, args []string) error {
 	// 	Verbose bool,  JSONOutput  bool,  APIEndPoint string
 	if len(args) != 0 {
-		fmt.Fprintf(os.Stderr, "ERROR: CERT CA requires 0 Arguments but found %d \n", len(args))
-		return
+		return clitypes.NewValueError(10001, fmt.Errorf("CERT CA requires 0 Arguments but found %d \n", len(args)))
 	}
 	var certCa clitypes.CertCaType
 	certCa.Init(Verbose, JSONOutput, CertAPIEndPoint, CertAccessToken)
 	certCa.PrintParams()
-	if !certCa.CheckParams() {
-		if nil != ccmd.Usage() {
-			fmt.Fprintf(os.Stderr, "ERROR: CERT CA Internal Error in ccmd.Usage()")
-		}
-		return
+	err := certCa.CheckParams()
+	if err != nil {
+		return clitypes.NewValueError(10002, err)
 	}
-	certCa.DoCommand()
+
+	return certCa.DoCommand()
 }
 
 // ===========================================================
@@ -146,24 +143,21 @@ var certListCommand = &cobra.Command{
 	Use:   "list",
 	Short: "List all certificates managed by DNS3L",
 	Long:  ``,
-	Run:   certListCmdCb,
+	RunE:  certListCmdCb,
 }
 
-func certListCmdCb(ccmd *cobra.Command, args []string) {
+func certListCmdCb(ccmd *cobra.Command, args []string) error {
 	// Verbose bool, JSONOutput bool,  APIEndPoint string,  CA  string
 	if len(args) != 0 {
-		fmt.Fprintf(os.Stderr, "ERROR: CERT LIST requires 0 Arguments but found %d \n", len(args))
-		return
+		return clitypes.NewValueError(11001, fmt.Errorf("CERT LIST requires 0 Arguments but found %d \n", len(args)))
 	}
 	var CertList = clitypes.CertListType{Verbose: Verbose, JSONOutput: JSONOutput, APIEndPoint: CertAPIEndPoint, AccessToken: CertAccessToken, CA: CertCA, Filter: CertSearchFilter}
 	CertList.PrintParams()
-	if !CertList.CheckParams() {
-		if nil != ccmd.Usage() {
-			fmt.Fprintf(os.Stderr, "ERROR: CERT LIST Internal Error in ccmd.Usage()")
-		}
-		return
+	err := CertList.CheckParams()
+	if err != nil {
+		return clitypes.NewValueError(11002, err)
 	}
-	CertList.DoCommand()
+	return CertList.DoCommand()
 }
 
 // ===========================================================
@@ -172,26 +166,24 @@ var certClaimCommand = &cobra.Command{
 	Use:   "claim",
 	Short: "Obtain cert from DNS3L ACME CAs",
 	Long:  ``,
-	Run:   certClaimCmdCb,
+	RunE:  certClaimCmdCb,
 }
 
-func certClaimCmdCb(ccmd *cobra.Command, args []string) {
+func certClaimCmdCb(ccmd *cobra.Command, args []string) error {
 	// 	Verbose bool, JSONOutput  bool, APIEndPoint string, CA string, Wildcard bool, AutoDNS bool, FQDN string, SAN []string
 	//  SAN has to be checked
 	if len(args) < 2 {
-		fmt.Fprintf(os.Stderr, "ERROR: CERT CLAIM requires 2 or more Arguments but found %d \n", len(args))
-		return
+		return clitypes.NewValueError(12001, fmt.Errorf("CERT CLAIM requires 2 or more Arguments but found %d \n", len(args)))
 	}
 	var CertClaim clitypes.CertClaimType
 	CertClaim.Init(Verbose, JSONOutput, CertAPIEndPoint, CertAccessToken, CertCA, CertWildcard, CertAutoDNS, args[0], args[1:], CertHintsSection)
 	CertClaim.PrintParams()
-	if !CertClaim.CheckParams() {
-		if nil != ccmd.Usage() {
-			fmt.Fprintf(os.Stderr, "ERROR: CERT CLAIM Internal Error in ccmd.Usage()")
-		}
-		return
+	err := CertClaim.CheckParams()
+	if err != nil {
+		return clitypes.NewValueError(12002, err)
 	}
-	CertClaim.DoCommand()
+
+	return CertClaim.DoCommand()
 }
 
 // ===========================================================
@@ -200,26 +192,24 @@ var certGetCommand = &cobra.Command{
 	Use:   "get",
 	Short: "Get PEM certificate (chain) from DNS3L",
 	Long:  ``,
-	Run:   certGetCmdCb,
+	RunE:  certGetCmdCb,
 }
 
-func certGetCmdCb(ccmd *cobra.Command, args []string) {
+func certGetCmdCb(ccmd *cobra.Command, args []string) error {
 	// 	Verbose bool, JSONOutput bool, APIEndPoint string, CA string, Mode string, FQDN string
 	// clitypes.NotImplemented()
 	if len(args) != 1 {
-		fmt.Fprintf(os.Stderr, "ERROR: CERT GET requires 1 Arguments but found %d \n", len(args))
-		return
+		return clitypes.NewValueError(13001, fmt.Errorf("CERT Get requires 1 Arguments but found %d \n", len(args)))
 	}
 	var CertGet = clitypes.CertGetType{Verbose: Verbose, JSONOutput: JSONOutput, APIEndPoint: CertAPIEndPoint,
 		AccessToken: CertAccessToken, CA: CertCA, Mode: clitypes.Mode2Enum(CertMode), FQDN: args[0]}
 	CertGet.PrintParams()
-	if !CertGet.CheckParams() {
-		if nil != ccmd.Usage() {
-			fmt.Fprintf(os.Stderr, "ERROR: CERT GET Internal Error in ccmd.Usage()")
-		}
-		return
+	err := CertGet.CheckParams()
+	if err != nil {
+		return clitypes.NewValueError(13002, err)
 	}
-	CertGet.DoCommand()
+
+	return CertGet.DoCommand()
 }
 
 // ===========================================================
@@ -228,23 +218,21 @@ var certDelCommand = &cobra.Command{
 	Use:   "del",
 	Short: "Delete cert managed by DNS3L",
 	Long:  ``,
-	Run:   certDelCmdCb,
+	RunE:  certDelCmdCb,
 }
 
-func certDelCmdCb(ccmd *cobra.Command, args []string) {
+func certDelCmdCb(ccmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		fmt.Fprintf(os.Stderr, "ERROR: CERT DEL requires 1 Arguments but found %d \n", len(args))
-		return
+		return clitypes.NewValueError(14001, fmt.Errorf("CERT DEL requires 1 Arguments but found %d \n", len(args)))
 	}
 	var CertDel = clitypes.CertDelType{Verbose: Verbose, JSONOutput: JSONOutput, APIEndPoint: CertAPIEndPoint, AccessToken: CertAccessToken, CA: CertCA, FQDN: args[0]}
 	CertDel.PrintParams()
-	if !CertDel.CheckParams() {
-		if nil != ccmd.Usage() {
-			fmt.Fprintf(os.Stderr, "ERROR: CERT DEL Internal Error in ccmd.Usage()")
-		}
-		return
+	err := CertDel.CheckParams()
+	if err != nil {
+		return clitypes.NewValueError(14002, err)
 	}
-	CertDel.DoCommand()
+
+	return CertDel.DoCommand()
 }
 
 // ===========================================================
@@ -253,25 +241,23 @@ var certCsrCommand = &cobra.Command{
 	Use:   "csr",
 	Short: "Create CSR and unencrypted private key for DNS3L none ACME CAs",
 	Long:  ``,
-	Run:   certCsrCmdCb,
+	RunE:  certCsrCmdCb,
 }
 
-func certCsrCmdCb(ccmd *cobra.Command, args []string) {
+func certCsrCmdCb(ccmd *cobra.Command, args []string) error {
 	// 	Verbose bool, JSONOutput  bool, Force  bool, APIEndPoint string, CA string, FQDN string
 	clitypes.NotImplemented()
 	if len(args) != 1 {
-		fmt.Fprintf(os.Stderr, "ERROR: CERT CSR requires 1 Arguments but found %d \n", len(args))
-		return
+		return clitypes.NewValueError(15001, fmt.Errorf("CERT CSR requires 1 Arguments but found %d \n", len(args)))
 	}
 	var CertCSR = clitypes.CertCSRType{Verbose: Verbose, JSONOutput: JSONOutput, Force: Force,
 		APIEndPoint: CertAPIEndPoint, AccessToken: CertAccessToken, CA: CertCA, FQDN: args[0]}
 	CertCSR.PrintParams()
-	if !CertCSR.CheckParams() {
-		if nil != ccmd.Usage() {
-			fmt.Fprintf(os.Stderr, "ERROR: CERT CSR Internal Error in ccmd.Usage()")
-		}
-		return
+	err := CertCSR.CheckParams()
+	if err != nil {
+		return clitypes.NewValueError(15002, err)
 	}
+	return clitypes.NewValueError(15005, fmt.Errorf("CERT CSR not implemented !\n"))
 }
 
 // ===========================================================
@@ -280,25 +266,23 @@ var certPushCommand = &cobra.Command{
 	Use:   "push",
 	Short: "Deal with DNS3L X.509 certificates",
 	Long:  ``,
-	Run:   certPushCmdCb,
+	RunE:  certPushCmdCb,
 }
 
-func certPushCmdCb(ccmd *cobra.Command, args []string) {
+func certPushCmdCb(ccmd *cobra.Command, args []string) error {
 	// Verbose bool, JSONOutput bool, Force bool, APIEndPoint string, CA string, FQDN string, CRTpem string, CHNpem string
 	clitypes.NotImplemented()
 	if len(args) != 3 {
-		fmt.Fprintf(os.Stderr, "ERROR: CERT PUSH requires 3 Arguments but found %d \n", len(args))
-		return
+		return clitypes.NewValueError(16001, fmt.Errorf("CERT PUSH requires 3 Arguments but found %d \n", len(args)))
 	}
 	var CertPush = clitypes.CertPushType{Verbose: Verbose, JSONOutput: JSONOutput, Force: Force,
 		APIEndPoint: CertAPIEndPoint, AccessToken: CertAccessToken, CA: CertCA, FQDN: args[0], CRTpem: args[1], CHNpem: args[2]}
 	CertPush.PrintParams()
-	if !CertPush.CheckParams() {
-		if nil != ccmd.Usage() {
-			fmt.Fprintf(os.Stderr, "ERROR: CERT PUSH Internal Error in ccmd.Usage()")
-		}
-		return
+	err := CertPush.CheckParams()
+	if err != nil {
+		return clitypes.NewValueError(16002, err)
 	}
+	return clitypes.NewValueError(16005, fmt.Errorf("CERT PUSH not implemented !\n"))
 }
 
 // ===========================================================
@@ -307,15 +291,11 @@ var certCommand = &cobra.Command{
 	Use:   "cert",
 	Short: "Push cert to DNS3L none ACME CAs",
 	Long:  ``,
-	Run:   certCmdCb,
+	RunE:  certCmdCb,
 }
 
-func certCmdCb(ccmd *cobra.Command, args []string) {
-	fmt.Fprintf(os.Stderr, "ERROR!  reason: command CERT <????> is used without ca, list, claim, get, del, csr, push or query \n ")
-	if nil != ccmd.Usage() {
-		fmt.Fprintf(os.Stderr, "ERROR: CERT <????> Internal Error in ccmd.Usage()")
-	}
-	os.Exit(1)
+func certCmdCb(ccmd *cobra.Command, args []string) error {
+	return clitypes.NewValueError(201, fmt.Errorf("command CERT is used without a subcommand ca, list, claim, get, del, csr, push or query \n "))
 }
 
 func initCert() {
@@ -353,7 +333,7 @@ func initCert() {
 	// if someone fill the ring
 	// use the value out of the ring as default value in the command line
 	var aToken string
-	// we test if somethink is stored in the keyring
+	// we test if something is stored in the keyring
 	rTok, inErr := clitypes.GetPasswordfromRing("CertAccountToken", false)
 	if inErr == nil {
 		aToken = string(rTok)

@@ -38,24 +38,28 @@ func (CertDel *CertDelType) PrintParams() {
 }
 
 // CheckParams prints the parameters of the command cert del
-func (CertDel *CertDelType) CheckParams() bool {
+func (CertDel *CertDelType) CheckParams() error {
 	// check api
 	// check CA
+	var errText string
 	OK := true
 	if !CheckTypeOfFQDN(CertDel.FQDN) {
 		OK = false
-		fmt.Fprintf(os.Stderr, "ERROR: Cert FQDN  '%s' is not valid \n", CertDel.FQDN)
+		errText = fmt.Sprintf("cert del FQDN  '%s' is not valid", CertDel.FQDN)
 	}
 	if len(CertDel.AccessToken) <= 4 {
 		OK = false
-		fmt.Fprintf(os.Stderr, "ERRORE: Cert AccessToken  heuristic check failed \n")
+		errText = "cert del AccessToken  heuristic check failed"
 	}
-	return OK
+	if !OK {
+		return NewValueError(14301, fmt.Errorf(errText))
+	}
+	return nil
 }
 
 // var bearer = "Bearer " + FinalCertToken(CertDel.AccessToken)
 
-func (CertDel *CertDelType) DoCommand() {
+func (CertDel *CertDelType) DoCommand() error {
 	var delCertUrl string
 	if CertDel.APIEndPoint[len(CertDel.APIEndPoint)-1] == byte('/') {
 		delCertUrl = CertDel.APIEndPoint + "crt/" + CertDel.FQDN
@@ -64,7 +68,7 @@ func (CertDel *CertDelType) DoCommand() {
 	}
 	req, err := http.NewRequest(http.MethodDelete, delCertUrl, nil)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "ERROR: Command.CertDel: url='%v' Error'%v' \n", delCertUrl, err.Error())
+		return NewValueError(14401, fmt.Errorf("cert del: url='%v' Error'%v'", delCertUrl, err.Error()))
 	}
 	req.Header.Set("Accept", "application/json")
 	// Create a Bearer string by appending string access token
@@ -73,11 +77,17 @@ func (CertDel *CertDelType) DoCommand() {
 	req.Header.Add("Authorization", bearer)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "ERROR: Command.CertDel: Request failed Error:= '%v' \n", err.Error())
-		return
+		if CertDel.Verbose {
+			PrintFullRespond("INFO: Command.CertDel: Request dump", resp)
+		}
+		return NewValueError(14402, fmt.Errorf("cert del: Request failed Error:= '%v'", err.Error()))
 	}
 	defer resp.Body.Close()
-	if CertDel.Verbose || resp.StatusCode != 200 {
+	if CertDel.Verbose {
 		PrintFullRespond("INFO: Command.CertDel: Request dump", resp)
 	}
+	if resp.StatusCode != 200 {
+		NewValueError(14403, fmt.Errorf("cert del: Request failed http Respond Status := '%v'", resp.StatusCode))
+	}
+	return nil
 }

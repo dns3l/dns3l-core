@@ -39,21 +39,19 @@ func (loginData *LoginDNSType) PrintParams() {
 	}
 }
 
-func (loginData *LoginDNSType) CheckParams() bool {
-	OK := true
+func (loginData *LoginDNSType) CheckParams() error {
 	if !loginData.FromTerminal {
 		if loginData.Password == "NOT_SET" {
 			_, pass := getProviderData(loginData.DNSBackend, loginData.Verbose)
 			if pass == "" {
-				OK = false
-				fmt.Fprintf(os.Stderr, "ERROR: No DNS backend Password provided \n  use --terminal=XXXX or  $(DNS3L_DNS_SECRET) or config to provide one\n")
+				return NewValueError(510, fmt.Errorf("no DNS backend Password provided \n  use --terminal=XXXX or  $(DNS3L_DNS_SECRET) or config to provide one"))
 			}
 		}
 	}
-	return OK
+	return nil
 }
 
-func (loginData *LoginDNSType) DoCommand() {
+func (loginData *LoginDNSType) DoCommand() error {
 	var secret string
 	var user string
 	var bIn []byte
@@ -63,8 +61,7 @@ func (loginData *LoginDNSType) DoCommand() {
 		if inErr == nil {
 			secret = string(bIn)
 		} else {
-			fmt.Fprintf(os.Stderr, "ERROR: store login DNS data:  %v \nt", inErr)
-			return
+			return NewValueError(520, fmt.Errorf("DNS get password from terminal failed, %v", inErr.Error()))
 		}
 	} else {
 		switch {
@@ -72,7 +69,6 @@ func (loginData *LoginDNSType) DoCommand() {
 			_, secret = getProviderData(loginData.DNSBackend, false)
 		default:
 			secret = loginData.Password
-			fmt.Fprintf(os.Stderr, "Override backend secret due to ENV/CLI option:\n")
 		}
 	}
 	switch {
@@ -80,19 +76,23 @@ func (loginData *LoginDNSType) DoCommand() {
 		user, _ = getProviderData(loginData.DNSBackend, false)
 	default:
 		user = loginData.User
-		fmt.Fprintf(os.Stderr, "Override backend user due to ENV/CLI option:\n")
+		if loginData.Verbose {
+			fmt.Fprintf(os.Stderr, "Override backend user due to ENV/CLI option:\n")
+		}
+	}
+	if loginData.Verbose {
+		fmt.Fprintf(os.Stderr, "KeyRing name %v\n", user)
 	}
 	if nil != CachePassword(user, secret, 3600*4, loginData.Verbose) {
-		fmt.Fprintf(os.Stderr, "ERROR store login data of DNS backend, can not store data in the password safe \n")
-		return
+		return NewValueError(530, fmt.Errorf("can not store secrete in the password safe"))
 	}
 	time.Sleep(time.Millisecond * 10)
 	_, inErr = GetPasswordfromRing(user, loginData.Verbose)
 	if inErr != nil {
-		fmt.Fprintf(os.Stderr, "ERROR: store login data of DNS backend, write to password safe was not OK: Error occured %v", inErr)
-		return
+		return NewValueError(540, fmt.Errorf("write to password safe was not OK: Error %v", inErr.Error()))
 	}
 	if loginData.Verbose {
 		fmt.Fprintf(os.Stderr, "Info: DNS backend login Secret sucessfully stored in password safe '%v' \n", user)
 	}
+	return nil
 }

@@ -32,17 +32,19 @@ func (DnsQuery *DNSQueryType) PrintParams() {
 		fmt.Fprintf(os.Stderr, "Backend      	'%s' \n", DnsQuery.Backend)
 		fmt.Fprintf(os.Stderr, "dnsFQDN         '%s' Check:='%t'\n", DnsQuery.FQDN, CheckTypeOfFQDN(DnsQuery.FQDN))
 		fmt.Fprintf(os.Stderr, "use password safe     '%t' \n", DnsQuery.UsePWSafe)
-
 	}
-	fmt.Printf("THIS COMMAND IS NOT IMPLEMENTED YET\n")
 }
 
 // CheckParams prints the parameters of the command dns query
-func (DnsQuery *DNSQueryType) CheckParams() bool {
+func (DnsQuery *DNSQueryType) CheckParams() error {
 	OK := true
+	var errText string
 	if !CheckTypeOfFQDN(DnsQuery.FQDN) {
 		OK = false
-		fmt.Fprintf(os.Stderr, "ERROR: Command DNS QUERY dnsFQDN  '%s' is not valid \n", DnsQuery.FQDN)
+		errText = fmt.Sprintf("ERROR: Command DNS QUERY dnsFQDN  '%s' is not valid \n", DnsQuery.FQDN)
 	}
-	return OK
+	if !OK {
+		return NewValueError(1301, fmt.Errorf(errText))
+	}
+	return nil
 }

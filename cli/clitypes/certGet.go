@@ -96,23 +96,27 @@ func (CertGet *CertGetType) PrintParams() {
 }
 
 // CheckParams prints the parameters of the command cert get
-func (CertGet *CertGetType) CheckParams() bool {
+func (CertGet *CertGetType) CheckParams() error {
 	// check api
 	// check CA
 	// mode
+	var errText string
 	OK := true
 	if !CheckTypeOfFQDN(CertGet.FQDN) {
 		OK = false
-		fmt.Fprintf(os.Stderr, "ERROR: CERT GET FQDN  '%s' is not valid \n", CertGet.FQDN)
+		errText = fmt.Sprintf("cert get FQDN  '%s' is not valid", CertGet.FQDN)
 	}
 	if len(CertGet.AccessToken) <= 4 {
 		OK = false
-		fmt.Fprintf(os.Stderr, "ERRORE: Cert AccessToken  heuristic check failed \n")
+		errText = "cert get AccessToken  heuristic check failed"
 	}
-	return OK
+	if !OK {
+		return NewValueError(13301, fmt.Errorf(errText))
+	}
+	return nil
 }
 
-func (CertGet *CertGetType) DoCommand() {
+func (CertGet *CertGetType) DoCommand() error {
 	// using API Endpoint /ca/{caId}/crt/{crtName}/pem
 	var getCertPemUrl string
 	if CertGet.APIEndPoint[len(CertGet.APIEndPoint)-1] == byte('/') {
@@ -125,7 +129,7 @@ func (CertGet *CertGetType) DoCommand() {
 	}
 	req, err := http.NewRequest("GET", getCertPemUrl, nil)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "ERROR: Command cert get full chain: url='%v' Error'%v' \n", getCertPemUrl, err.Error())
+		return NewValueError(13401, fmt.Errorf("cert get: certificate cresate request failed  url='%v' Error'%v'", getCertPemUrl, err.Error()))
 	}
 	req.Header.Set("Accept", "application/json")
 	// Create a Bearer string by appending string access token
@@ -134,17 +138,18 @@ func (CertGet *CertGetType) DoCommand() {
 	req.Header.Add("Authorization", bearer)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "ERROR: Command CERTGET full chain: Request failed Error:= '%v' \n", err.Error())
-		return
+		return NewValueError(11402, fmt.Errorf("cert get certifikate : Request failed Error:= '%v'", err.Error()))
 	}
 	defer resp.Body.Close()
-	if CertGet.Verbose || resp.StatusCode != 200 {
+	if CertGet.Verbose {
 		PrintFullRespond("INFO: Command CERT GET full chain: Request dump", resp)
+	}
+	if resp.StatusCode != 200 {
+		return NewValueError(13403, fmt.Errorf("cert get certifikate: Request respond code:= '%v'", resp.StatusCode))
 	}
 	var aPEMFullChain PEMFullChainType
 	if err = json.NewDecoder(resp.Body).Decode(&aPEMFullChain); err != nil {
-		fmt.Fprintf(os.Stderr, "ERROR: Command CERT GET full chain: No Data received \nUnmarshal Error '%v' \n ", err.Error())
-		return
+		return NewValueError(13402, fmt.Errorf("cert get certifikate: request failed Error:= '%v'", err.Error()))
 	}
 	// extract the data coresponding to MODE FLAG
 	var outData string
@@ -170,4 +175,5 @@ func (CertGet *CertGetType) DoCommand() {
 	} else {
 		fmt.Fprintf(os.Stdout, "%v\n", outData)
 	}
+	return nil
 }

@@ -117,19 +117,21 @@ var DNSUsePWSafe bool
 // DNSAddCmdCb ------------------------------------
 // implementation of [dns add]
 // Args: FQDN TYPE DATA
-func DNSAddCmdCb(ccmd *cobra.Command, args []string) {
+// net.IPv4allrouter.IsInterfaceLocalMulticast()
+func DNSAddCmdCb(ccmd *cobra.Command, args []string) error {
 	if len(args) != 4 {
-		fmt.Fprintf(os.Stderr, "ERROR: DNS ADD requires 4 Arguments but found %d \n", len(args))
-		return
+		return clitypes.NewValueError(1001, fmt.Errorf("DNS ADD requires 4 Arguments but found %d \n", len(args)))
 	}
 	var dnsAdd clitypes.DNSAddType
-	dnsAdd.Init(Verbose, JSONOutput, Backend, Force, DNSProviderID, DNSProviderSecret, DNSUsePWSafe, args)
+	var err error
+	err = dnsAdd.Init(Verbose, JSONOutput, Backend, Force, DNSProviderID, DNSProviderSecret, DNSUsePWSafe, args)
+	if err != nil {
+		return err
+	}
 	dnsAdd.PrintParams()
-	if !dnsAdd.CheckParams() {
-		if nil != ccmd.Usage() {
-			fmt.Fprintf(os.Stderr, "ERROR: DNS ADD Internal Error in ccmd.Usage()")
-		}
-		return
+	err = dnsAdd.CheckParams()
+	if err != nil {
+		return err
 	}
 	// see dnsTypeList in file util.go
 	// Ip-Address -> type "a"
@@ -140,6 +142,7 @@ func DNSAddCmdCb(ccmd *cobra.Command, args []string) {
 			dnsDel.Init(Verbose, JSONOutput, Backend, DNSProviderID, DNSProviderSecret, DNSUsePWSafe, args)
 			err := dnsDel.P.DeleteRecordA(dnsDel.FQDN)
 			if err != nil {
+				// delete fails but the flag force is set and it is not an error
 				fmt.Fprintf(os.Stderr, "Info: DNS ADD Delete of the A Record fails '%v' continue with add\n", err.Error())
 				fmt.Fprintf(os.Stderr, "Info: DNS ADD This occures due to Flag force, which try to delete the record")
 			} else {
@@ -148,11 +151,11 @@ func DNSAddCmdCb(ccmd *cobra.Command, args []string) {
 		}
 		err := dnsAdd.P.SetRecordA(dnsAdd.FQDN, uint32(dnsAdd.Seconds), ipAddr)
 		if err != nil {
-			fmt.Fprintf(os.Stdout, "FAIL\n DNS record '%s' not added \n'%v'\n", dnsAdd.FQDN, err.Error())
-		} else {
-			fmt.Fprintf(os.Stdout, "OK\n Add DNS record := '%v'", dnsAdd.FQDN)
+			return clitypes.NewValueError(1005, err)
 		}
+		fmt.Fprintf(os.Stdout, "OK\n Add DNS record := '%v'", dnsAdd.FQDN)
 	}
+	return nil
 }
 
 // DNSAddCommand DNS add cobra command
@@ -160,39 +163,39 @@ var DNSAddCommand = &cobra.Command{
 	Use:   "add",
 	Short: "Add A, CNAME, TXT, ... to DNS backend",
 	Long:  ``,
-	Run:   DNSAddCmdCb,
+	RunE:  DNSAddCmdCb,
 }
 
 // DNSDelCmdCb ------------------------------------
 // implementation of [dns del]
 // Args: FQDN TYPE DATA
-func DNSDelCmdCb(ccmd *cobra.Command, args []string) {
+func DNSDelCmdCb(ccmd *cobra.Command, args []string) error {
 	if len(args) != 3 {
-		fmt.Fprintf(os.Stderr, "ERROR: DNS DEL requires 3 Arguments but found %d \n", len(args))
-		return
+		return clitypes.NewValueError(2001, fmt.Errorf("DNS DEL requires 3 Arguments but found %d \n", len(args)))
 	}
 	var dnsDel clitypes.DNSDelType
-	dnsDel.Init(Verbose, JSONOutput, Backend, DNSProviderID, DNSProviderSecret, DNSUsePWSafe, args)
+	var err error
+	err = dnsDel.Init(Verbose, JSONOutput, Backend, DNSProviderID, DNSProviderSecret, DNSUsePWSafe, args)
+	if err != nil {
+		return err
+	}
 	dnsDel.PrintParams()
-	if !dnsDel.CheckParams() {
-		if nil != ccmd.Usage() {
-			fmt.Fprintf(os.Stderr, "ERROR: DNS DEL Internal Error in ccmd.Usage()")
-		}
-		return
+	err = dnsDel.CheckParams()
+	if err != nil {
+		return err
 	}
 	// see dnsTypeList in file util.go
 	// Ip-Address -> type "a"
 	if dnsDel.Type == string("a") {
 		err := dnsDel.P.DeleteRecordA(dnsDel.FQDN)
 		if err != nil {
-			fmt.Fprintf(os.Stdout, "FAIL\n DNS record '%s' not deleted  \n'%v'\n", dnsDel.FQDN, err.Error())
-		} else {
-			fmt.Fprintf(os.Stdout, "OK\n Delete DNS record := '%v'", dnsDel.FQDN)
-			if Verbose {
-				fmt.Fprintf(os.Stderr, "SUCCESS: DNS record deletet %s \n", dnsDel.FQDN)
-			}
+			return clitypes.NewValueError(2002, fmt.Errorf("DNS DEL record failed: '%s' not deleted '%v'\n", dnsDel.FQDN, err.Error()))
+		}
+		if Verbose {
+			fmt.Fprintf(os.Stderr, "SUCCESS: DNS record deletet %s \n", dnsDel.FQDN)
 		}
 	}
+	return nil
 }
 
 // DNSDelCommand DNS delete cobra command
@@ -200,26 +203,24 @@ var DNSDelCommand = &cobra.Command{
 	Use:   "del ",
 	Short: "Delete RR from DNS backend",
 	Long:  ``,
-	Run:   DNSDelCmdCb,
+	RunE:  DNSDelCmdCb,
 }
 
 // DNSListCmdCb ------------------------------------
 // implementation of [dns list]
-func DNSListCmdCb(ccmd *cobra.Command, args []string) {
+func DNSListCmdCb(ccmd *cobra.Command, args []string) error {
 	clitypes.NotImplemented()
 	if len(args) != 0 {
-		fmt.Fprintf(os.Stderr, "ERROR: DNS LIST requires 0 Arguments but found %d \n", len(args))
-		return
+		return clitypes.NewValueError(3001, fmt.Errorf("DNS LIST requires 0 Arguments but found %d \n", len(args)))
 	}
 	var dnsList = clitypes.DNSListType{Verbose: Verbose, JSONOutput: JSONOutput}
 	dnsList.PrintParams()
-	if !dnsList.CheckParams() {
-		if nil != ccmd.Usage() {
-			fmt.Fprintf(os.Stderr, "ERROR: DNS LIST Internal Error in ccmd.Usage()")
-		}
-		return
+	err := dnsList.CheckParams()
+	if err != nil {
+		return clitypes.NewValueError(3002, err)
 	}
-
+	// ExitCodes are set in function CheckParams
+	return clitypes.NewValueError(3003, fmt.Errorf("ERROR: Command DNS LIST not implemented !\n"))
 }
 
 // DNSListCommand DNS list cobra command
@@ -227,26 +228,24 @@ var DNSListCommand = &cobra.Command{
 	Use:   "list",
 	Short: "List DNS backends",
 	Long:  ``,
-	Run:   DNSQueryCmdCb,
+	RunE:  DNSQueryCmdCb,
 }
 
 // DNSQueryCmdCb ------------------------------------
 // implementation of [dns query]
-func DNSQueryCmdCb(ccmd *cobra.Command, args []string) {
+func DNSQueryCmdCb(ccmd *cobra.Command, args []string) error {
 	clitypes.NotImplemented()
 	if len(args) != 1 {
-		fmt.Fprintf(os.Stderr, "ERROR: DNS QUERY requires 1 Arguments but found %d \n", len(args))
-		return
+		return clitypes.NewValueError(4001, fmt.Errorf("DNS QUERY requires 1 Arguments but found %d \n", len(args)))
 	}
 	var dnsQuery = clitypes.DNSQueryType{Verbose: Verbose, JSONOutput: JSONOutput,
 		Backend: Backend, User: DNSProviderID, Pass: DNSProviderSecret, UsePWSafe: DNSUsePWSafe, FQDN: args[0]}
 	dnsQuery.PrintParams()
-	if !dnsQuery.CheckParams() {
-		if nil != ccmd.Usage() {
-			fmt.Fprintf(os.Stderr, "ERROR: DNS QUERY Internal Error in ccmd.Usage()")
-		}
-		return
+	err := dnsQuery.CheckParams()
+	if err != nil {
+		return clitypes.NewValueError(4002, err)
 	}
+	return clitypes.NewValueError(4003, fmt.Errorf("DNS LIST not implemented !\n"))
 }
 
 // DNSQueryCommand DNS query cobra command
@@ -254,7 +253,7 @@ var DNSQueryCommand = &cobra.Command{
 	Use:   "query",
 	Short: "Query DNS backend",
 	Long:  ``,
-	Run:   DNSQueryCmdCb,
+	RunE:  DNSQueryCmdCb,
 }
 
 // DNSCommand ------------------------------------
@@ -263,17 +262,13 @@ var DNSCommand = &cobra.Command{
 	Use:   "dns",
 	Short: "Deal with DNS3L DNS backends",
 	Long:  ``,
-	Run:   DNSCmdCb,
+	RunE:  DNSCmdCb,
 }
 
 // DNSCmdCb this is only called if "add del list or query is missing!!!!"
 // and this is not allowed -> exit
-func DNSCmdCb(ccmd *cobra.Command, args []string) {
-	fmt.Fprintf(os.Stderr, "ERROR!  reason: command DNS is used without one out of {add, del, list or query} \n ")
-	if nil != ccmd.Usage() {
-		fmt.Fprintf(os.Stderr, "ERROR: DNS <???> Internal Error in ccmd.Usage()")
-	}
-	os.Exit(1)
+func DNSCmdCb(ccmd *cobra.Command, args []string) error {
+	return clitypes.NewValueError(3, fmt.Errorf("Reason: DNS command is used without necessary subcommand \n "))
 }
 
 func initDNS() {
