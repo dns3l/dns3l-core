@@ -1,0 +1,21 @@
+name: comptest
+on:
+  push:
+    tags:
+      - "*"
+    branches:
+      - "*"
+  pull_request:
+jobs:
+  comptest:
+    runs-on: ubuntu-latest
+    container:
+      image: golang:1.19-alpine
+      options: --user root
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: run
+        run: |
+          chown -R 1000:1000 /__w/dns3l-core/dns3l-core
+          docker/run-in-docker golang-alpine

@@ -19,13 +19,15 @@ import (
 )
 
 type OIDCHandler struct {
-	AuthnDisabled      bool                `yaml:"authn_disabled"`
-	AuthnDisabledEmail string              `yaml:"authn_disabled_email" validate:"email"`
-	AuthzDisabled      bool                `yaml:"authz_disabled"`
-	DebugClaims        bool                `yaml:"debug_claims"`
-	InjectGroups       map[string][]string `yaml:"inject_groups"`
-	GroupsPrefix       string              `yaml:"groups_prefix" validate:"alphanumUnderscoreDashDot"`
-	GroupsReplaceDot   bool                `yaml:"groups_replace_dot"`
+	AuthnDisabled        bool                `yaml:"authn_disabled"`
+	AuthnDisabledEmail   string              `yaml:"authn_disabled_email" validate:"email"`
+	AuthzDisabled        bool                `yaml:"authz_disabled"`
+	DebugClaims          bool                `yaml:"debug_claims"`
+	InjectGroups         map[string][]string `yaml:"inject_groups"`
+	GroupsPrefix         string              `yaml:"groups_prefix" validate:"alphanumUnderscoreDashDot"`
+	GroupsReplaceDot     bool                `yaml:"groups_replace_dot"`
+	AuthnedCanReadPublic bool                `yaml:"authned_can_read_public"`
+	AnonCanReadPublic    bool                `yaml:"anon_can_read_public"`
 
 	OIDCBindings map[string]*OIDCBinding `yaml:"oidc_bindings"`
 
@@ -128,13 +130,39 @@ func (h *OIDCHandler) selectIssuer(token string) (*OIDCBinding, string, error) {
 
 }
 
+func (h *OIDCHandler) GetAnonymousInfo() *DefaultAuthorizationInfo {
+
+	return &DefaultAuthorizationInfo{
+		DomainsAllowed:        []string{},
+		AuthorizationDisabled: false,
+		ReadAllowed:           false,
+		WriteAllowed:          false,
+		Name:                  "anonymous",
+		Username:              "anonymous",
+		Email:                 h.AuthnDisabledEmail,
+		ReadAnyPublicAllowed:  false,
+	}
+
+}
+
 func (h *OIDCHandler) AuthnGetAuthzInfo(r *http.Request) (AuthorizationInfo, error) {
 
+	rinfo, err := h.authnGetAuthzInfoRaw(r)
+
+	if err == nil {
+		log.WithField("authzinfo", rinfo.String()).Debug("Request authorization determined")
+	}
+
+	return rinfo, err
+
+}
+
+func (h *OIDCHandler) authnGetAuthzInfoRaw(r *http.Request) (AuthorizationInfo, error) {
+
 	if h.AuthnDisabled {
-		return &DefaultAuthorizationInfo{
-			AuthorizationDisabled: true,
-			Email:                 h.AuthnDisabledEmail,
-		}, nil
+		disinfo := h.GetAnonymousInfo()
+		disinfo.AuthorizationDisabled = true
+		return disinfo, nil
 	}
 
 	tkn, err := GetBearerToken(r)
@@ -142,6 +170,12 @@ func (h *OIDCHandler) AuthnGetAuthzInfo(r *http.Request) (AuthorizationInfo, err
 		return nil, err
 	}
 	if tkn == "" {
+		if h.AnonCanReadPublic {
+			rinfo := h.GetAnonymousInfo()
+			rinfo.ReadAnyPublicAllowed = true
+			return rinfo, nil
+		}
+
 		return nil, &common.NotAuthnedError{Msg: "no bearer token has been set"}
 	}
 
@@ -207,13 +241,14 @@ func (h *OIDCHandler) AuthnGetAuthzInfo(r *http.Request) (AuthorizationInfo, err
 	}
 
 	authzinfo := &DefaultAuthorizationInfo{
-		DomainsAllowed:        make([]string, 100),
+		DomainsAllowed:        make([]string, 0, 100),
 		AuthorizationDisabled: h.AuthzDisabled,
 		ReadAllowed:           false,
 		WriteAllowed:          false,
 		Name:                  cinfo.Name,
 		Username:              username,
 		Email:                 cinfo.Email,
+		ReadAnyPublicAllowed:  h.AuthnedCanReadPublic,
 	}
 
 	for _, grp := range cinfo.Groups {
@@ -234,10 +269,14 @@ func (h *OIDCHandler) AuthnGetAuthzInfo(r *http.Request) (AuthorizationInfo, err
 			authzinfo.ReadAllowed = true
 			continue
 		}
+
+		if domain == "" || domain == "." {
+			log.Warn("Permitting the root domain '.' to users is not allowed, dropping domain prefix for authz.")
+			continue
+		}
+
 		authzinfo.DomainsAllowed = append(authzinfo.DomainsAllowed, util.GetDomainFQDNDot(domain))
 	}
-
-	log.WithField("authzinfo", authzinfo).Debug("Authzinfo generated.")
 
 	return authzinfo, nil
 

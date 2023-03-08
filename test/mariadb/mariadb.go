@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"os/user"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -68,6 +69,24 @@ func (c *MariaDBController) Start() error {
 	log.Info("MariaDB successfully started up. Continuing...")
 
 	return nil
+
+}
+
+func (c *MariaDBController) GetUnixSockURL(dbname string) (string, error) {
+	if dbname == "" {
+		dbname = "dns3ld"
+	}
+
+	currentUser, err := user.Current()
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%s:@unix(%s)/%s?parseTime=true",
+		currentUser.Username,
+		filepath.Join(getDBDataBasedir(), "db.sock"),
+		dbname,
+	), nil
 
 }
 

@@ -10,6 +10,7 @@ import (
 
 const MariaDB_Port = 15234
 
+// Generic component test mini-framework
 type ComponentTest struct {
 	TestConfig string
 	StubUsers  map[string]testauth.AuthStubUser
@@ -27,7 +28,7 @@ func (c *ComponentTest) Exec(testfn func(*service.Service) error) error {
 		util.LogDefer(log, mdb.Stop())
 	}()
 
-	conf, err := c.prepareTestConfig()
+	conf, err := c.prepareTestConfig(&mdb)
 	if err != nil {
 		return err
 	}
@@ -60,7 +61,7 @@ func (c *ComponentTest) Exec(testfn func(*service.Service) error) error {
 
 }
 
-func (c *ComponentTest) prepareTestConfig() (*service.Config, error) {
+func (c *ComponentTest) prepareTestConfig(mdb *mariadb.MariaDBController) (*service.Config, error) {
 
 	confTemplate := c.TestConfig
 
@@ -74,6 +75,14 @@ func (c *ComponentTest) prepareTestConfig() (*service.Config, error) {
 	conf.Auth.Provider = &testauth.AuthStub{
 		TestUsers: c.StubUsers,
 	}
+
+	//Patch database URL to the one of the MariaDB stub
+	conf.DB.URL, err = mdb.GetUnixSockURL("")
+	if err != nil {
+		return nil, err
+	}
+
+	log.Debugf("DB URL set to '%s'", conf.DB.URL)
 
 	err = conf.Initialize()
 	if err != nil {

@@ -177,6 +177,15 @@ auth:
   #User e-mail address used (for ACME, persistency) if authn is disabled
   authn_disabled_email: foo@telekom.de
 
+  # If any authenticated users can read information stored on dns3ld that normally is shared
+  # publicly (like certs, issuer certs, and thus any information stored in certs, but not
+  # private keys)
+  authned_can_read_public: false
+
+  # If unauthenticated, anonymous users can read information stored on dns3ld that normally
+  # is shared publicly
+  anon_can_read_public: false
+
   #If your auth provider cannot provide you with the "groups" list in the token
   #claims, use this as a workaround to inject values to a user's list. Not suitable
   #for scalable LDAP auth, but sufficient for testing setups.
