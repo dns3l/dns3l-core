@@ -20,8 +20,10 @@ func CreateKey(srv *service.Service, caid string, user string, name string, sans
 				Wildcard:        false,
 				SubjectAltNames: sans,
 
-				AutoDNS: nil,
-				Hints:   nil,
+				AutoDNS: &apiv1.AutoDNSInfo{
+					IPv4: "1.2.3.4",
+				},
+				Hints: nil,
 			},
 		))
 }

@@ -19,8 +19,6 @@ func (s SchedulerJob) String() string {
 
 func TestSchedulers(T *testing.T) {
 
-	rand.Seed(time.Now().Unix())
-
 	num := rand.Intn(123)
 	jobsExecuted := 0
 

@@ -1,7 +1,7 @@
 package dns
 
 import (
-	"math/rand"
+	"crypto/rand"
 	"net"
 
 	"github.com/dns3l/dns3l-core/dns/common"
@@ -9,6 +9,17 @@ import (
 
 	"github.com/sirupsen/logrus"
 )
+
+// For this test to work you need to extend your dns3ld config with metadata:
+// dns-test:
+//   testablezones:
+//     <dnsplugin>:
+//       zones:
+//       - test.example.com.
+//       - playground.example.com.
+//       checkservers:
+//       - 1.2.3.4:53
+//       - 4.5.6.7:53
 
 var log = logrus.WithField("module", "dns-test")
 
@@ -39,7 +50,12 @@ func TestAllProvidersFromConfig() {
 
 	for id, p := range c.DNS.Providers {
 
-		testableZones := c.DNSTest.TestableZones[id]
+		log.WithField("provider", id).Info("Running tests for provider")
+
+		testableZones, zonesFound := c.DNSTest.TestableZones[id]
+		if !zonesFound {
+			panic("No testable zones found. Did you extend the config with DNS test metadata?")
+		}
 
 		log.WithField("provider", id).Info("Testing A record behavior")
 
@@ -113,6 +129,9 @@ func TestAllProvidersFromConfig() {
 
 func makeNewIPAddr4Test() (net.IP, error) {
 	twobytes := make([]byte, 2)
-	rand.Read(twobytes)
+	_, err := rand.Read(twobytes)
+	if err != nil {
+		return net.IP{}, err
+	}
 	return net.IPv4(10, 0, twobytes[0], twobytes[1]), nil
 }

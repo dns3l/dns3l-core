@@ -2,11 +2,14 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"os/signal"
 	"path/filepath"
 	"time"
 
+	acmetest "github.com/dns3l/dns3l-core/ca/acme/test"
+	"github.com/dns3l/dns3l-core/dns"
 	"github.com/dns3l/dns3l-core/service"
 	"github.com/dns3l/dns3l-core/test/comp"
 	"github.com/dns3l/dns3l-core/test/runs"
@@ -16,15 +19,17 @@ import (
 
 var log = logrus.WithField("module", "test")
 
-// Component test with external systems which cannot be unit tests
-// are triggered from here
-func main() {
+var testruns = map[string]func(){
 
-	logrus.SetLevel(logrus.DebugLevel)
-	//dns.TestAllProvidersFromConfig()
-	//acmetest.TestWithLEStaging()
+	"acme": func() {
 
-	if os.Args[1] == "tryout" {
+		acmetest.TestWithLEStaging()
+
+	}, "dns": func() {
+
+		dns.TestAllProvidersFromConfig()
+
+	}, "tryout": func() {
 
 		comptest := comp.ComponentTest{
 			TestConfig: filepath.Join(util.GetExecDir(), "test", "config-comptest.yaml"),
@@ -39,13 +44,13 @@ func main() {
 			panic(err)
 		}
 
-	} else if os.Args[1] == "dbfull" {
+	}, "dbfull": func() {
 
 		testconf := filepath.Join(util.GetExecDir(), "test", "config-comptest.yaml")
 
 		runs.RunDBFull(testconf, "bogus", "test.example.com.", true, 0, 20, false)
 
-	} else if os.Args[1] == "le-staging" {
+	}, "le-staging": func() {
 
 		rootdomain := os.Getenv("DNS3L_TEST_ROOTDOMAIN")
 		if rootdomain == "" {
@@ -59,7 +64,7 @@ func main() {
 
 		runs.RunSingleEntry(testconf, "le-staging", rootdomain, false, 0, 1, false)
 
-	} else if os.Args[1] == "renewexisting" {
+	}, "renewexisting": func() {
 
 		comptest := comp.ComponentTest{
 			TestConfig: filepath.Join(util.GetExecDir(), "test", "config-comptest.yaml"),
@@ -90,7 +95,29 @@ func main() {
 			panic(err)
 		}
 
+	},
+}
+
+// Component test with external systems which cannot be unit tests
+// are triggered from here
+func main() {
+
+	logrus.SetLevel(logrus.DebugLevel)
+	//
+	//acmetest.TestWithLEStaging()
+
+	if len(os.Args) <= 1 {
+		panic("no command given")
 	}
+
+	key := os.Args[1]
+
+	if runfunc, ok := testruns[key]; ok {
+		runfunc()
+		return
+	}
+
+	panic(fmt.Sprintf("command %s not found", key))
 
 }
 
