@@ -251,7 +251,7 @@ func (s *V1) GetCertificateInfo(caID string, crtID string, authz auth.Authorizat
 	fu := s.Service.Config.CA.Functions
 
 	// TODO: do we need to implement SAN permissions check?
-	err := authz.ChkAuthReadDomain(crtID)
+	err := authz.ChkAuthReadDomainPublic(crtID)
 	if err != nil {
 		return nil, err
 	}
