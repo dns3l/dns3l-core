@@ -141,9 +141,9 @@ func (e *Engine) TriggerUpdate(acmeuser string, keyname string, domains []string
 		if err != nil {
 			return err
 		}
-		info.PrivKey = common.RSAPrivKeyToStr(privKey)
+		info.PrivKey = util.RSAPrivKeyToStr(privKey)
 	} else {
-		privKey, err = common.RSAPrivKeyFromStr(info.PrivKey)
+		privKey, err = util.RSAPrivKeyFromStr(info.PrivKey)
 		if err != nil {
 			return err
 		}
@@ -185,7 +185,7 @@ func (e *Engine) TriggerUpdate(acmeuser string, keyname string, domains []string
 		return err
 	}
 
-	cert, err := common.ParseCertificatePEM(certificates.Certificate)
+	cert, err := util.ParseCertificatePEM(certificates.Certificate)
 	if err != nil {
 		return err
 	}
@@ -199,7 +199,7 @@ func (e *Engine) TriggerUpdate(acmeuser string, keyname string, domains []string
 		time.Duration(-e.Conf.DaysRenewBeforeExpiry*24) * time.Hour)
 	info.RenewedTime = time.Now()
 	info.ClaimTime = info.RenewedTime
-	certStr, err := common.ConvertCertBundleToPEMStr([]*x509.Certificate{cert[0]})
+	certStr, err := util.ConvertCertBundleToPEMStr([]*x509.Certificate{cert[0]})
 	if err != nil {
 		return err
 	}

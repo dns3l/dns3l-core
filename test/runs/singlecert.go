@@ -1,9 +1,11 @@
 package runs
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/dns3l/dns3l-core/service"
+	srvapiv1 "github.com/dns3l/dns3l-core/service/apiv1"
 	"github.com/dns3l/dns3l-core/state"
 	"github.com/dns3l/dns3l-core/test/apiv1"
 	testauth "github.com/dns3l/dns3l-core/test/auth"
@@ -78,23 +80,50 @@ func RunSingleEntry(testconfig, caid, domain string, truncate bool, replicaOffse
 				fmt.Println(out)
 			}
 
-			// These are the accesses that require checking all SANs for security
-			out = testhttp.AssertSuccess("Get key 1 by alice",
-				apiv1.GetCertResources(srv, caid, "alice", prefix+".foo.bar.sub1."+domain))
-			if dump {
-				fmt.Println(out)
-			}
+			{
+				// These are the accesses that require checking all SANs for security
+				resstr := testhttp.AssertSuccess("Get key 1 by alice",
+					apiv1.GetCertResources(srv, caid, "alice", prefix+".foo.bar.sub1."+domain))
+				if dump {
+					fmt.Println(out)
+				}
+				res := srvapiv1.CertResources{}
+				fromJson(&res, resstr)
 
-			out = testhttp.AssertSuccess("Get key 1 PEM key by alice",
-				apiv1.GetCertResource(srv, caid, "alice", prefix+".foo.bar.sub1."+domain, "key"))
-			out2 := testhttp.AssertSuccess("Get key 1 PEM key by alice",
-				apiv1.GetCertResource(srv, caid, "alice", prefix+".foo.bar.sub1."+domain, "fullchain"))
-			out3 := testhttp.AssertSuccess("Get key 1 PEM key by alice",
-				apiv1.GetCertResource(srv, caid, "alice", prefix+".foo.bar.sub1."+domain, "root"))
-			if dump {
-				fmt.Println("key", out)
-				fmt.Println("fullchain", out2)
-				fmt.Println("root", out3)
+				key := testhttp.AssertSuccess("Get key 1 PEM key by alice",
+					apiv1.GetCertResource(srv, caid, "alice", prefix+".foo.bar.sub1."+domain, "key"))
+				crt := testhttp.AssertSuccess("Get key 1 PEM key by alice",
+					apiv1.GetCertResource(srv, caid, "alice", prefix+".foo.bar.sub1."+domain, "crt"))
+				fullchain := testhttp.AssertSuccess("Get key 1 PEM key by alice",
+					apiv1.GetCertResource(srv, caid, "alice", prefix+".foo.bar.sub1."+domain, "fullchain"))
+				root := testhttp.AssertSuccess("Get key 1 PEM key by alice",
+					apiv1.GetCertResource(srv, caid, "alice", prefix+".foo.bar.sub1."+domain, "root"))
+				rootchain := testhttp.AssertSuccess("Get key 1 PEM key by alice",
+					apiv1.GetCertResource(srv, caid, "alice", prefix+".foo.bar.sub1."+domain, "rootchain"))
+				chain := testhttp.AssertSuccess("Get key 1 PEM key by alice",
+					apiv1.GetCertResource(srv, caid, "alice", prefix+".foo.bar.sub1."+domain, "chain"))
+				if dump {
+					fmt.Println("key", key)
+					fmt.Println("crt", crt)
+					fmt.Println("fullchain", fullchain)
+					fmt.Println("root", root)
+					fmt.Println("rootchain", rootchain)
+					fmt.Println("chain", chain)
+				}
+
+				assertEqual(res.Key, key)
+				assertEqual(res.Certificate, crt)
+				assertEqual(res.FullChain, fullchain)
+				if res.Root == "" {
+					panic("root cert is empty string")
+				}
+				assertEqual(res.Root, root)
+				assertEqual(res.RootChain, rootchain)
+				if res.Chain == "" {
+					panic("chain is empty string")
+				}
+				assertEqual(res.Chain, chain)
+
 			}
 
 			testhttp.AssertStatusCode("Get key 1 by bob", 403,
@@ -121,6 +150,23 @@ func RunSingleEntry(testconfig, caid, domain string, truncate bool, replicaOffse
 
 		return nil
 	})
+	if err != nil {
+		panic(err)
+	}
+
+}
+
+func assertEqual(expected, actual string) {
+
+	if expected != actual {
+		panic(fmt.Errorf("Expected '%s', but got '%s'", expected, actual))
+	}
+
+}
+
+func fromJson(strct interface{}, input string) {
+
+	err := json.Unmarshal([]byte(input), strct)
 	if err != nil {
 		panic(err)
 	}

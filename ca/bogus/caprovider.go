@@ -1,6 +1,7 @@
 package bogus
 
 import (
+	"bytes"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
@@ -99,6 +100,24 @@ func (p *CAProvider) ClaimCertificate(cinfo *types.CertificateClaimInfo) error {
 		Bytes: cert,
 	})
 
+	issuerChain := bytes.Buffer{}
+
+	err = pem.Encode(&issuerChain, &pem.Block{
+		Type:  "CERTIFICATE",
+		Bytes: cert,
+	})
+	if err != nil {
+		return err
+	}
+
+	err = pem.Encode(&issuerChain, &pem.Block{
+		Type:  "CERTIFICATE",
+		Bytes: cert,
+	})
+	if err != nil {
+		return err
+	}
+
 	info := &types.CACertInfo{
 		Name:            cinfo.Name,
 		PrivKey:         string(keyPem),
@@ -114,7 +133,7 @@ func (p *CAProvider) ClaimCertificate(cinfo *types.CertificateClaimInfo) error {
 	} //TODO maybe there is the need to configure specific lifetimes for our tests
 
 	return castate.PutCACertData(cinfo.Name, p.ID, info,
-		info.CertPEM, string(certPem))
+		info.CertPEM, issuerChain.String())
 
 }
 
