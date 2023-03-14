@@ -149,8 +149,8 @@ func (h *CAFunctionHandler) getResourcesNoUpd(keyID, caID string) (*types.Certif
 		Domains:     domains,
 		Certificate: res[1],
 		Key:         res[0],
-		Chain:       res[2],
-		FullChain:   res[1] + res[2],
+		RootChain:   res[2],
+		FullChain:   res[1] + "\n" + res[2],
 	}, nil
 
 }
@@ -203,7 +203,7 @@ func (h *CAFunctionHandler) getResourceNoUpd(keyID, caID, objectType string) (*c
 			Domains:     domains,
 			CanBePublic: true,
 		}, nil
-	case "chain":
+	case "rootchain": //chain with root cert
 		res, err := sess.GetResource(keyID, caID, "issuer_cert")
 		if err != nil {
 			return nil, err
@@ -219,12 +219,27 @@ func (h *CAFunctionHandler) getResourceNoUpd(keyID, caID, objectType string) (*c
 		if err != nil {
 			return nil, err
 		}
-		root, err := common.ExtractRootCertPEM(res)
+		root, _, err := util.SplitOffRootCertPEM(res)
 		if err != nil {
 			return nil, err
 		}
 		return &common.PEMResource{
 			PEMData:     root,
+			ContentType: "application/x-pem-file",
+			Domains:     domains,
+			CanBePublic: true,
+		}, nil
+	case "chain": //chain without root
+		res, err := sess.GetResource(keyID, caID, "issuer_cert")
+		if err != nil {
+			return nil, err
+		}
+		_, rest, err := util.SplitOffRootCertPEM(res)
+		if err != nil {
+			return nil, err
+		}
+		return &common.PEMResource{
+			PEMData:     rest,
 			ContentType: "application/x-pem-file",
 			Domains:     domains,
 			CanBePublic: true,

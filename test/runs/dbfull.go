@@ -170,6 +170,12 @@ func RunDBFull(testconfig, caid, domain string, truncate bool, replicaOffset, nu
 				fmt.Println(out)
 			}
 
+			out = testhttp.AssertSuccess("Get key 3 info by alice",
+				apiv1.GetKeyById(srv, caid, "alice", prefix+".test1.bar.sub1."+domain))
+			if dump {
+				fmt.Println(out)
+			}
+
 			// These are the accesses that require checking all SANs for security
 			out = testhttp.AssertSuccess("Get key 3 by alice",
 				apiv1.GetCertResources(srv, caid, "alice", prefix+".test1.bar.sub1."+domain))
@@ -199,6 +205,8 @@ func RunDBFull(testconfig, caid, domain string, truncate bool, replicaOffset, nu
 				apiv1.GetCertResource(srv, caid, "bob", prefix+".test2.bar.sub2."+domain, "key"))
 
 			// Accessing publicly available things
+			testhttp.AssertSuccess("Get key 4 info by fquux",
+				apiv1.GetKeyById(srv, caid, "fquux", prefix+".test1.bar.sub1."+domain))
 			testhttp.AssertSuccess("Get key 3 PEM root by fquux",
 				apiv1.GetCertResource(srv, caid, "fquux", prefix+".test1.bar.sub1."+domain, "root"))
 			testhttp.AssertStatusCode("Get key 3 PEM key by fquux", 403,

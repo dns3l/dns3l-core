@@ -12,7 +12,7 @@ type CertificateResources struct {
 	Domains     []string
 	Certificate string
 	Key         string
-	Chain       string
+	RootChain   string
 	FullChain   string
 }
 

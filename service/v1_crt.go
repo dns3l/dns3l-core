@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	cacommon "github.com/dns3l/dns3l-core/ca/common"
 	"github.com/dns3l/dns3l-core/ca/types"
 	"github.com/dns3l/dns3l-core/common"
 	"github.com/dns3l/dns3l-core/service/apiv1"
@@ -184,11 +183,18 @@ func (s *V1) GetAllCertResources(caID, crtID string, authz auth.AuthorizationInf
 		return nil, err
 	}
 
+	root, chain, err := util.SplitOffRootCertPEM(r.RootChain)
+	if err != nil {
+		return nil, err
+	}
+
 	return &apiv1.CertResources{
 
 		Certificate: r.Certificate,
 		Key:         r.Key,
-		Chain:       r.Chain,
+		Root:        root,
+		Chain:       chain,
+		RootChain:   r.RootChain,
 		FullChain:   r.FullChain,
 	}, nil
 }
@@ -245,7 +251,7 @@ func (s *V1) GetCertificateInfo(caID string, crtID string, authz auth.Authorizat
 	fu := s.Service.Config.CA.Functions
 
 	// TODO: do we need to implement SAN permissions check?
-	err := authz.ChkAuthReadDomain(crtID)
+	err := authz.ChkAuthReadDomainPublic(crtID)
 	if err != nil {
 		return nil, err
 	}
@@ -287,7 +293,7 @@ func (s *V1) DeleteCertificatesAllCA(crtID string, authz auth.AuthorizationInfo)
 }
 
 func apiCertInfoFromCACertInfo(source *types.CACertInfo, target *apiv1.CertInfo) error {
-	cbatch, err := cacommon.ParseCertificatePEM([]byte(source.CertPEM))
+	cbatch, err := util.ParseCertificatePEM([]byte(source.CertPEM))
 	if err != nil {
 		return err
 	}

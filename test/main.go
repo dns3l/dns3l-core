@@ -50,6 +50,12 @@ var testruns = map[string]func(){
 
 		runs.RunDBFull(testconf, "bogus", "test.example.com.", true, 0, 20, false)
 
+	}, "bogus": func() {
+
+		testconf := filepath.Join(util.GetExecDir(), "test", "config-comptest.yaml")
+
+		runs.RunSingleEntry(testconf, "bogus", "test.example.com.", true, 0, 1, false)
+
 	}, "le-staging": func() {
 
 		rootdomain := os.Getenv("DNS3L_TEST_ROOTDOMAIN")
