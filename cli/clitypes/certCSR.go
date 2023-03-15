@@ -12,6 +12,9 @@ cert	CSR
 	-a, --api   	| DNS3L API endpoint [$DNS3L_API]
 	  , --ca        | Claim from a specific ACME CA [$DNS3L_CA]
 	-f, --force     | Overwrite existing CSR/key
+200 = OK
+400 = bad request
+404 = not found
 args
 	FQDN: FQDN as certificate name
 ----------------------------------------------------------------------------------------- */

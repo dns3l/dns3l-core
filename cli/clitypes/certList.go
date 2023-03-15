@@ -15,6 +15,9 @@ import (
 	-a, --api   	| DNS3L API endpoint [$DNS3L_API]
 	  , --ca        | Claim from a specific ACME CA [$DNS3L_CA]
 
+ 200 = OK
+ 404 = not Found
+
   curl -X GET "https://dns3l.example.com/api/v1/ca/4/crt?search=*.acme.com" -H "Accept: application/json"
 	  ?search=*.acme.com
 ----------------------------------------------------------------------------------------- */
@@ -62,7 +65,7 @@ func (CertList *CertListType) PrintParams() {
 }
 
 // CheckParams prints the parameters of the command cert list
-func (CertList *CertListType) CheckParams() error  {
+func (CertList *CertListType) CheckParams() error {
 	// check api
 	// check CA
 	var errText string
@@ -108,13 +111,17 @@ func (CertList *CertListType) DoCommand() error {
 	if CertList.Verbose {
 		PrintFullRespond("INFO: Cert List: Request dump", resp)
 	}
+	if resp.StatusCode != 200 {
+		return NewValueError(20000+resp.StatusCode, fmt.Errorf("request failed http statuscode:= '%v'", resp.StatusCode))
+	}
+	//404 = not Found
 	var aCertList []CertInfo
 	if err = json.NewDecoder(resp.Body).Decode(&aCertList); err != nil {
 		return NewValueError(11403, fmt.Errorf("cert list: decoding Error '%v' No Data received", err.Error()))
 	}
 	var certListJson []byte
 	filteredList := make([]CertInfo, 0, len(aCertList))
-	if CertList.Filter !="" {
+	if CertList.Filter != "" {
 		pattern, compileErr := regexp.Compile(CertList.Filter)
 		if compileErr == nil {
 			for _, aVal := range aCertList {

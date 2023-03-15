@@ -12,6 +12,7 @@ import (
  List all certificate authorities (CA) utilized by DNS3L
  Flags
 	-a, --api   	| DNS3L API endpoint [$DNS3L_API]
+200 = OK
 ----------------------------------------------------------------------------------------- */
 type CertCaType struct {
 	Verbose     bool
@@ -90,6 +91,9 @@ func (CertCa *CertCaType) DoCommand() error {
 		return NewValueError(10402, fmt.Errorf("cert ca: Request failed Error:= '%v'", err.Error()))
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		return NewValueError(20000+resp.StatusCode, fmt.Errorf("request failed http statuscode:= '%v'", resp.StatusCode))
+	}
 	if CertCa.Verbose {
 		PrintFullRespond("INFO: Command.certCA: Request dump", resp)
 	}

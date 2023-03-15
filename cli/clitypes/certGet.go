@@ -28,6 +28,9 @@ type PEMFullChainType struct {
 	     chain       All intermediate certificate(s) PEM encoded
 	     root        The root certificate PEM encoded
          full	    cert + chain + root PEM encoded
+200 = OK
+404 = not found
+
 Args
 	FQDN: FQDN as certificate name
 
@@ -145,7 +148,7 @@ func (CertGet *CertGetType) DoCommand() error {
 		PrintFullRespond("INFO: Command CERT GET full chain: Request dump", resp)
 	}
 	if resp.StatusCode != 200 {
-		return NewValueError(13403, fmt.Errorf("cert get certifikate: Request respond code:= '%v'", resp.StatusCode))
+		return NewValueError(20000+resp.StatusCode, fmt.Errorf("request failed http statuscode:= '%v'", resp.StatusCode))
 	}
 	var aPEMFullChain PEMFullChainType
 	if err = json.NewDecoder(resp.Body).Decode(&aPEMFullChain); err != nil {

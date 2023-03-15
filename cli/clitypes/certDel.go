@@ -12,6 +12,8 @@ import (
  Flags
 	-a, --api   	| DNS3L API endpoint [$DNS3L_API]
 	  , --ca        | Claim from a specific ACME CA [$DNS3L_CA]
+200 = OK
+404 = not found
 Args
 	FQDN: FQDN as certificate name
 ----------------------------------------------------------------------------------------- */
@@ -87,7 +89,7 @@ func (CertDel *CertDelType) DoCommand() error {
 		PrintFullRespond("INFO: Command.CertDel: Request dump", resp)
 	}
 	if resp.StatusCode != 200 {
-		return NewValueError(14403, fmt.Errorf("cert del: Request failed http Respond Status := '%v'", resp.StatusCode))
+		return NewValueError(20000+resp.StatusCode, fmt.Errorf("request failed http statuscode:= '%v'", resp.StatusCode))
 	}
 	return nil
 }

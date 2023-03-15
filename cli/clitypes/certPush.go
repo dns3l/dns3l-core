@@ -16,6 +16,10 @@ args
 	FQDN: FQDN as certificate name
 	CRT.pem 	Leaf cert PEM
 	CHN.pem		Concatenated intermediate and root cert chain PEM
+
+200 = OK
+400 = bad request
+404 = not found
 ----------------------------------------------------------------------------------------- */
 type CertPushType struct {
 	Verbose     bool

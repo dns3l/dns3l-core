@@ -160,6 +160,10 @@ type claimRequestType struct {
 	  , --ca        | Claim from a specific ACME CA [$DNS3L_CA]
 	-w, --wildcard  | Create a wildcard (cannot be used with -d)
 	-d, --autodns   | Create an A record (cannot be used with -w)
+200 = OK
+400 = bad request
+404 = not found
+
 
 Args
 	FQDN: FQDN as certificate name
