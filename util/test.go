@@ -2,7 +2,6 @@ package util
 
 import (
 	"errors"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -19,7 +18,7 @@ func ConfigFromFileEnv(c interface{}) error {
 }
 
 func ConfigFromFile(c interface{}, filename string) error {
-	filebytes, err := ioutil.ReadFile(filename)
+	filebytes, err := os.ReadFile(filename)
 	if err != nil {
 		return err
 	}

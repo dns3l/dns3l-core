@@ -59,6 +59,8 @@ type CertClaimInfo struct {
 type CertResources struct {
 	Certificate string `json:"cert"`
 	Key         string `json:"key"`
+	Root        string `json:"root"`
+	RootChain   string `json:"rootchain"`
 	Chain       string `json:"chain"`
 	FullChain   string `json:"fullchain"`
 }

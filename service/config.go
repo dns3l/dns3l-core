@@ -2,7 +2,7 @@ package service
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 
 	"github.com/creasty/defaults"
 	"github.com/dns3l/dns3l-core/ca"
@@ -29,7 +29,7 @@ type Config struct {
 }
 
 func (c *Config) FromFile(file string) error {
-	filebytes, err := ioutil.ReadFile(file)
+	filebytes, err := os.ReadFile(file)
 	if err != nil {
 		return err
 	}
