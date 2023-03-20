@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/dns3l/dns3l-core/cli/clitypes"
+	"github.com/dns3l/dns3l-core/cli/cliutil"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -91,17 +92,18 @@ var CertWildcard bool
 var CertAutoDNS string
 
 // CertModeFull Chain mode
-// 	-m, --mode  | Chain mode, full = cert + chain (default: full)
-//  allowed Values
-// 	Cert        the leaf certificate PEM encoded
-//	privateKey  the unencrypted private key PEM encoded
-//	Chain       All intermediate certificate(s) PEM encoded
-//	Root        The root certificate PEM encoded
-//  Full	    cert + chain + root PEM encoded
+//
+//		-m, --mode  | Chain mode, full = cert + chain (default: full)
+//	 allowed Values
+//		Cert        the leaf certificate PEM encoded
+//		privateKey  the unencrypted private key PEM encoded
+//		Chain       All intermediate certificate(s) PEM encoded
+//		Root        The root certificate PEM encoded
+//	 Full	    cert + chain + root PEM encoded
 var CertMode string
 
-//  accesstoken for the ACME
-//  -t, --tok       | Access token for ACME [$DNS3L_CERT_ACCESSTOKEN]
+// accesstoken for the ACME
+// -t, --tok       | Access token for ACME [$DNS3L_CERT_ACCESSTOKEN]
 var CertAccessToken string
 
 // search string for List cert com anndo
@@ -334,7 +336,7 @@ func initCert() {
 	// use the value out of the ring as default value in the command line
 	var aToken string
 	// we test if something is stored in the keyring
-	rTok, inErr := clitypes.GetPasswordfromRing("CertAccountToken", false)
+	rTok, inErr := cliutil.GetPasswordfromRing("CertAccountToken", false)
 	if inErr == nil {
 		aToken = string(rTok)
 	} else {

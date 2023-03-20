@@ -1,12 +1,15 @@
-package clitypes
+//go:build windows && (amd64 || arm)
+// +build windows
+// +build amd64 arm
+
+package cliutil
 
 import (
 	"fmt"
+	"github.com/zalando/go-keyring"
+	"golang.org/x/term"
 	"os"
 	"syscall"
-
-	"github.com/jsipprell/keyctl"
-	"golang.org/x/term"
 )
 
 // CachePassword - Saves a secret to the User Session Keyring.
@@ -17,44 +20,28 @@ func CachePassword(name, password string, timeoutSeconds uint, verbose bool) err
 	if password == "" {
 		return fmt.Errorf("function cachePassword(): name:%s empty secret", name)
 	}
-	keyring, err := keyctl.SessionKeyring()
-	if err != nil {
-		return fmt.Errorf("function cachePassword(): name:%s couldn't create keyring session: %v", name, err)
-	}
-	// Store key
-	keyring.SetDefaultTimeout(timeoutSeconds)
-	key, err := keyring.Add(name, []byte(password))
+	err := keyring.Set("dns3l", name, password)
 	if err != nil {
 		return fmt.Errorf("function cachePassword(): name:%s couldn't store '%s'", name, err)
 	}
 	// OK case
 	if verbose {
-		info, _ := key.Info()
-		fmt.Fprintf(os.Stderr, "Function CachePassword():name:%s key: %+v\n", name, info)
+		fmt.Fprintf(os.Stderr, "Function CachePassword():name:%s service: dns3l \n", name)
 	}
 	return nil
 }
 
 func GetPasswordfromRing(name string, verbose bool) ([]byte, error) {
 	// Create session
-	keyring, err := keyctl.SessionKeyring()
-	if err != nil {
-		return nil, fmt.Errorf("function getPasswordfromRing(): couldn't create keyring session: %v", err)
-	}
 	// Retrieve
-	key, err := keyring.Search(name)
-	if err == nil {
-		data, err := key.Get()
-		if err != nil {
-			return nil, fmt.Errorf("function getPasswordfromRing(): couldn't retrieve key data: %v", err)
-		}
-		if verbose {
-			info, _ := key.Info()
-			fmt.Fprintf(os.Stderr, "INFO Function GetPasswordfromRing() key: %+v\n", info)
-		}
-		return data, nil
+	data, err := keyring.Get("dns3l", name)
+	if err != nil {
+		return nil, fmt.Errorf("function getPasswordfromRing(): couldn't retrieve key data: %v", err)
 	}
-	return nil, fmt.Errorf("function getPasswordfromRing(): couldn't find key data: %v", err)
+	if verbose {
+		fmt.Fprintf(os.Stderr, "INFO Function GetPasswordfromRing() key: dns3l %+v\n", name)
+	}
+	return []byte(data), nil
 }
 
 // GetPassword - Gets a secret from the User Session Keyring.

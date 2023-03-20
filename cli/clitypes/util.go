@@ -7,6 +7,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"github.com/dns3l/dns3l-core/cli/cliutil"
 
 	"github.com/dns3l/dns3l-core/dns/infblx"
 	"github.com/dns3l/dns3l-core/dns/otc"
@@ -134,7 +135,7 @@ func setProvider(dnsbackend string, id string, secret string, usePWSafe bool, ve
 			if verbose {
 				fmt.Fprintf(os.Stderr, "INFO setProvider(): User %s and password from safe \n", infblxConfig.Auth.User)
 			}
-			if sec, err = GetPasswordfromRing(infblxConfig.Auth.User, verbose); err != nil {
+			if sec, err = cliutil.GetPasswordfromRing(infblxConfig.Auth.User, verbose); err != nil {
 				infblxConfig.Auth.Pass = ""
 				return nil, NewValueError(1103, fmt.Errorf("fucntion SetProvider() failed: no secret found in the Keyring for '%v' and ID:= '%v'", dnsbackend, infblxConfig.Auth.User))
 			} else {
@@ -224,7 +225,7 @@ func FinalCertToken(inToken string) string {
 	var aToken string
 	switch inToken {
 	case "USE_RING_TOKEN":
-		token, inErr := GetPasswordfromRing("CertAccountToken", false)
+		token, inErr := cliutil.GetPasswordfromRing("CertAccountToken", false)
 		if inErr == nil {
 			aToken = string(token)
 		} else {

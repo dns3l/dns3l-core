@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/dns3l/dns3l-core/cli/cliutil"
 	"github.com/spf13/viper"
 )
 
@@ -56,7 +57,7 @@ type LoginACMEType struct {
 func (loginData *LoginACMEType) GetOpenIdConfiguration() (*OpenIdInfo, error) {
 	resp, err := http.Get(loginData.ClientInfo.OidcUrl)
 	if err != nil {
-		return nil, NewValueError(610, fmt.Errorf("request for OpenIdConfiguration of the ACME failed reason %v",err.Error()))
+		return nil, NewValueError(610, fmt.Errorf("request for OpenIdConfiguration of the ACME failed reason %v", err.Error()))
 	}
 	defer resp.Body.Close()
 	if loginData.Verbose {
@@ -68,7 +69,7 @@ func (loginData *LoginACMEType) GetOpenIdConfiguration() (*OpenIdInfo, error) {
 	}
 	err = json.NewDecoder(resp.Body).Decode(&msg)
 	if err != nil {
-		return nil,  NewValueError(630, fmt.Errorf("received OpenIdConfiguration data: json decoding Error, '%v' ", err.Error()))
+		return nil, NewValueError(630, fmt.Errorf("received OpenIdConfiguration data: json decoding Error, '%v' ", err.Error()))
 	}
 	return &msg, nil
 }
@@ -162,7 +163,7 @@ func (loginData *LoginACMEType) CheckParams() error {
 
 func (loginData *LoginACMEType) DoCommand() error {
 	if loginData.FromTerminal {
-		bIn, inErr := GetPasswordFromConsole("Password for acme account " + loginData.ACMEProviderID + " =")
+		bIn, inErr := cliutil.GetPasswordFromConsole("Password for acme account " + loginData.ACMEProviderID + " =")
 		if inErr == nil {
 			loginData.ACMEProviderPASS = string(bIn)
 		} else {
@@ -184,15 +185,15 @@ func (loginData *LoginACMEType) DoCommand() error {
 	}
 	// put into the ring
 	if !loginData.ACMEForceOStream {
-		err := CachePassword("CertAccountToken", tok.AccesssToken, uint(tok.Expire+60), loginData.Verbose)
+		err := cliutil.CachePassword("CertAccountToken", tok.AccesssToken, uint(tok.Expire+60), loginData.Verbose)
 		if nil != err {
 			return NewValueError(650, err)
 		}
-		err = CachePassword("CertIdToken", tok.IdToken, uint(tok.Expire+60), loginData.Verbose)
+		err = cliutil.CachePassword("CertIdToken", tok.IdToken, uint(tok.Expire+60), loginData.Verbose)
 		if nil != err {
 			return NewValueError(660, err)
 		}
-		err = CachePassword("CertRefreshToken", tok.RefreshToken, uint(tok.Expire+60), loginData.Verbose)
+		err = cliutil.CachePassword("CertRefreshToken", tok.RefreshToken, uint(tok.Expire+60), loginData.Verbose)
 		if nil != err {
 			return NewValueError(670, err)
 		}

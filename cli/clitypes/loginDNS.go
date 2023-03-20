@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"time"
+
+	"github.com/dns3l/dns3l-core/cli/cliutil"
 )
 
 type LoginDNSType struct {
@@ -57,7 +59,7 @@ func (loginData *LoginDNSType) DoCommand() error {
 	var bIn []byte
 	var inErr error
 	if loginData.FromTerminal {
-		bIn, inErr = GetPasswordFromConsole("DNS Provider Login Secret " + loginData.User + " =")
+		bIn, inErr = cliutil.GetPasswordFromConsole("DNS Provider Login Secret " + loginData.User + " =")
 		if inErr == nil {
 			secret = string(bIn)
 		} else {
@@ -83,11 +85,11 @@ func (loginData *LoginDNSType) DoCommand() error {
 	if loginData.Verbose {
 		fmt.Fprintf(os.Stderr, "KeyRing name %v\n", user)
 	}
-	if nil != CachePassword(user, secret, 3600*4, loginData.Verbose) {
+	if nil != cliutil.CachePassword(user, secret, 3600*4, loginData.Verbose) {
 		return NewValueError(530, fmt.Errorf("can not store secrete in the password safe"))
 	}
 	time.Sleep(time.Millisecond * 10)
-	_, inErr = GetPasswordfromRing(user, loginData.Verbose)
+	_, inErr = cliutil.GetPasswordfromRing(user, loginData.Verbose)
 	if inErr != nil {
 		return NewValueError(540, fmt.Errorf("write to password safe was not OK: Error %v", inErr.Error()))
 	}
