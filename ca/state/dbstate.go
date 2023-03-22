@@ -10,6 +10,7 @@ import (
 	"github.com/Masterminds/squirrel"
 	"github.com/dns3l/dns3l-core/ca/types"
 	"github.com/dns3l/dns3l-core/common"
+	"github.com/dns3l/dns3l-core/service/auth"
 	"github.com/dns3l/dns3l-core/state"
 	"github.com/dns3l/dns3l-core/util"
 )
@@ -61,10 +62,11 @@ func (s *CAStateManagerSQLSession) GetCACertByID(keyname string, caid string) (*
 	defer rows.Close()
 
 	info := &types.CACertInfo{}
+	info.IssuedBy = &auth.UserInfo{}
 	if !rows.Next() {
 		return nil, nil
 	}
-	err = rows.Scan(&info.Name, &info.PrivKey, &info.ACMEUser, &info.IssuedByUser, &info.IssuedByEmail,
+	err = rows.Scan(&info.Name, &info.PrivKey, &info.ACMEUser, &info.IssuedBy.Name, &info.IssuedBy.Email,
 		&info.ClaimTime, &info.RenewedTime, &info.ValidStartTime, &info.ValidEndTime, &info.CertPEM)
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -199,7 +201,8 @@ func (s *CAStateManagerSQLSession) ListCACerts(keyName string, caid string, auth
 
 func (s *CAStateManagerSQLSession) rowToCACertInfo(rows *sql.Rows, info *types.CACertInfo) error {
 	var domainsRevStr string
-	err := rows.Scan(&info.Name, &info.PrivKey, &info.ACMEUser, &info.IssuedByUser, &info.IssuedByEmail,
+	info.IssuedBy = &auth.UserInfo{}
+	err := rows.Scan(&info.Name, &info.PrivKey, &info.ACMEUser, &info.IssuedBy.Name, &info.IssuedBy.Email,
 		&info.ClaimTime, &info.RenewedTime, &info.ValidStartTime, &info.ValidEndTime, &info.CertPEM, &domainsRevStr)
 	if err != nil {
 		return err
@@ -283,12 +286,12 @@ func (s *CAStateManagerSQLSession) PutCACertData(keyname string, caid string, in
 	defer util.RollbackIfNotCommitted(log, tx)
 
 	log.Debugf("Storing new cert/key pair '%s' for user '%s' in database",
-		keyname, info.ACMEUser)
+		keyname, info.IssuedBy.GetPreferredName())
 	_, err = tx.Exec(`INSERT INTO `+s.prov.Prov.DBName("keycerts")+` (key_name, ca_id,`+
 		`acme_user, issued_by, issued_by_email, priv_key, cert, issuer_cert, claim_time,
 	renewed_time, next_renewal_time, valid_start_time, valid_end_time, renew_count) `+
 		`values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0);`,
-		keyname, caid, info.ACMEUser, info.IssuedByUser, info.IssuedByEmail,
+		keyname, caid, info.ACMEUser, info.IssuedBy.Name, info.IssuedBy.Email,
 		info.PrivKey, certStr,
 		issuerCertStr, info.ClaimTime.UTC(), info.RenewedTime.UTC(),
 		info.NextRenewalTime.UTC(), info.ValidStartTime.UTC(), info.ValidEndTime.UTC())
@@ -488,4 +491,22 @@ func (s *CAStateManagerSQLSession) listTimeExpired(atTime time.Time, limit uint,
 		return nil, err
 	}
 	return res, nil
+}
+
+func (s *CAStateManagerSQLSession) UserHasCerts(user *auth.UserInfo, caid string) (bool, error) {
+
+	row := s.db.QueryRow(`SELECT COUNT(*) FROM `+s.prov.Prov.DBName("keycerts")+
+		` WHERE issued_by=? AND issued_by_email=? AND ca_id=? LIMIT 1;`, user.Name, user.Email, caid)
+
+	var numrows uint
+	err := row.Scan(&numrows)
+	if err != nil {
+		return true, err
+	}
+	if numrows > 0 {
+		return true, nil
+	}
+
+	return false, nil
+
 }

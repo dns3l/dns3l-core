@@ -44,7 +44,7 @@ func (s *V1) logAction(authz auth.AuthorizationInfo, action string) {
 
 	u := "anonymous"
 	if authz != nil {
-		userid := authz.GetUserID()
+		userid := authz.GetUserInfo().GetPreferredName()
 		if userid != "" {
 			u = userid
 		}

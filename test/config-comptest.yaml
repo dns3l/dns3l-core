@@ -66,6 +66,19 @@ ca:
       roots: https://bogus.org/certificates/
       description: "BOGUS 2 certificates"
       logopath: "/images/bogus.png"
+    step-comptest:
+      type: acme
+      name: Step CA to test ACME stuff
+      catype: public
+      api: https://localhost:8081/acme/acme/directory
+      url: https://localhost
+      roots: https://localhost
+      description: "Step CA for the component tests"
+      logopath: "/images/logo.png"
+      daysRenewBeforeExpiry: 30
+      acmeRegisterWithoutEmail: true
+      httpInsecureSkipVerify: true
+      acmeUserScheme: user
 rtzn:
   - root: sub1.test.example.com.
     autodns: bogus

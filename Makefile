@@ -11,6 +11,7 @@ GO_LDFLAGS := "\
 	-extldflags '-static' -w -s"
 GOENV := GOARCH=$(GOARCH) GOOS=linux
 GODIRS := ./acme/... ./ca/... ./commands/... ./cmd/... ./context/...  ./dns/... ./service/... ./util/... ./cli/... ./renew/...
+DOCKER_COMPTEST := $(DOCKER) run -v $(shell pwd):/workdir -t golang:1.19-alpine /workdir/docker/run-in-docker golang-alpine
 
 all: service cli
 
@@ -39,8 +40,14 @@ unittest:
 comptest:
 	$(GOENV) go run ./test/main.go dbfull
 
+comptest-acmestep:
+	$(GOENV) go run ./test/main.go acmestep
+
 comptest-docker:
-	$(DOCKER) run -v $(shell pwd):/workdir -t golang:1.19-alpine /workdir/docker/run-in-docker golang-alpine
+	$(DOCKER_COMPTEST) dbfull
+
+comptest-acmestep-docker:
+	$(DOCKER_COMPTEST) acmestep
 
 clean: comptest-clean
 

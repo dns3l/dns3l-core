@@ -13,6 +13,7 @@ import (
 	"github.com/dns3l/dns3l-core/ca/types"
 	cmn "github.com/dns3l/dns3l-core/common"
 	dnscommon "github.com/dns3l/dns3l-core/dns/common"
+	"github.com/dns3l/dns3l-core/service/auth"
 	"github.com/dns3l/dns3l-core/util"
 	"github.com/go-acme/lego/v4/certificate"
 	"github.com/go-acme/lego/v4/challenge/dns01"
@@ -37,9 +38,9 @@ type Engine struct {
 // is authenticated and authorized for the requested domain.
 // It will look up the current state of the user and the key/certificate and ensures that the user and
 // the requested key/cert is present.
-func (e *Engine) TriggerUpdate(acmeuser string, keyname string, domains []string, issuedBy, issuedByEmail string) error {
+func (e *Engine) TriggerUpdate(acmeuser string, keyname string, domains []string, issuedBy *auth.UserInfo) error {
 
-	keyMustExist := acmeuser == "" || len(domains) <= 0
+	keyMustExist := acmeuser == "" || issuedBy == nil || len(domains) <= 0
 
 	for _, domain := range domains {
 		err := dnscommon.ValidateDomainNameWildcard(domain)
@@ -98,15 +99,10 @@ func (e *Engine) TriggerUpdate(acmeuser string, keyname string, domains []string
 			info.ACMEUser = acmeuser
 			forceUpdate = true
 		}
-		if issuedBy != "" && info.IssuedByUser != issuedBy {
-			log.Infof("Issued-by-user for key %s has changed from %s to %s",
-				keyname, info.IssuedByUser, issuedBy)
-			info.IssuedByUser = issuedBy
-		}
-		if issuedByEmail != "" && info.IssuedByEmail != issuedByEmail {
-			log.Infof("Issued-by-email for key %s has changed from %s to %s",
-				keyname, info.IssuedByEmail, issuedByEmail)
-			info.IssuedByEmail = issuedByEmail
+		if issuedBy != nil && !info.IssuedBy.Equal(issuedBy) {
+			log.Infof("Issued-by user info for key %s has changed from %s to %s",
+				keyname, info.IssuedBy, issuedBy)
+			info.IssuedBy = issuedBy
 		}
 
 		now := time.Now()
@@ -131,10 +127,9 @@ func (e *Engine) TriggerUpdate(acmeuser string, keyname string, domains []string
 			return &cmn.NotFoundError{RequestedResource: keyname}
 		}
 		info = &types.CACertInfo{
-			ACMEUser:      acmeuser,
-			Domains:       domainsSanitized,
-			IssuedByUser:  issuedBy,
-			IssuedByEmail: issuedByEmail,
+			ACMEUser: acmeuser,
+			Domains:  domainsSanitized,
+			IssuedBy: issuedBy,
 		}
 		log.Infof("Generating new RSA private key '%s' issued by user '%s'", keyname, acmeuser)
 		privKey, err = generateRSAPrivateKey()
@@ -218,7 +213,7 @@ func (e *Engine) getACMEEmail(info *types.CACertInfo) string {
 	if e.Conf.ACMERegisterWithoutEMail {
 		return ""
 	}
-	return info.IssuedByEmail
+	return info.IssuedBy.Email
 }
 
 func sanitizeDomains(domains []string) ([]string, error) {

@@ -137,9 +137,7 @@ func (h *OIDCHandler) GetAnonymousInfo() *DefaultAuthorizationInfo {
 		AuthorizationDisabled: false,
 		ReadAllowed:           false,
 		WriteAllowed:          false,
-		Name:                  "anonymous",
-		Username:              "anonymous",
-		Email:                 h.AuthnDisabledEmail,
+		UserInfo:              &UserInfo{"anonymous", h.AuthnDisabledEmail},
 		ReadAnyPublicAllowed:  false,
 	}
 
@@ -221,22 +219,25 @@ func (h *OIDCHandler) authnGetAuthzInfoRaw(r *http.Request) (AuthorizationInfo, 
 		return nil, err
 	}
 
-	var username string
-	if cinfo.Email != "" {
-		username = cinfo.Email
-	} else if cinfo.Name != "" {
-		username = cinfo.Name
-	} else {
-		return nil, &common.NotAuthnedError{Msg: "neither 'user' nor 'email' has been provided in OIDC token claims"}
+	userinfo := &UserInfo{
+		Name:  cinfo.Name,
+		Email: cinfo.Email,
 	}
+
+	err = userinfo.Validate()
+	if err != nil {
+		return nil, err
+	}
+
+	uname := userinfo.GetPreferredName()
 
 	if len(h.InjectGroups) > 0 {
 		//This is a quirks mode for OIDC environments not offering
 		//groups, e.g. test beds. Normally not used.
-		groups, exists := h.InjectGroups[username]
+		groups, exists := h.InjectGroups[uname]
 		if exists {
 			cinfo.Groups = append(cinfo.Groups, groups...)
-			log.WithField("groups", groups).WithField("username", username).Debug("Injected groups for authorization (quirks)")
+			log.WithField("groups", groups).WithField("username", uname).Debug("Injected groups for authorization (quirks)")
 		}
 	}
 
@@ -245,9 +246,7 @@ func (h *OIDCHandler) authnGetAuthzInfoRaw(r *http.Request) (AuthorizationInfo, 
 		AuthorizationDisabled: h.AuthzDisabled,
 		ReadAllowed:           false,
 		WriteAllowed:          false,
-		Name:                  cinfo.Name,
-		Username:              username,
-		Email:                 cinfo.Email,
+		UserInfo:              userinfo,
 		ReadAnyPublicAllowed:  h.AuthnedCanReadPublic,
 	}
 
