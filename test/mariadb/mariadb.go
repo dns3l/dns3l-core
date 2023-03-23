@@ -82,8 +82,14 @@ func (c *MariaDBController) GetUnixSockURL(dbname string) (string, error) {
 		return "", err
 	}
 
+	uname := currentUser.Username
+
+	if uname == "" {
+		uname = "root"
+	}
+
 	return fmt.Sprintf("%s:@unix(%s)/%s?parseTime=true",
-		currentUser.Username,
+		uname,
 		filepath.Join(getDBDataBasedir(), "db.sock"),
 		dbname,
 	), nil

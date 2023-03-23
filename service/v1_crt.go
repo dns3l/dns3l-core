@@ -98,18 +98,17 @@ func (s *V1) ClaimCertificate(caID string, cinfo *apiv1.CertClaimInfo, authz aut
 
 	}
 
-	if strings.TrimSpace(authz.GetEmail()) == "" {
+	if strings.TrimSpace(authz.GetUserInfo().Email) == "" {
 		return &common.UnauthzedError{Msg: "the user's email address has not been provided by the auth provider, required for claiming certificate"}
 	}
 
 	trl = append(trl, &util.TransactionalJobImpl{
 		DoFunc: func() error {
 			return fu.ClaimCertificate(caID, &types.CertificateClaimInfo{
-				Name:          cinfo.Name,
-				NameRZ:        namerz.Root,
-				Domains:       domains,
-				IssuedBy:      authz.GetName(),
-				IssuedByEmail: authz.GetEmail(),
+				Name:     cinfo.Name,
+				NameRZ:   namerz.Root,
+				Domains:  domains,
+				IssuedBy: authz.GetUserInfo(),
 			})
 		},
 		UndoFunc: nil, //not needed because this is always the last thing that is executed
@@ -313,8 +312,8 @@ func apiCertInfoFromCACertInfo(source *types.CACertInfo, target *apiv1.CertInfo)
 	target.SubjectCN = cert.Subject.CommonName
 	target.IssuerCN = cert.Issuer.CommonName
 	target.Serial = cert.SerialNumber.String()
-	target.ClaimedBy.Name = source.IssuedByUser
-	target.ClaimedBy.EMail = source.IssuedByEmail
+	target.ClaimedBy.Name = source.IssuedBy.Name
+	target.ClaimedBy.EMail = source.IssuedBy.Email
 
 	return nil
 }

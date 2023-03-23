@@ -56,7 +56,7 @@ func (p *CAProvider) ClaimCertificate(cinfo *types.CertificateClaimInfo) error {
 
 }
 
-func (p *CAProvider) CleanupAfterDeletion(keyID string) error {
+func (p *CAProvider) CleanupAfterDeletion(keyID string, crt *types.CACertInfo) error {
 
 	return errors.New("CleanupAfterDeletion(..) not yet implemented")
 

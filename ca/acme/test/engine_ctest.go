@@ -13,6 +13,7 @@ import (
 	dns "github.com/dns3l/dns3l-core/dns"
 	dnscommon "github.com/dns3l/dns3l-core/dns/common"
 	dnstypes "github.com/dns3l/dns3l-core/dns/types"
+	"github.com/dns3l/dns3l-core/service/auth"
 	"github.com/dns3l/dns3l-core/state"
 	"github.com/dns3l/dns3l-core/util"
 )
@@ -101,9 +102,8 @@ func TestWithLEStaging() {
 	}
 
 	dnsProvider := "otc"
-	issuedBy := "testuser1"
+	issuedBy := &auth.UserInfo{Name: "testuser1", Email: ""}
 	acmeuser := "testacmeuser1"
-	issuedByEmail := "leo@nobach.net"
 
 	domainName1, _, err := dnscommon.MakeNewDomainName4Test(c.DNSTest.TestableZones[dnsProvider].Zones)
 	if err != nil {
@@ -115,7 +115,7 @@ func TestWithLEStaging() {
 	}
 
 	err = e.TriggerUpdate(acmeuser, domainName1, []string{domainName1, domainName2},
-		issuedBy, issuedByEmail)
+		issuedBy)
 	if err != nil {
 		var norenew *acme.NoRenewalDueError
 		if errors.As(err, &norenew) {
@@ -127,7 +127,7 @@ func TestWithLEStaging() {
 	}
 
 	//this should trigger updating the existing key while getting details from database
-	err = e.TriggerUpdate("", domainName1, nil, "", "")
+	err = e.TriggerUpdate("", domainName1, nil, nil)
 	if err != nil {
 		var norenew *acme.NoRenewalDueError
 		if errors.As(err, &norenew) {

@@ -18,4 +18,4 @@ jobs:
       - name: run
         run: |
           chown -R 1000:1000 /__w/dns3l-core/dns3l-core
-          docker/run-in-docker golang-alpine
+          docker/run-in-docker golang-alpine dbfull
