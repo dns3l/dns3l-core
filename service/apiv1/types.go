@@ -1,8 +1,11 @@
 package apiv1
 
+import "github.com/dns3l/dns3l-core/service/auth"
+
 type ServerInfo struct {
-	Version *ServerInfoVersion `json:"version"`
-	Contact *ServerInfoContact `json:"contact"`
+	Version *ServerInfoVersion  `json:"version"`
+	Contact *ServerInfoContact  `json:"contact"`
+	Auth    auth.ServerInfoAuth `json:"auth"` //populated by auth plugin
 }
 
 type ServerInfoVersion struct {

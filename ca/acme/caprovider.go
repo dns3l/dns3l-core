@@ -71,7 +71,7 @@ func makeACMEStateManager(c types.ProviderConfigurationContext) (ACMEStateManage
 
 func (p *CAProvider) IsEnabled() bool {
 
-	return true //TODO
+	return !p.C.Disabled
 
 }
 

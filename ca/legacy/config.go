@@ -6,6 +6,7 @@ import (
 
 type Config struct {
 	Name        string `yaml:"name" validate:"required"`
+	Disabled    bool   `yaml:"disabled"`
 	CAType      string `yaml:"catype" validate:"required,alpha"` //public or private only...
 	Roots       string `yaml:"roots" validate:"required,url"`
 	Description string `yaml:"description"`

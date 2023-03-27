@@ -11,8 +11,8 @@ import (
 func TestGroupReplacement(t *testing.T) {
 
 	hut := OIDCHandler{
-		GroupsPrefix:     "dns3l_",
-		GroupsReplaceDot: true,
+		GroupsPrefix:          "dns3l_",
+		GroupsDomainDelimiter: "_",
 	}
 
 	dom, valid := hut.groupsToDomain("dns3l_foo_bar")
@@ -23,9 +23,25 @@ func TestGroupReplacement(t *testing.T) {
 	assert.Equal(t, valid, true)
 	assert.Equal(t, dom, "dns3l.domain.com")
 
-	dom, valid = hut.groupsToDomain("dns3l_underscore__in__name_com")
-	assert.Equal(t, valid, true)
-	assert.Equal(t, dom, "underscore_in_name.com")
+	// We don't allow domain delimiter runes to be part of the actual domain name
+	// so we remove some of the corner cases here
+	// See https://github.com/dns3l/dns3l-core/issues/62
+
+	// dom, valid = hut.groupsToDomain("dns3l_underscore\\_in\\_name_com")
+	// assert.Equal(t, valid, true)
+	// assert.Equal(t, dom, "underscore_in_name.com")
+
+	// dom, valid = hut.groupsToDomain("dns3l_bar_\\_foo_com")
+	// assert.Equal(t, valid, true)
+	// assert.Equal(t, dom, "bar._foo.com")
+
+	// dom, valid = hut.groupsToDomain("dns3l_bar\\__foo_com")
+	// assert.Equal(t, valid, true)
+	// assert.Equal(t, dom, "bar_.foo.com")
+
+	// dom, valid = hut.groupsToDomain("dns3l_bar.\\_foo_com")
+	// assert.Equal(t, valid, true)
+	// assert.Equal(t, dom, "bar._foo.com")
 
 	_, valid = hut.groupsToDomain("dns3l_")
 	assert.Equal(t, valid, false)

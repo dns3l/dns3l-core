@@ -24,6 +24,9 @@ func (h *CAFunctionHandler) ClaimCertificate(caID string, cinfo *types.Certifica
 	if !exists {
 		return fmt.Errorf("no CA provider with name '%s' exists", caID)
 	}
+	if !prov.Prov.IsEnabled() {
+		return &cmn.DisabledError{RequestedResource: caID}
+	}
 
 	for _, san := range cinfo.Domains {
 		if !prov.DomainIsInAllowedRootZone(util.GetDomainFQDNDot(san)) {
@@ -50,6 +53,9 @@ func (h *CAFunctionHandler) RenewCertificate(cinfo *types.CertificateRenewInfo) 
 	if !exists {
 		return fmt.Errorf("no CA provider with name '%s' exists", cinfo.CAID)
 	}
+	if !prov.Prov.IsEnabled() {
+		return &cmn.DisabledError{RequestedResource: cinfo.CAID}
+	}
 
 	err := prov.Prov.RenewCertificate(cinfo)
 	if err != nil {
@@ -71,6 +77,9 @@ func (h *CAFunctionHandler) DeleteCertificate(caID, keyID string) error {
 	prov, exists := h.Config.Providers[caID]
 	if !exists {
 		return fmt.Errorf("no CA provider with name '%s' exists", caID)
+	}
+	if !prov.Prov.IsEnabled() {
+		return &cmn.DisabledError{RequestedResource: caID}
 	}
 
 	sess, err := h.State.NewSession()

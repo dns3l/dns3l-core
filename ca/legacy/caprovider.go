@@ -24,21 +24,9 @@ func (p *CAProvider) GetInfo() *types.CAProviderInfo {
 
 }
 
-func (p *CAProvider) GetTotalValid() uint {
-
-	return 23 //TODO
-
-}
-
-func (p *CAProvider) GetTotalIssued() uint {
-
-	return 34 //TODO
-
-}
-
 func (p *CAProvider) IsEnabled() bool {
 
-	return true //TODO
+	return !p.C.Disabled
 
 }
 

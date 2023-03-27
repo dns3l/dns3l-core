@@ -5,11 +5,12 @@ import (
 )
 
 type Config struct {
-	Name   string `yaml:"name" validate:"required"`
-	CAType string `yaml:"catype" validate:"required,alpha"` //public or private only...
-	API    string `yaml:"api" validate:"required,url"`
-	URL    string `yaml:"url" validate:"url"`
-	EAB    struct {
+	Name     string `yaml:"name" validate:"required"`
+	Disabled bool   `yaml:"disabled"`
+	CAType   string `yaml:"catype" validate:"required,alpha"` //public or private only...
+	API      string `yaml:"api" validate:"required,url"`
+	URL      string `yaml:"url" validate:"url"`
+	EAB      struct {
 		KID  string `yaml:"kid" validate:"alphanumUnderscoreDashDot"`
 		HMAC string `yaml:"hmac"`
 	} `yaml:"eab"`

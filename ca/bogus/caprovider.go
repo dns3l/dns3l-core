@@ -48,7 +48,7 @@ func (p *CAProvider) Init(c types.ProviderConfigurationContext) error {
 
 func (p *CAProvider) IsEnabled() bool {
 
-	return true
+	return !p.C.Disabled
 
 }
 

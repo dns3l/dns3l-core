@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"regexp"
 	"strings"
 	"time"
 
@@ -19,15 +18,15 @@ import (
 )
 
 type OIDCHandler struct {
-	AuthnDisabled        bool                `yaml:"authn_disabled"`
-	AuthnDisabledEmail   string              `yaml:"authn_disabled_email" validate:"email"`
-	AuthzDisabled        bool                `yaml:"authz_disabled"`
-	DebugClaims          bool                `yaml:"debug_claims"`
-	InjectGroups         map[string][]string `yaml:"inject_groups"`
-	GroupsPrefix         string              `yaml:"groups_prefix" validate:"alphanumUnderscoreDashDot"`
-	GroupsReplaceDot     bool                `yaml:"groups_replace_dot"`
-	AuthnedCanReadPublic bool                `yaml:"authned_can_read_public"`
-	AnonCanReadPublic    bool                `yaml:"anon_can_read_public"`
+	AuthnDisabled         bool                `yaml:"authn_disabled"`
+	AuthnDisabledEmail    string              `yaml:"authn_disabled_email" validate:"email"`
+	AuthzDisabled         bool                `yaml:"authz_disabled"`
+	DebugClaims           bool                `yaml:"debug_claims"`
+	InjectGroups          map[string][]string `yaml:"inject_groups"`
+	GroupsPrefix          string              `yaml:"groups_prefix" validate:"alphanumUnderscoreDashDot"`
+	AuthnedCanReadPublic  bool                `yaml:"authned_can_read_public"`
+	AnonCanReadPublic     bool                `yaml:"anon_can_read_public"`
+	GroupsDomainDelimiter string              `yaml:"groups_domain_delim"`
 
 	OIDCBindings map[string]*OIDCBinding `yaml:"oidc_bindings"`
 
@@ -49,6 +48,11 @@ type ClaimsInfo struct {
 	Email         string `json:"email" validate:"email"`
 	EmailVerified bool   `json:"email_verified"`
 	Groups        []string
+}
+
+type OIDCServerInfoAuth struct {
+	GroupsPrefix          string `json:"groups-prefix"`
+	GroupsDomainDelimiter string `json:"groups-domain-delim"`
 }
 
 func createNewOIDCBinding(binding *OIDCBinding, issuer string, onStartup bool) error {
@@ -112,6 +116,13 @@ func (h *OIDCHandler) Init() error {
 
 	return nil
 
+}
+
+func (h *OIDCHandler) GetServerInfoAuth() ServerInfoAuth {
+	return OIDCServerInfoAuth{
+		GroupsPrefix:          h.GroupsPrefix,
+		GroupsDomainDelimiter: h.GroupsDomainDelimiter,
+	}
 }
 
 func (h *OIDCHandler) selectIssuer(token string) (*OIDCBinding, string, error) {
@@ -281,8 +292,6 @@ func (h *OIDCHandler) authnGetAuthzInfoRaw(r *http.Request) (AuthorizationInfo, 
 
 }
 
-var reDashToDot = regexp.MustCompile(`([^_])_([^_])`)
-
 func (h *OIDCHandler) groupsToDomain(group string) (string, bool) {
 
 	if !strings.HasPrefix(group, h.GroupsPrefix) {
@@ -295,8 +304,10 @@ func (h *OIDCHandler) groupsToDomain(group string) (string, bool) {
 		return "", false
 	}
 
-	if h.GroupsReplaceDot {
-		group = strings.Replace(reDashToDot.ReplaceAllString(group, "$1.$2"), "__", "_", -1)
+	if h.GroupsDomainDelimiter == "" || h.GroupsDomainDelimiter != "." {
+
+		group = strings.Replace(group, h.GroupsDomainDelimiter, ".", -1) //corner cases where we need an underscore are removed
+
 	}
 	return group, true
 }
