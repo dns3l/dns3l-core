@@ -42,9 +42,7 @@ func (a *AuthStub) AuthnGetAuthzInfo(r *http.Request) (auth.AuthorizationInfo, e
 	}
 
 	authzinfo := &auth.DefaultAuthorizationInfo{
-		Name:                 v.Name,
-		Username:             testusername,
-		Email:                v.Email,
+		UserInfo:             &auth.UserInfo{Name: v.Name, Email: v.Email},
 		DomainsAllowed:       v.DomainsAllowed,
 		WriteAllowed:         v.WriteAllowed,
 		ReadAllowed:          v.ReadAllowed,

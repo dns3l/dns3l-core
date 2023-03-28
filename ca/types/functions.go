@@ -5,6 +5,7 @@ import (
 	"time"
 
 	dnstypes "github.com/dns3l/dns3l-core/dns/types"
+	"github.com/dns3l/dns3l-core/service/auth"
 	"github.com/dns3l/dns3l-core/state"
 )
 
@@ -17,11 +18,10 @@ type CertificateResources struct {
 }
 
 type CertificateClaimInfo struct {
-	Name          string
-	NameRZ        string
-	Domains       []string
-	IssuedBy      string
-	IssuedByEmail string
+	Name     string
+	NameRZ   string
+	Domains  []string
+	IssuedBy *auth.UserInfo
 	//TODO implement hints
 }
 
