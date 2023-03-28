@@ -270,8 +270,8 @@ General options
     --command cert
 
     currently supported subcommands
-        -- subcommands ca       output all supported CAs
-        -- subcommands list     print all certificates of the "dns3l" instance
+        -- subcommands listca   output all supported CAs
+        -- subcommands list     print all certificates of one supportted ca from this acme instance
         -- subcommands claim    transfer a certificate request to acme
         -- subcommands get      download a certificate from "dns3l"
         -- subcommands del      deleting a Certificate on acme
@@ -282,7 +282,7 @@ General options
         -- Subcommands push     transfer a certificate to DNS3L for CAs that do not support ACME
 
 -----------------------------------------------------------------------------------------
-   ./dns3lcli cert ca
+   ./dns3lcli cert listca
 
     typical call
     Important before, the Access token was stored in the keychain or ENV
@@ -292,7 +292,7 @@ General options
         # Output in JSON format
         # API endpoint user .. is taken from the configuration file
         # AccessToken from the KeyRing or ENV
-        ./dns3lcli --config=dns3cli_config_example.yaml json=true cert ca
+        ./dns3lcli --config=dns3cli_config_example.yaml json=true cert listca
 
     Arguments
         none
@@ -307,8 +307,8 @@ General options
         --tok           The access token for ACME API endpoint
                         Overrides all other options to specify a user
                         other options in descending priority
-                            Environment variable            $DNS3L_CERT_API
-                            Configuration File Value from   cert.accessToken
+                            Environment variable            $DNS3L_CERT_TOKEN
+                            Configuration File Value from   cert.token
                             If present value from           KeyRing
 
 -----------------------------------------------------------------------------------------
@@ -342,8 +342,8 @@ General options
             --tok               the access token for ACME API endpoint
                                 overrides all other options to specify a user
                                 other options in descending priority
-                                    Environment variable            $DNS3L_CERT_API
-                                    Configuration File Value from   cert.accessToken
+                                    Environment variable            $DNS3L_CERT_TOKEN
+                                    Configuration File Value from   cert.token
                                     If present value from KeyRing
             --ca                CA to use
             --filter            regular re2 expression
@@ -379,8 +379,8 @@ General options
             --tok               the access token for ACME API endpoint
                                 overrides all other options to specify a user
                                 other options in descending priority
-                                    Environment variable $DNS3L_CERT_API
-                                    Configuration File Value from cert.accessToken
+                                    Environment variable $DNS3L_CERT_TOKEN
+                                    Configuration File Value from cert.token
                                     If present value from KeyRing
             --api               ACME backend API endpoint
                                 overrides all other options to specify a user
@@ -389,6 +389,7 @@ General options
                                 configuration File Value from cert. api
             --ca                CA to use
             --wildcard          creates a wildcard certificate cannot be used with --autodns
+                                It adds an star at the begin of the FQDN ( test.test.cloud.de -> *.test.test.cloud.de )
             --autodns           creates a DNS A record from the specified IP, cannot be used with wildcard
             --hints             string[="default"] "hints" section in the configuration file to be used
                                 Default value is cert. hints. default
@@ -422,8 +423,8 @@ General options
             --tok               The access token for ACME API endpoint
                                 Overrides all other options to specify a user
                                 other options in descending priority
-                                Environment variable                $DNS3L_CERT_API
-                                Configuration File Value from       cert.accessToken
+                                Environment variable                $DNS3L_CERT_TOKEN
+                                Configuration File Value from       cert.token
                                 If present value from KeyRing
             --ca                CA to use
             --mode              What exactly is downloaded for this FQDN
@@ -458,8 +459,8 @@ General options
             --tok           The access token for ACME API endpoint
                             overrides all other options to specify a user
                             other options in descending priority
-                                environment variable            $DNS3L_CERT_API
-                                onfiguration File Value from    cert.accessToken
+                                environment variable            $DNS3L_CERT_TOKEN
+                                onfiguration File Value from    cert.token
                                 If present value from KeyRing
             --api           ACME backend API endpoint
                             Overrides all other options to specify a user

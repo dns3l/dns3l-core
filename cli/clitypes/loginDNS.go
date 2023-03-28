@@ -32,8 +32,8 @@ func (loginData *LoginDNSType) PrintParams() {
 		fmt.Fprintf(os.Stderr, "INFO: login DNS called \n")
 		fmt.Fprintf(os.Stderr, "INFO: Secret from terminal '%v' \n", loginData.FromTerminal)
 		fmt.Fprintf(os.Stderr, "INFO: DNS backend %s\n", loginData.DNSBackend)
-		fmt.Fprintf(os.Stderr, "INFO: user %s\n", loginData.User)
-		fmt.Fprintf(os.Stderr, "INFO: password %s\n", loginData.Password)
+		fmt.Fprintf(os.Stderr, "INFO: Enviroment user %s\n", loginData.User)
+		fmt.Fprintf(os.Stderr, "INFO: Enviroment password %s\n", loginData.Password)
 		var user, pass string
 		user, pass = getProviderData(loginData.DNSBackend, false)
 		fmt.Fprintf(os.Stderr, "INFO: Backend User %s\n", user)
@@ -58,8 +58,18 @@ func (loginData *LoginDNSType) DoCommand() error {
 	var user string
 	var bIn []byte
 	var inErr error
+	var data []byte
+	switch {
+	case loginData.User == "NOT_SET":
+		user, _ = getProviderData(loginData.DNSBackend, false)
+	default:
+		user = loginData.User
+		if loginData.Verbose {
+			fmt.Fprintf(os.Stderr, "Override backend user due to ENV/CLI option:\n")
+		}
+	}
 	if loginData.FromTerminal {
-		bIn, inErr = cliutil.GetPasswordFromConsole("DNS Provider Login Secret " + loginData.User + " =")
+		bIn, inErr = cliutil.GetPasswordFromConsole("DNS Provider Login Id '" + user + "' =")
 		if inErr == nil {
 			secret = string(bIn)
 		} else {
@@ -73,28 +83,23 @@ func (loginData *LoginDNSType) DoCommand() error {
 			secret = loginData.Password
 		}
 	}
-	switch {
-	case loginData.User == "NOT_SET":
-		user, _ = getProviderData(loginData.DNSBackend, false)
-	default:
-		user = loginData.User
-		if loginData.Verbose {
-			fmt.Fprintf(os.Stderr, "Override backend user due to ENV/CLI option:\n")
-		}
-	}
 	if loginData.Verbose {
-		fmt.Fprintf(os.Stderr, "KeyRing name %v\n", user)
+		fmt.Fprintf(os.Stderr, "KeyRing name '%s'\n", user)
 	}
 	if nil != cliutil.CachePassword(user, secret, 3600*4, loginData.Verbose) {
 		return NewValueError(530, fmt.Errorf("can not store secrete in the password safe"))
 	}
 	time.Sleep(time.Millisecond * 10)
-	_, inErr = cliutil.GetPasswordfromRing(user, loginData.Verbose)
+	data , inErr = cliutil.GetPasswordfromRing(user, loginData.Verbose)
 	if inErr != nil {
 		return NewValueError(540, fmt.Errorf("write to password safe was not OK: Error %v", inErr.Error()))
 	}
 	if loginData.Verbose {
-		fmt.Fprintf(os.Stderr, "Info: DNS backend login Secret sucessfully stored in password safe '%v' \n", user)
+		if len(data) > 3 {
+			fmt.Fprintf(os.Stderr, "Info: DNS backend login Secret sucessfully stored in password safe User '%s' pass '%s...' \n", user, string(data)[0:3])
+		} else {
+			fmt.Fprintf(os.Stderr, "Info: DNS backend login Secret sucessfully stored in password safe User '%s' \n", user)
+		}
 	}
 	return nil
 }

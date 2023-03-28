@@ -11,7 +11,7 @@ import (
 
 /* Sub commands cert
 cert:
-ca
+listca
    		List all certificate authorities (CA) utilized by DNS3L
 ============================================
 list
@@ -102,9 +102,9 @@ var CertAutoDNS string
 //	 Full	    cert + chain + root PEM encoded
 var CertMode string
 
-// accesstoken for the ACME
-// -t, --tok       | Access token for ACME [$DNS3L_CERT_ACCESSTOKEN]
-var CertAccessToken string
+// token for the ACME
+// -t, --tok       | Access/id token for ACME [$DNS3L_CERT_TOKEN]
+var CertToken string
 
 // search string for List cert com anndo
 // -s --search
@@ -117,8 +117,8 @@ var CertHintsSection string
 // ===========================================================
 // cert ca =========================================
 var certCaCommand = &cobra.Command{
-	Use:   "ca",
-	Short: "List all certificate authorities (CA) utilized by DNS3L",
+	Use:   "listca",
+	Short: "List all certificate authorities (CA) which are suportted by DNS3L",
 	Long:  ``,
 	RunE:  certCaCmdCb,
 }
@@ -126,10 +126,10 @@ var certCaCommand = &cobra.Command{
 func certCaCmdCb(ccmd *cobra.Command, args []string) error {
 	// 	Verbose bool,  JSONOutput  bool,  APIEndPoint string
 	if len(args) != 0 {
-		return clitypes.NewValueError(10001, fmt.Errorf("CERT CA requires 0 Arguments but found %d \n", len(args)))
+		return clitypes.NewValueError(10001, fmt.Errorf("CERT CA requires 0 Arguments but found %d", len(args)))
 	}
 	var certCa clitypes.CertCaType
-	certCa.Init(Verbose, JSONOutput, CertAPIEndPoint, CertAccessToken)
+	certCa.Init(Verbose, JSONOutput, CertAPIEndPoint, CertToken)
 	certCa.PrintParams()
 	err := certCa.CheckParams()
 	if err != nil {
@@ -151,9 +151,9 @@ var certListCommand = &cobra.Command{
 func certListCmdCb(ccmd *cobra.Command, args []string) error {
 	// Verbose bool, JSONOutput bool,  APIEndPoint string,  CA  string
 	if len(args) != 0 {
-		return clitypes.NewValueError(11001, fmt.Errorf("CERT LIST requires 0 Arguments but found %d \n", len(args)))
+		return clitypes.NewValueError(11001, fmt.Errorf("CERT LIST requires 0 Arguments but found %d", len(args)))
 	}
-	var CertList = clitypes.CertListType{Verbose: Verbose, JSONOutput: JSONOutput, APIEndPoint: CertAPIEndPoint, AccessToken: CertAccessToken, CA: CertCA, Filter: CertSearchFilter}
+	var CertList = clitypes.CertListType{Verbose: Verbose, JSONOutput: JSONOutput, APIEndPoint: CertAPIEndPoint, CertToken: CertToken, CA: CertCA, Filter: CertSearchFilter}
 	CertList.PrintParams()
 	err := CertList.CheckParams()
 	if err != nil {
@@ -174,11 +174,11 @@ var certClaimCommand = &cobra.Command{
 func certClaimCmdCb(ccmd *cobra.Command, args []string) error {
 	// 	Verbose bool, JSONOutput  bool, APIEndPoint string, CA string, Wildcard bool, AutoDNS bool, FQDN string, SAN []string
 	//  SAN has to be checked
-	if len(args) < 2 {
-		return clitypes.NewValueError(12001, fmt.Errorf("CERT CLAIM requires 2 or more Arguments but found %d \n", len(args)))
+	if len(args) < 1 {
+		return clitypes.NewValueError(12001, fmt.Errorf("CERT CLAIM requires 1 or more Arguments but found %d", len(args)))
 	}
 	var CertClaim clitypes.CertClaimType
-	CertClaim.Init(Verbose, JSONOutput, CertAPIEndPoint, CertAccessToken, CertCA, CertWildcard, CertAutoDNS, args[0], args[1:], CertHintsSection)
+	CertClaim.Init(Verbose, JSONOutput, CertAPIEndPoint, CertToken, CertCA, CertWildcard, CertAutoDNS, args[0], args[1:], CertHintsSection)
 	CertClaim.PrintParams()
 	err := CertClaim.CheckParams()
 	if err != nil {
@@ -201,10 +201,10 @@ func certGetCmdCb(ccmd *cobra.Command, args []string) error {
 	// 	Verbose bool, JSONOutput bool, APIEndPoint string, CA string, Mode string, FQDN string
 	// clitypes.NotImplemented()
 	if len(args) != 1 {
-		return clitypes.NewValueError(13001, fmt.Errorf("CERT Get requires 1 Arguments but found %d \n", len(args)))
+		return clitypes.NewValueError(13001, fmt.Errorf("CERT Get requires 1 Arguments but found %d", len(args)))
 	}
 	var CertGet = clitypes.CertGetType{Verbose: Verbose, JSONOutput: JSONOutput, APIEndPoint: CertAPIEndPoint,
-		AccessToken: CertAccessToken, CA: CertCA, Mode: clitypes.Mode2Enum(CertMode), FQDN: args[0]}
+		CertToken: CertToken, CA: CertCA, Mode: clitypes.Mode2Enum(CertMode), FQDN: args[0]}
 	CertGet.PrintParams()
 	err := CertGet.CheckParams()
 	if err != nil {
@@ -225,9 +225,9 @@ var certDelCommand = &cobra.Command{
 
 func certDelCmdCb(ccmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		return clitypes.NewValueError(14001, fmt.Errorf("CERT DEL requires 1 Arguments but found %d \n", len(args)))
+		return clitypes.NewValueError(14001, fmt.Errorf("CERT DEL requires 1 Arguments but found %d", len(args)))
 	}
-	var CertDel = clitypes.CertDelType{Verbose: Verbose, JSONOutput: JSONOutput, APIEndPoint: CertAPIEndPoint, AccessToken: CertAccessToken, CA: CertCA, FQDN: args[0]}
+	var CertDel = clitypes.CertDelType{Verbose: Verbose, JSONOutput: JSONOutput, APIEndPoint: CertAPIEndPoint, CertToken: CertToken, CA: CertCA, FQDN: args[0]}
 	CertDel.PrintParams()
 	err := CertDel.CheckParams()
 	if err != nil {
@@ -250,16 +250,16 @@ func certCsrCmdCb(ccmd *cobra.Command, args []string) error {
 	// 	Verbose bool, JSONOutput  bool, Force  bool, APIEndPoint string, CA string, FQDN string
 	clitypes.NotImplemented()
 	if len(args) != 1 {
-		return clitypes.NewValueError(15001, fmt.Errorf("CERT CSR requires 1 Arguments but found %d \n", len(args)))
+		return clitypes.NewValueError(15001, fmt.Errorf("CERT CSR requires 1 Arguments but found %d", len(args)))
 	}
 	var CertCSR = clitypes.CertCSRType{Verbose: Verbose, JSONOutput: JSONOutput, Force: Force,
-		APIEndPoint: CertAPIEndPoint, AccessToken: CertAccessToken, CA: CertCA, FQDN: args[0]}
+		APIEndPoint: CertAPIEndPoint, CertToken: CertToken, CA: CertCA, FQDN: args[0]}
 	CertCSR.PrintParams()
 	err := CertCSR.CheckParams()
 	if err != nil {
 		return clitypes.NewValueError(15002, err)
 	}
-	return clitypes.NewValueError(15005, fmt.Errorf("CERT CSR not implemented !\n"))
+	return clitypes.NewValueError(15005, fmt.Errorf("cert csr not implemented"))
 }
 
 // ===========================================================
@@ -275,29 +275,29 @@ func certPushCmdCb(ccmd *cobra.Command, args []string) error {
 	// Verbose bool, JSONOutput bool, Force bool, APIEndPoint string, CA string, FQDN string, CRTpem string, CHNpem string
 	clitypes.NotImplemented()
 	if len(args) != 3 {
-		return clitypes.NewValueError(16001, fmt.Errorf("CERT PUSH requires 3 Arguments but found %d \n", len(args)))
+		return clitypes.NewValueError(16001, fmt.Errorf("CERT PUSH requires 3 Arguments but found %d", len(args)))
 	}
 	var CertPush = clitypes.CertPushType{Verbose: Verbose, JSONOutput: JSONOutput, Force: Force,
-		APIEndPoint: CertAPIEndPoint, AccessToken: CertAccessToken, CA: CertCA, FQDN: args[0], CRTpem: args[1], CHNpem: args[2]}
+		APIEndPoint: CertAPIEndPoint, CertToken: CertToken, CA: CertCA, FQDN: args[0], CRTpem: args[1], CHNpem: args[2]}
 	CertPush.PrintParams()
 	err := CertPush.CheckParams()
 	if err != nil {
 		return clitypes.NewValueError(16002, err)
 	}
-	return clitypes.NewValueError(16005, fmt.Errorf("CERT PUSH not implemented !\n"))
+	return clitypes.NewValueError(16005, fmt.Errorf("cert push not implemented"))
 }
 
 // ===========================================================
 // cert main command =========================================
 var certCommand = &cobra.Command{
 	Use:   "cert",
-	Short: "Push cert to DNS3L none ACME CAs",
+	Short: "cert to DNS3L none ACME CAs",
 	Long:  ``,
 	RunE:  certCmdCb,
 }
 
 func certCmdCb(ccmd *cobra.Command, args []string) error {
-	return clitypes.NewValueError(201, fmt.Errorf("command CERT is used without a subcommand ca, list, claim, get, del, csr, push or query \n "))
+	return clitypes.NewValueError(201, fmt.Errorf("command CERT is used without a subcommand listca, list, claim, get, del, csr, push or query \n "))
 }
 
 func initCert() {
@@ -336,16 +336,16 @@ func initCert() {
 	// use the value out of the ring as default value in the command line
 	var aToken string
 	// we test if something is stored in the keyring
-	rTok, inErr := cliutil.GetPasswordfromRing("CertAccountToken", false)
+	rTok, inErr := cliutil.GetPasswordfromRing("CertIdToken", false)
 	if inErr == nil {
 		aToken = string(rTok)
 	} else {
 		aToken = ""
 	}
-	envToken := vip.GetString("cert.accessToken")
+	envToken := vip.GetString("cert.token")
 	if envToken != "" {
 		aToken = envToken
 	}
-	certCommand.PersistentFlags().StringVarP(&CertAccessToken, "tok", "t", aToken, "access token acme ")
+	certCommand.PersistentFlags().StringVarP(&CertToken, "tok", "t", aToken, "token to access acme [$DNS3L_CERT_TOKEN]")
 
 }

@@ -8,24 +8,28 @@ import (
 	"regexp"
 )
 
-/*CertListType ---------------------------------------------------------------------------------
- cert	ca
- 	List all certificate authorities (CA) utilized by DNS3L
-  Flags
-	-a, --api   	| DNS3L API endpoint [$DNS3L_API]
-	  , --ca        | Claim from a specific ACME CA [$DNS3L_CA]
+/*
+CertListType ---------------------------------------------------------------------------------
 
- 200 = OK
- 404 = not Found
+	 cert	list
+	 	List all certificate authorities (CA) utilized by DNS3L
+	  Flags
+		-a, --api   	| DNS3L API endpoint [$DNS3L_API]
+		  , --ca        | Claim from a specific ACME CA [$DNS3L_CA]
 
-  curl -X GET "https://dns3l.example.com/api/v1/ca/4/crt?search=*.acme.com" -H "Accept: application/json"
-	  ?search=*.acme.com
------------------------------------------------------------------------------------------ */
+	 200 = OK
+	 404 = not Found
+
+	  curl -X GET "https://dns3l.example.com/api/v1/ca/4/crt?search=*.acme.com" -H "Accept: application/json"
+		  ?search=*.acme.com
+
+-----------------------------------------------------------------------------------------
+*/
 type CertListType struct {
 	Verbose     bool
 	JSONOutput  bool
 	APIEndPoint string
-	AccessToken string
+	CertToken   string
 	CA          string
 	Filter      string
 }
@@ -53,12 +57,12 @@ func (CertList *CertListType) PrintParams() {
 	if CertList.Verbose {
 		fmt.Fprintf(os.Stderr, "INFO: Command Cert List called \n")
 		PrintViperConfigCert()
-		fmt.Fprintf(os.Stderr, "INFO:JsonOut 	     '%t' \n", CertList.JSONOutput)
-		fmt.Fprintf(os.Stderr, "INFO:Api EndPoint    '%s' \n", CertList.APIEndPoint)
-		fmt.Fprintf(os.Stderr, "AccessToken  (4 < len)='%t' \n", (len(CertList.AccessToken) > 4))
+		fmt.Fprintf(os.Stderr, "INFO:JsonOut 	   '%t' \n", CertList.JSONOutput)
+		fmt.Fprintf(os.Stderr, "INFO:Api EndPoint  '%s' \n", CertList.APIEndPoint)
+		fmt.Fprintf(os.Stderr, "Token len >  4     '%t' \n", (len(CertList.CertToken) > 4))
 		// the id of the CA, which can be obtained through the ca command
-		fmt.Fprintf(os.Stderr, "INFO:CA          	 '%s' \n", CertList.CA)
-		fmt.Fprintf(os.Stderr, "INFO:Filter          	 '%s' \n", CertList.Filter)
+		fmt.Fprintf(os.Stderr, "INFO:CA            '%s' \n", CertList.CA)
+		fmt.Fprintf(os.Stderr, "INFO:Filter        '%s' \n", CertList.Filter)
 
 	}
 	//
@@ -70,9 +74,9 @@ func (CertList *CertListType) CheckParams() error {
 	// check CA
 	var errText string
 	OK := true
-	if len(CertList.AccessToken) <= 4 {
+	if len(CertList.CertToken) <= 4 {
 		OK = false
-		errText = "cert AccessToken  heuristic check failed"
+		errText = "cert Token  heuristic check failed"
 	}
 	if !OK {
 		return NewValueError(11301, fmt.Errorf(errText))
@@ -100,7 +104,13 @@ func (CertList *CertListType) DoCommand() error {
 	req.URL.RawQuery = qVals.Encode()
 	req.Header.Set("Accept", "application/json")
 	// Create a Bearer string by appending string access token
-	var bearer = "Bearer " + FinalCertToken(CertList.AccessToken)
+	if CertList.Verbose {
+		fmt.Fprintf(os.Stderr, "INFO: token before bearer construction'%s' \n", CertList.CertToken)
+	}
+	var bearer = "Bearer " + FinalCertToken(CertList.CertToken)
+	if CertList.Verbose {
+		fmt.Fprintf(os.Stderr, "INFO: berar+token '%s' \n", bearer)
+	}
 	// add authorization header to the req
 	req.Header.Add("Authorization", bearer)
 	resp, err := client.Do(req)

@@ -9,8 +9,7 @@ DNS3LCLI_VERSION = $(shell awk -v FS="dns3lcli=" 'NF>1{print $$2}' VERSIONS)
 GO_LDFLAGS := "\
 	-X 'github.com/dns3l/dns3l-core/context.ServiceVersion=$(DNS3LD_VERSION)' \
 	-X 'github.com/dns3l/dns3l-core/context.CLIVersion=$(DNS3LCLI_VERSION)'\
-	-extldflags '-static'"
-#-extldflags '-static' -w -s"
+	-extldflags '-static' -w -s"
 GOENV := GOARCH=$(GOARCH) GOOS=linux
 GODIRS := ./acme/... ./ca/... ./commands/... ./cmd/... ./context/...  ./dns/... ./service/... ./util/... ./cli/... ./renew/...
 
@@ -19,8 +18,24 @@ all: service cli
 service:
 	$(GOENV) go build -v -ldflags $(GO_LDFLAGS) -o dns3ld ./cmd/dns3ld/.
 
-cli: cli_linux_arm cli_linux_amd64  cli_win_amd64  cli_win_arm
-	$(GOENV)  go build -v -ldflags $(GO_LDFLAGS) -o ./dns3lcli ./cmd/dns3lcli/.
+# cli: cli_linux_arm cli_linux_amd64  cli_win_amd64  cli_win_arm
+cli: CGO_ENABLED=0
+cli: cli_linux_amd64
+	$(GOENV)  go build -v -a -tags netgo -ldflags $(GO_LDFLAGS) -o ./dns3lcli ./cmd/dns3lcli/.
+
+cli_linux_amd64: GOARCH = amd64
+cli_linux_amd64: GOOS = linux
+cli_linux_amd64: GOENV := GOARCH=$(GOARCH) GOOS=$(GOOS)
+cli_linux_amd64: DNS3LCLI_RELEASE_FLAG = -X github.com/dns3l/dns3l-core/context.CLIVersion=$(DNS3LCLI_VERSION)
+cli_linux_amd64: DNS3LD_RELEASE_FLAG = -X github.com/dns3l/dns3l-core/context.ServiceVersion=$(DNS3LD_VERSION)
+cli_linux_amd64: GO_LDFLAGS := '$(DNS3LCLI_RELEASE_FLAG) $(DNS3LD_RELEASE_FLAG) -extldflags "-fno-PIC -static" -w -s' -buildmode pie -tags 'osusergo netgo static_build'
+cli_linux_amd64: CGO_ENABLED=0
+cli_linux_amd64:
+	$(GOENV)  go build  -tags static_build -v -a -ldflags $(GO_LDFLAGS)  -o ./$(GOOS)/$(GOARCH)/dns3lcli ./cmd/dns3lcli/.
+#	$(GOENV)  go build -v -a -ldflags $(GO_LDFLAGS) -o ./$(GOOS)/$(GOARCH)/dns3lcli ./cmd/dns3lcli/.
+# the following line compiles a static application even glibc!  
+# GOARCH=amd64 GOOS=linux  go build  -v -a -ldflags '-extldflags "-fno-PIC -static"' -buildmode pie -tags 'osusergo netgo static_build'  -o ./linux/amd64/dns3lcli ./cmd/dns3lcli/.
+
 
 cli_linux_arm: GOARCH = arm
 cli_linux_arm: GOOS = linux
@@ -32,19 +47,6 @@ cli_linux_arm: CGO_ENABLED=0
 # cli_linux_arm: CGO_LDFLAGS="-Xlinker -rpath=/path/to/another_glibc/lib -static"
 cli_linux_arm:
 	$(GOENV)  go build -v -a -ldflags $(GO_LDFLAGS) -o ./$(GOOS)/$(GOARCH)/dns3lcli ./cmd/dns3lcli/.
-
-cli_linux_amd64: GOARCH = amd64
-cli_linux_amd64: GOOS = linux
-cli_linux_amd64: GOENV := GOARCH=$(GOARCH) GOOS=$(GOOS)
-cli_linux_amd64: DNS3LCLI_RELEASE_FLAG = -X github.com/dns3l/dns3l-core/context.CLIVersion=$(DNS3LCLI_VERSION)
-cli_linux_amd64: DNS3LD_RELEASE_FLAG = -X github.com/dns3l/dns3l-core/context.ServiceVersion=$(DNS3LD_VERSION)
-cli_linux_amd64: GO_LDFLAGS := '$(DNS3LCLI_RELEASE_FLAG) $(DNS3LD_RELEASE_FLAG) -extldflags "-fno-PIC -static"' -buildmode pie -tags 'osusergo netgo static_build'
-cli_linux_amd64: CGO_ENABLED=0
-cli_linux_amd64:
-	$(GOENV)  go build  -tags static_build -v -a -ldflags $(GO_LDFLAGS)  -o ./$(GOOS)/$(GOARCH)/dns3lcli ./cmd/dns3lcli/.
-#	$(GOENV)  go build -v -a -ldflags $(GO_LDFLAGS) -o ./$(GOOS)/$(GOARCH)/dns3lcli ./cmd/dns3lcli/.
-# the following line compiles a static application even glibc!  
-# GOARCH=amd64 GOOS=linux  go build  -v -a -ldflags '-extldflags "-fno-PIC -static"' -buildmode pie -tags 'osusergo netgo static_build'  -o ./linux/amd64/dns3lcli ./cmd/dns3lcli/.
 
 cli_win_amd64: GOARCH = amd64
 cli_win_amd64: GOOS = windows
@@ -63,7 +65,6 @@ cli_win_arm: DNS3LD_RELEASE_FLAG = -X github.com/dns3l/dns3l-core/context.Servic
 cli_win_arm: CGO_ENABLED=0
 cli_win_arm:
 	$(GOENV)  go build -v -ldflags $(GO_LDFLAGS) -o ./$(GOOS)/$(GOARCH)/dns3lcli ./cmd/dns3lcli/.
-
 
 
 docker: service-docker

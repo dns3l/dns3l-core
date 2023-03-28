@@ -33,10 +33,11 @@ IMPLEMENTATION
 var Verbose bool
 
 // JSONOutput ===========================
-//-j, --json      | Results as JSON
+// -j, --json      | Results as JSON
 var JSONOutput bool
 
-/*Force flag
+/*
+Force flag
 // -f, --force     | Change existing DATA
 */
 var Force bool
@@ -92,7 +93,7 @@ var rootCmd = &cobra.Command{
 	},
 }
 
-//Execute this function will be called from main()
+// Execute this function will be called from main()
 // and at the this will call the final command e.g dns_add_Command
 func Execute() error {
 	// start with the root element of our commands tree
@@ -182,6 +183,7 @@ func initViperConfig() {
 	vip.BindEnv("cert.autodns", viperShellPrefix+"_CERT_AUTODNS")   //nolint:errcheck
 	vip.BindEnv("cert.modeFull", viperShellPrefix+"_CERT_MODE")     //nolint:errcheck
 	vip.BindEnv("cert.api", viperShellPrefix+"_CERT_API")           //nolint:errcheck
+	vip.BindEnv("cert.token", viperShellPrefix+"_CERT_TOKEN")       //nolint:errcheck
 
 	// if in the commandline was no --config
 	if Config == "" {
@@ -233,7 +235,7 @@ func parseCommandLineForConfig() (string, bool) {
 	return string(""), false
 }
 
-//  -h, --help
+// -h, --help
 func parseCommandLineForHelp() bool {
 	for _, v := range os.Args {
 		if strings.EqualFold(v, "-h") || strings.EqualFold(v, "--help") {

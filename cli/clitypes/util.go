@@ -7,6 +7,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+
 	"github.com/dns3l/dns3l-core/cli/cliutil"
 
 	"github.com/dns3l/dns3l-core/dns/infblx"
@@ -83,7 +84,7 @@ func getProviderData(dnsbackend string, verbose bool) (string, string) {
 	}
 	if verbose {
 		fmt.Fprintf(os.Stderr, "INFO provider user '%s'\n", user)
-		fmt.Fprintf(os.Stderr, "INFO provider pass '%s'\n", secret)
+		fmt.Fprintf(os.Stderr, "INFO provider pass '%s'\n", secret[0:2])
 	}
 	return user, secret
 }
@@ -121,8 +122,8 @@ func setProvider(dnsbackend string, id string, secret string, usePWSafe bool, ve
 		} else {
 			infblxConfig.Auth.User = vip.GetString(providerPath + "auth.user")
 			if verbose {
-				fmt.Fprintf(os.Stderr, "INFO  setProvider() User of the providers section %s is used infblk\n", dnsbackend)
-				fmt.Fprintf(os.Stderr, "INFO  setProvider() User:= %s ", infblxConfig.Auth.User)
+				fmt.Fprintf(os.Stderr, "INFO  setProvider() providers section '%s' selected \n", dnsbackend)
+				fmt.Fprintf(os.Stderr, "INFO  setProvider() user:= '%s' ", infblxConfig.Auth.User)
 			}
 			if infblxConfig.Auth.User == "" {
 				return nil, NewValueError(1102, fmt.Errorf("fuction SetProvider() failed: User/ID is empty"))
@@ -225,7 +226,7 @@ func FinalCertToken(inToken string) string {
 	var aToken string
 	switch inToken {
 	case "USE_RING_TOKEN":
-		token, inErr := cliutil.GetPasswordfromRing("CertAccountToken", false)
+		token, inErr := cliutil.GetPasswordfromRing("CertIdToken", false)
 		if inErr == nil {
 			aToken = string(token)
 		} else {
@@ -234,7 +235,7 @@ func FinalCertToken(inToken string) string {
 		}
 	case "USE_ENV_TOKEN":
 		vip := viper.GetViper()
-		envToken := vip.GetString("cert.accessToken")
+		envToken := vip.GetString("cert.token")
 		if envToken != "" {
 			aToken = envToken
 		} else {
@@ -256,7 +257,7 @@ func PrintDNSProvider(provider types.DNSProvider) {
 		fmt.Fprintf(os.Stderr, "Infblk Provider Config Port     	'%s' \n", value.C.Port)
 		fmt.Fprintf(os.Stderr, "Infblk Provider Config Version    	'%s' \n", value.C.Version)
 		fmt.Fprintf(os.Stderr, "Infblk Provider Config Auth User 	'%s' \n", value.C.Auth.User)
-		fmt.Fprintf(os.Stderr, "Infblk Provider Config Auth Pass 	'%s' \n", value.C.Auth.Pass)
+		fmt.Fprintf(os.Stderr, "Infblk Provider Config Auth Pass 	'%s' \n", value.C.Auth.Pass[0:2])
 		fmt.Fprintf(os.Stderr, "Infblk Provider Config DNSView   	'%s' \n", value.C.DNSView)
 		fmt.Fprintf(os.Stderr, "Infblk Provider Config SSLVerify 	'%s' \n", value.C.SSLVerify)
 	case *(otc.DNSProvider):
@@ -278,12 +279,12 @@ func PrintViperConfigDNS() {
 	// Provider = viper.GetString("provider")
 	//BackendAPIEndPoint = viper.GetString("api")
 	vip := viper.GetViper()
-	fmt.Fprintf(os.Stderr, "resulting value Provider Name 	'%s' \n", vip.GetString("dns.backend"))
-	fmt.Fprintf(os.Stderr, "resulting value  dns force flag	'%s' \n", vip.GetString("force"))
-	fmt.Fprintf(os.Stderr, "resulting value  debug flag 	    '%s' \n", vip.GetString("debug"))
-	fmt.Fprintf(os.Stderr, "resulting value  json output 	    '%s' \n", vip.GetString("json"))
-	fmt.Fprintf(os.Stderr, "resulting value  User/ Id 	        '%s' \n", vip.GetString("dns.id"))
-	fmt.Fprintf(os.Stderr, "resulting value  secret / Password '%s' \n", vip.GetString("dns.secret"))
+	fmt.Fprintf(os.Stderr, "value read from config Provider Name 	'%s' \n", vip.GetString("dns.backend"))
+	fmt.Fprintf(os.Stderr, "value read from config  dns force flag	'%s' \n", vip.GetString("force"))
+	fmt.Fprintf(os.Stderr, "value read from config  debug flag 	    '%s' \n", vip.GetString("debug"))
+	fmt.Fprintf(os.Stderr, "value read from config  json output 	    '%s' \n", vip.GetString("json"))
+	fmt.Fprintf(os.Stderr, "value read from config  User/ Id 	        '%s' \n", vip.GetString("dns.id"))
+	fmt.Fprintf(os.Stderr, "value read from config  secret / Password '%s' \n", vip.GetString("dns.secret"))
 
 }
 
@@ -292,14 +293,14 @@ func PrintViperConfigCert() {
 	// Provider = viper.GetString("provider")
 	//BackendAPIEndPoint = viper.GetString("api")
 	vip := viper.GetViper()
-	fmt.Fprintf(os.Stderr, "resulting value  cert.ca 	    '%s' \n", vip.GetString("cert.ca"))
-	fmt.Fprintf(os.Stderr, "resulting value  cert.wildcard	'%v' \n", vip.GetString("cert.wildcard"))
-	fmt.Fprintf(os.Stderr, "resulting value  cert.autodns 	'%s' \n", vip.GetString("cert.autodns"))
-	fmt.Fprintf(os.Stderr, "resulting value  cert.mode 	'%s' \n", vip.GetString("cert.mode"))
-	fmt.Fprintf(os.Stderr, "resulting value  cert.api  	'%s' \n", vip.GetString("cert.api"))
-	fmt.Fprintf(os.Stderr, "resulting value  force flag	'%s' \n", vip.GetString("force"))
-	fmt.Fprintf(os.Stderr, "resulting value  debug flag 	'%s' \n", vip.GetString("debug"))
-	fmt.Fprintf(os.Stderr, "resulting value  json output 	'%s' \n", vip.GetString("json"))
+	fmt.Fprintf(os.Stderr, "value read from config  cert.ca 	    '%s' \n", vip.GetString("cert.ca"))
+	fmt.Fprintf(os.Stderr, "value read from config  cert.wildcard	'%v' \n", vip.GetString("cert.wildcard"))
+	fmt.Fprintf(os.Stderr, "value read from config  cert.autodns 	'%s' \n", vip.GetString("cert.autodns"))
+	fmt.Fprintf(os.Stderr, "value read from config  cert.mode 	'%s' \n", vip.GetString("cert.mode"))
+	fmt.Fprintf(os.Stderr, "value read from config  cert.api  	'%s' \n", vip.GetString("cert.api"))
+	fmt.Fprintf(os.Stderr, "value read from config  force flag	'%s' \n", vip.GetString("force"))
+	fmt.Fprintf(os.Stderr, "value read from config  debug flag 	'%s' \n", vip.GetString("debug"))
+	fmt.Fprintf(os.Stderr, "value read from config  json output 	'%s' \n", vip.GetString("json"))
 }
 
 var dnsTypeList [3]string = [...]string{"a", "txt", "cname"}

@@ -74,12 +74,28 @@ func (loginData *LoginACMEType) GetOpenIdConfiguration() (*OpenIdInfo, error) {
 	return &msg, nil
 }
 
+/*
+ ID_TOKEN=`curl "${CURL_OPTS[@]}" -X POST -u "${CLIENT_ID}:${CLIENT_SECRET}" \
+    -d "grant_type=password&scope=openid profile email groups offline_access audience:server:client_id:${DAEMON_CLIENT_ID}&username=${AUTH_USER}&password=${AUTH_PASS}" \
+    ${TOKEN_URL} | jq -r .id_token`
+*/
 // the call for retriving the tokens from the server
 func (loginData *LoginACMEType) GetDEXToken(msg *OpenIdInfo) (*TokenInfo, error) {
+	vip := viper.GetViper()
+	daemonClientId := vip.GetString("acme.daemonClientId")
+	if loginData.Verbose {
+		fmt.Fprintf(os.Stderr, "INFO: daemonClientId :='%s'\n", daemonClientId)
+	}
 	client := &http.Client{}
 	var aToken TokenInfo
-	dataStr := "grant_type=password&scope=openid profile email groups offline_access&username=" +
-		url.QueryEscape(loginData.ACMEProviderID) + "&password=" + url.QueryEscape(loginData.ACMEProviderPASS)
+	var dataStr string
+	if daemonClientId == "" {
+		dataStr = "grant_type=password&scope=openid profile email groups offline_access&username=" +
+			url.QueryEscape(loginData.ACMEProviderID) + "&password=" + url.QueryEscape(loginData.ACMEProviderPASS)
+	} else {
+		dataStr = "grant_type=password&scope=openid profile email groups offline_access audience:server:client_id:" + url.QueryEscape(daemonClientId) +
+			"&username=" + url.QueryEscape(loginData.ACMEProviderID) + "&password=" + url.QueryEscape(loginData.ACMEProviderPASS)
+	}
 	var data = strings.NewReader(dataStr)
 	req, err := http.NewRequest("POST", msg.TokenEndpoint, data)
 	if err != nil {
@@ -141,12 +157,18 @@ func (loginData *LoginACMEType) PrintParams() {
 		if loginData.ACMEProviderPASS == "" {
 			fmt.Fprintf(os.Stderr, "INFO: ACMEProviderSecret 'is empty \n")
 		} else {
-			fmt.Fprintf(os.Stderr, "INFO: ACMEProviderSecret '%v'\n", loginData.ACMEProviderPASS[0:2])
+			if len(loginData.ACMEProviderPASS) > 2 {
+				fmt.Fprintf(os.Stderr, "INFO: ACMEProviderSecret '%v'\n", loginData.ACMEProviderPASS[0:2])
+			}
 		}
 		fmt.Fprintf(os.Stderr, "INFO: DATA READ FROM KONFIG FILE / ENVIROMENT \n")
 		fmt.Fprintf(os.Stderr, "INFO: acme.OicdUrl='%v'\n", loginData.ClientInfo.OidcUrl)
 		fmt.Fprintf(os.Stderr, "INFO: acme.ClientId='%v'\n", loginData.ClientInfo.ClientId) // Anwendung
-		fmt.Fprintf(os.Stderr, "INFO: acme.ClientSecret='%v'\n", loginData.ClientInfo.ClientSecret)
+		if len(loginData.ClientInfo.ClientSecret) > 4 {
+			fmt.Fprintf(os.Stderr, "INFO: acme.ClientSecret='%v'\n", loginData.ClientInfo.ClientSecret[1:4])
+		} else {
+			fmt.Fprintf(os.Stderr, "INFO: acme.ClientSecret='%v'\n", loginData.ClientInfo.ClientSecret)
+		}
 	}
 }
 

@@ -66,18 +66,18 @@ type CertGetType struct {
 	Verbose     bool
 	JSONOutput  bool
 	APIEndPoint string
-	AccessToken string
+	CertToken   string
 	CA          string
 	Mode        int
 	FQDN        string
 }
 
 /*
-func (CertGet CertGetType) Init(verbose bool, jsonOutput bool, apiEndPoint string, accessToken string, ca string, mode string, args []string) {
+func (CertGet CertGetType) Init(verbose bool, jsonOutput bool, apiEndPoint string, certToken  string, ca string, mode string, args []string) {
 	CertGet.Verbose = verbose
 	CertGet.JSONOutput = jsonOutput
 	CertGet.APIEndPoint = apiEndPoint
-	CertGet.AccessToken = accessToken
+	CertGet.CertToken  = certToken 
 	CertGet.CA = ca
 	CertGet.Mode = Mode2Enum(mode)
 	CertGet.FQDN = args[0]
@@ -91,7 +91,7 @@ func (CertGet *CertGetType) PrintParams() {
 		PrintViperConfigCert()
 		fmt.Fprintf(os.Stderr, "JsonOut 	         '%t' \n", CertGet.JSONOutput)
 		fmt.Fprintf(os.Stderr, "Api EndPoint  	     '%s' \n", CertGet.APIEndPoint)
-		fmt.Fprintf(os.Stderr, "AccessToken not empty'%t' \n", (len(CertGet.AccessToken) > 4))
+		fmt.Fprintf(os.Stderr, "AccessToken not empty'%t' \n", (len(CertGet.CertToken ) > 4))
 		fmt.Fprintf(os.Stderr, "CA          	     '%s' \n", CertGet.CA)
 		fmt.Fprintf(os.Stderr, "Mode          	     '%s' \n", Mode2String(CertGet.Mode))
 		fmt.Fprintf(os.Stderr, "FQDN                 '%s' is OK '%t' \n", CertGet.FQDN, CheckTypeOfFQDN(CertGet.FQDN))
@@ -109,7 +109,7 @@ func (CertGet *CertGetType) CheckParams() error {
 		OK = false
 		errText = fmt.Sprintf("cert get FQDN  '%s' is not valid", CertGet.FQDN)
 	}
-	if len(CertGet.AccessToken) <= 4 {
+	if len(CertGet.CertToken ) <= 4 {
 		OK = false
 		errText = "cert get AccessToken  heuristic check failed"
 	}
@@ -136,7 +136,7 @@ func (CertGet *CertGetType) DoCommand() error {
 	}
 	req.Header.Set("Accept", "application/json")
 	// Create a Bearer string by appending string access token
-	var bearer = "Bearer " + FinalCertToken(CertGet.AccessToken)
+	var bearer = "Bearer " + FinalCertToken(CertGet.CertToken )
 	// add authorization header to the req
 	req.Header.Add("Authorization", bearer)
 	resp, err := http.DefaultClient.Do(req)

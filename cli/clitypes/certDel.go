@@ -21,7 +21,7 @@ type CertDelType struct {
 	Verbose     bool
 	JSONOutput  bool
 	APIEndPoint string
-	AccessToken string
+	CertToken   string
 	CA          string
 	FQDN        string
 }
@@ -33,7 +33,7 @@ func (CertDel *CertDelType) PrintParams() {
 		PrintViperConfigCert()
 		fmt.Fprintf(os.Stderr, "JsonOut 	           '%t' \n", CertDel.JSONOutput)
 		fmt.Fprintf(os.Stderr, "Api EndPoint  	       '%s' \n", CertDel.APIEndPoint)
-		fmt.Fprintf(os.Stderr, "AccessToken  (4 < len)='%t' \n", (len(CertDel.AccessToken) > 4))
+		fmt.Fprintf(os.Stderr, "Token  (4 < len)=      '%t' \n", (len(CertDel.CertToken ) > 4))
 		fmt.Fprintf(os.Stderr, "CA          	       '%s' \n", CertDel.CA)
 		fmt.Fprintf(os.Stderr, "FQDN                   '%s' is OK '%t' \n", CertDel.FQDN, CheckTypeOfFQDN(CertDel.FQDN))
 	}
@@ -49,9 +49,9 @@ func (CertDel *CertDelType) CheckParams() error {
 		OK = false
 		errText = fmt.Sprintf("cert del FQDN  '%s' is not valid", CertDel.FQDN)
 	}
-	if len(CertDel.AccessToken) <= 4 {
+	if len(CertDel.CertToken ) <= 4 {
 		OK = false
-		errText = "cert del AccessToken  heuristic check failed"
+		errText = "cert del Token  heuristic check failed"
 	}
 	if !OK {
 		return NewValueError(14301, fmt.Errorf(errText))
@@ -74,7 +74,7 @@ func (CertDel *CertDelType) DoCommand() error {
 	}
 	req.Header.Set("Accept", "application/json")
 	// Create a Bearer string by appending string access token
-	var bearer = "Bearer " + FinalCertToken(CertDel.AccessToken)
+	var bearer = "Bearer " + FinalCertToken(CertDel.CertToken )
 	// add authorization header to the req
 	req.Header.Add("Authorization", bearer)
 	resp, err := http.DefaultClient.Do(req)

@@ -7,18 +7,22 @@ import (
 	"os"
 )
 
-/*CertCaType ----------------------------------------------------------------------------
- cert	ca
- List all certificate authorities (CA) utilized by DNS3L
- Flags
-	-a, --api   	| DNS3L API endpoint [$DNS3L_API]
+/*
+CertCaType ----------------------------------------------------------------------------
+
+	 cert	ca
+	 List all certificate authorities (CA) utilized by DNS3L
+	 Flags
+		-a, --api   	| DNS3L API endpoint [$DNS3L_API]
+
 200 = OK
------------------------------------------------------------------------------------------ */
+-----------------------------------------------------------------------------------------
+*/
 type CertCaType struct {
 	Verbose     bool
 	JSONOutput  bool
 	APIEndPoint string
-	AccessToken string
+	CertToken   string
 }
 
 type CAInfo struct {
@@ -37,11 +41,11 @@ type CAInfo struct {
 }
 
 // Init inits the parameters of the command cert ca
-func (CertCa *CertCaType) Init(verbose bool, jsonOutput bool, certAPIEndPoint string, certAccessToken string) {
+func (CertCa *CertCaType) Init(verbose bool, jsonOutput bool, certAPIEndPoint string, CertToken string) {
 	CertCa.Verbose = verbose
 	CertCa.JSONOutput = jsonOutput
 	CertCa.APIEndPoint = certAPIEndPoint
-	CertCa.AccessToken = certAccessToken
+	CertCa.CertToken = CertToken
 }
 
 // PrintParams prints the parameters of the command cert ca
@@ -49,9 +53,9 @@ func (CertCa *CertCaType) PrintParams() {
 	if CertCa.Verbose {
 		fmt.Fprintf(os.Stderr, "INFO: Command Cert CA called \n")
 		PrintViperConfigCert()
-		fmt.Fprintf(os.Stderr, "INFO: JsonOut 	'%t' \n", CertCa.JSONOutput)
+		fmt.Fprintf(os.Stderr, "INFO: JsonOut 	    '%t' \n", CertCa.JSONOutput)
 		fmt.Fprintf(os.Stderr, "INFO:Api EndPoint  	'%s' \n", CertCa.APIEndPoint)
-		fmt.Fprintf(os.Stderr, "AccessToken  (4 < len)='%t' \n", (len(CertCa.AccessToken) > 4))
+		fmt.Fprintf(os.Stderr, "Token  (4 < len)    '%t' \n", (len(CertCa.CertToken) > 4))
 	}
 }
 
@@ -60,8 +64,8 @@ func (CertCa *CertCaType) CheckParams() error {
 	// check CertCA
 	var errText string
 	OK := true
-	if len(CertCa.AccessToken) <= 4 {
-		errText = "cert ca: AccessToken  heuristic check failed"
+	if len(CertCa.CertToken) <= 4 {
+		errText = "cert ca: Token  heuristic check failed"
 		OK = false
 	}
 	if !OK {
@@ -83,7 +87,7 @@ func (CertCa *CertCaType) DoCommand() error {
 	}
 	req.Header.Set("Accept", "application/json")
 	// Create a Bearer string by appending string access token
-	var bearer = "Bearer " + FinalCertToken(CertCa.AccessToken)
+	var bearer = "Bearer " + FinalCertToken(CertCa.CertToken)
 	// add authorization header to the req
 	req.Header.Add("Authorization", bearer)
 	resp, err := http.DefaultClient.Do(req)
