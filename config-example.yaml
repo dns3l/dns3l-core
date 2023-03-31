@@ -89,6 +89,8 @@ ca: #ACME and none ACME CA
       httpInsecureSkipVerify: true #if TLS cert check shall be disabled
       acmeRegisterWithoutEmail: true # if registration of new ACME users should 
                                      # be done without e-mail address
+      disableWildcards: false #e.g. if the acme provider does not support wildcard certs
+      disableSAN: false #e.g. if the acme provider does not support subject alt names (SANs)
     step:
       type: acme
       name: ACME RA for Smallstep CM
