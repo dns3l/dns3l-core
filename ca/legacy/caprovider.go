@@ -38,6 +38,10 @@ func (p *CAProvider) Init(c types.ProviderConfigurationContext) error {
 
 }
 
+func (p *CAProvider) PrecheckClaimCertificate(cinfo *types.CertificateClaimInfo) error {
+	return nil
+}
+
 func (p *CAProvider) ClaimCertificate(cinfo *types.CertificateClaimInfo) error {
 
 	return errors.New("ClaimCertificate(..) not yet implemented")

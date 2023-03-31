@@ -17,33 +17,43 @@ type CAFunctionHandler struct {
 	State  types.CAStateManager
 }
 
-func (h *CAFunctionHandler) ClaimCertificate(caID string, cinfo *types.CertificateClaimInfo) error {
+// Returns a function that will eventually claim certificate. Does pre-checks before that.
+func (h *CAFunctionHandler) PrepareClaimCertificate(caID string, cinfo *types.CertificateClaimInfo) (func() error, error) {
 	//TODO check exact semantics of name <> san relation and in case validate!
 
 	prov, exists := h.Config.Providers[caID]
 	if !exists {
-		return fmt.Errorf("no CA provider with name '%s' exists", caID)
+		return nil, fmt.Errorf("no CA provider with name '%s' exists", caID)
 	}
 	if !prov.Prov.IsEnabled() {
-		return &cmn.DisabledError{RequestedResource: caID}
+		return nil, &cmn.DisabledError{RequestedResource: caID}
 	}
 
 	for _, san := range cinfo.Domains {
 		if !prov.DomainIsInAllowedRootZone(util.GetDomainFQDNDot(san)) {
-			return fmt.Errorf("subject alt name '%s' is not in the allowed root zones of CA provider '%s'",
+			return nil, fmt.Errorf("subject alt name '%s' is not in the allowed root zones of CA provider '%s'",
 				san, caID)
 		}
 	}
 
-	err := prov.Prov.ClaimCertificate(cinfo)
+	err := prov.Prov.PrecheckClaimCertificate(cinfo)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	h.Config.Providers[caID].TotalValid.Invalidate()
-	h.Config.Providers[caID].TotalIssued.Invalidate()
+	return func() error {
 
-	return nil
+		err := prov.Prov.ClaimCertificate(cinfo)
+		if err != nil {
+			return err
+		}
+
+		prov.TotalValid.Invalidate()
+		prov.TotalIssued.Invalidate()
+
+		return nil
+
+	}, nil
 
 }
 

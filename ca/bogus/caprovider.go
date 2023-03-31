@@ -52,6 +52,10 @@ func (p *CAProvider) IsEnabled() bool {
 
 }
 
+func (p *CAProvider) PrecheckClaimCertificate(cinfo *types.CertificateClaimInfo) error {
+	return nil
+}
+
 func (p *CAProvider) ClaimCertificate(cinfo *types.CertificateClaimInfo) error {
 
 	castate, err := p.Context.GetStateMgr().NewSession()

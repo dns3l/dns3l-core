@@ -49,6 +49,22 @@ func (s *V1) ClaimCertificate(caID string, cinfo *apiv1.CertClaimInfo, authz aut
 
 	trl := make(util.TransactionalJobList, 0, 10)
 
+	var ClaimFunc func() error
+
+	trl = append(trl, &util.TransactionalJobImpl{
+		DoFunc: func() error {
+			var err error
+			ClaimFunc, err = fu.PrepareClaimCertificate(caID, &types.CertificateClaimInfo{
+				Name:     cinfo.Name,
+				NameRZ:   namerz.Root,
+				Domains:  domains,
+				IssuedBy: authz.GetUserInfo(),
+			})
+			return err
+		},
+		UndoFunc: nil, //not needed because this is always the last thing that is executed
+	})
+
 	if cinfo.AutoDNS != nil {
 		autodnsV4 = net.ParseIP(cinfo.AutoDNS.IPv4)
 		if autodnsV4 == nil {
@@ -104,12 +120,7 @@ func (s *V1) ClaimCertificate(caID string, cinfo *apiv1.CertClaimInfo, authz aut
 
 	trl = append(trl, &util.TransactionalJobImpl{
 		DoFunc: func() error {
-			return fu.ClaimCertificate(caID, &types.CertificateClaimInfo{
-				Name:     cinfo.Name,
-				NameRZ:   namerz.Root,
-				Domains:  domains,
-				IssuedBy: authz.GetUserInfo(),
-			})
+			return ClaimFunc()
 		},
 		UndoFunc: nil, //not needed because this is always the last thing that is executed
 	})
