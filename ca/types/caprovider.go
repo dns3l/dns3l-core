@@ -24,7 +24,7 @@ type CAProvider interface {
 	RenewCertificate(cinfo *CertificateRenewInfo) error
 
 	//May be called even if CAProvider does not manage key, should return nil then
-	CleanupAfterDeletion(keyID string) error
+	CleanupAfterDeletion(keyID string, crt *CACertInfo) error
 }
 
 type ProviderConfigurationContext interface {

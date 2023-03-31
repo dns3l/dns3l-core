@@ -121,8 +121,7 @@ func (p *CAProvider) ClaimCertificate(cinfo *types.CertificateClaimInfo) error {
 	info := &types.CACertInfo{
 		Name:            cinfo.Name,
 		PrivKey:         string(keyPem),
-		IssuedByUser:    cinfo.IssuedBy,
-		IssuedByEmail:   cinfo.IssuedByEmail,
+		IssuedBy:        cinfo.IssuedBy,
 		ClaimTime:       time.Now(),
 		RenewedTime:     time.Now(),
 		NextRenewalTime: time.Now().Add(90 * 24 * time.Hour),
@@ -168,7 +167,7 @@ func (p *CAProvider) RenewCertificate(cinfo *types.CertificateRenewInfo) error {
 
 }
 
-func (p *CAProvider) CleanupAfterDeletion(keyID string) error {
+func (p *CAProvider) CleanupAfterDeletion(keyID string, crt *types.CACertInfo) error {
 
 	//Nothing to do with the bogus provider
 	return nil

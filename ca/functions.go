@@ -79,12 +79,17 @@ func (h *CAFunctionHandler) DeleteCertificate(caID, keyID string) error {
 	}
 	defer sess.Close()
 
+	crt, err := sess.GetCACertByID(keyID, caID)
+	if err != nil {
+		return err
+	}
+
 	err = sess.DelCACertByID(keyID, caID)
 	if err != nil {
 		return err
 	}
 
-	err = prov.Prov.CleanupAfterDeletion(keyID)
+	err = prov.Prov.CleanupAfterDeletion(keyID, crt)
 	if err != nil {
 		log.WithError(err).WithField("caID", caID).Errorf("Problems cleaning up after deletion")
 	}
@@ -311,38 +316,21 @@ func (h *CAFunctionHandler) ListCertsToRenew(limit uint) ([]types.CertificateRen
 
 func (h *CAFunctionHandler) DeleteCertificatesAllCA(keyID string) error {
 
-	err := common.ValidateKeyName(keyID)
-	if err != nil {
-		return err
-	}
-
-	sess, err := h.State.NewSession()
-	if err != nil {
-		return err
-	}
-	defer sess.Close()
-
-	err = sess.DeleteCertAllCA(keyID)
-	if err != nil {
-		return err
-	}
-
-	for id, prov := range h.Config.Providers {
-		err = prov.Prov.CleanupAfterDeletion(keyID)
+	/*
+		err = sess.DeleteCertAllCA(keyID)
 		if err != nil {
-			if _, is := err.(*cmn.NotFoundError); is {
-				log.WithError(err).WithField("caID", keyID).Debugf("Provider '%s' not managing "+
-					"key '%s', this is normal.", id, keyID)
-			} else {
-				log.WithError(err).WithField("caID", keyID).Errorf("Problems cleaning up for provider '%s' before deletion "+
-					"of key '%s', continuing nevertheless...", id, keyID)
-			}
+			return err
 		}
-	}
+	*/
 
-	for _, prov := range h.Config.Providers {
-		prov.TotalValid.Invalidate()
-		prov.TotalIssued.Invalidate()
+	for id := range h.Config.Providers {
+		err := h.DeleteCertificate(id, keyID)
+		if _, is := err.(*cmn.NotFoundError); is {
+			log.WithError(err).WithField("caID", keyID).Debugf("Provider '%s' not managing "+
+				"key '%s', this is normal.", id, keyID)
+		} else {
+			return fmt.Errorf("problems deleting key '%s' in ca '%s', %w", id, keyID, err)
+		}
 	}
 
 	return nil

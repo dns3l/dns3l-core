@@ -11,17 +11,17 @@ import (
 	testhttp "github.com/dns3l/dns3l-core/test/http"
 )
 
-func RunDBFull(testconfig, caid, domain string, truncate bool, replicaOffset, numReplicas uint, dump bool) {
+func (t *TestRunner) RunDBFull() {
 
 	comptest := comp.ComponentTest{
-		TestConfig: testconfig,
+		TestConfig: t.TestConfig,
 		StubUsers: map[string]testauth.AuthStubUser{
 			"alice": {
 				Name:  "Alice Doe",
 				Email: "alice@example.com",
 				DomainsAllowed: []string{
-					"sub1." + domain,
-					"sub2." + domain,
+					"sub1." + t.Domain,
+					"sub2." + t.Domain,
 				},
 				WriteAllowed: true,
 				ReadAllowed:  true,
@@ -30,8 +30,8 @@ func RunDBFull(testconfig, caid, domain string, truncate bool, replicaOffset, nu
 				Name:  "Bob Doe",
 				Email: "bob@example.com",
 				DomainsAllowed: []string{
-					"sub1." + domain,
-					"bar.sub2." + domain,
+					"sub1." + t.Domain,
+					"bar.sub2." + t.Domain,
 				},
 				WriteAllowed: true,
 				ReadAllowed:  true,
@@ -40,8 +40,8 @@ func RunDBFull(testconfig, caid, domain string, truncate bool, replicaOffset, nu
 				Name:  "Clara Doe",
 				Email: "clara@example.com",
 				DomainsAllowed: []string{
-					"bar.sub1." + domain,
-					"sub2." + domain,
+					"bar.sub1." + t.Domain,
+					"sub2." + t.Domain,
 				},
 				WriteAllowed: true,
 				ReadAllowed:  true,
@@ -50,8 +50,8 @@ func RunDBFull(testconfig, caid, domain string, truncate bool, replicaOffset, nu
 				Name:  "Kilgore Trout",
 				Email: "ktrout@example.com",
 				DomainsAllowed: []string{
-					"sub1." + domain,
-					"sub2." + domain,
+					"sub1." + t.Domain,
+					"sub2." + t.Domain,
 				},
 				WriteAllowed: false,
 				ReadAllowed:  true,
@@ -60,7 +60,7 @@ func RunDBFull(testconfig, caid, domain string, truncate bool, replicaOffset, nu
 				Name:  "Frank Quux",
 				Email: "fquux@example.com",
 				DomainsAllowed: []string{
-					"sub5." + domain,
+					"sub5." + t.Domain,
 				},
 				WriteAllowed:         false,
 				ReadAllowed:          true,
@@ -71,87 +71,87 @@ func RunDBFull(testconfig, caid, domain string, truncate bool, replicaOffset, nu
 
 	err := comptest.Exec(func(srv *service.Service) error {
 
-		if truncate {
+		if t.Truncate {
 			err := state.Truncate(srv.Config.DB)
 			if err != nil {
 				return err
 			}
 		}
 
-		for i := replicaOffset; i < numReplicas; i++ {
+		for i := t.ReplicaOffset; i < t.NumReplicas; i++ {
 
 			prefix := fmt.Sprintf("node%d", i)
 
-			testhttp.AssertSuccess("Create key 1", apiv1.CreateKey(srv, caid, "alice",
-				prefix+".foo.bar.sub1."+domain, []string{
-					prefix + ".alt.foo.bar.sub1." + domain,
-					prefix + ".alt2.foo.bar.sub2." + domain,
+			testhttp.AssertSuccess("Create key 1", apiv1.CreateKey(srv, t.CAID, "alice",
+				prefix+".foo.bar.sub1."+t.Domain, []string{
+					prefix + ".alt.foo.bar.sub1." + t.Domain,
+					prefix + ".alt2.foo.bar.sub2." + t.Domain,
 				}))
 
-			testhttp.AssertSuccess("Create key 2", apiv1.CreateKey(srv, caid, "alice",
-				prefix+".foo.bar.sub2."+domain, []string{
-					prefix + ".alt.foo.bar.sub2." + domain,
-					prefix + ".alt2.foo.bar.sub1." + domain,
+			testhttp.AssertSuccess("Create key 2", apiv1.CreateKey(srv, t.CAID, "alice",
+				prefix+".foo.bar.sub2."+t.Domain, []string{
+					prefix + ".alt.foo.bar.sub2." + t.Domain,
+					prefix + ".alt2.foo.bar.sub1." + t.Domain,
 				}))
 
-			testhttp.AssertSuccess("Create key 3", apiv1.CreateKey(srv, caid, "bob",
-				prefix+".test1.bar.sub1."+domain, []string{
-					prefix + ".alt.test1.1337.sub1." + domain,
-					prefix + ".alt2.test1.1337.sub1." + domain,
+			testhttp.AssertSuccess("Create key 3", apiv1.CreateKey(srv, t.CAID, "bob",
+				prefix+".test1.bar.sub1."+t.Domain, []string{
+					prefix + ".alt.test1.1337.sub1." + t.Domain,
+					prefix + ".alt2.test1.1337.sub1." + t.Domain,
 				}))
 
 			testhttp.AssertSuccess("Create key 3 bogus2", apiv1.CreateKey(srv, "bogus2", "bob",
-				prefix+".test1.bar.sub1."+domain, []string{
-					prefix + ".alt.test1.1337.sub1." + domain,
-					prefix + ".alt2.test1.1337.sub1." + domain,
+				prefix+".test1.bar.sub1."+t.Domain, []string{
+					prefix + ".alt.test1.1337.sub1." + t.Domain,
+					prefix + ".alt2.test1.1337.sub1." + t.Domain,
 				}))
 
-			testhttp.AssertSuccess("Create key 4", apiv1.CreateKey(srv, caid, "bob",
-				prefix+".test1.1337.sub1."+domain, []string{
-					prefix + ".alt.test1.1337.sub1." + domain,
-					prefix + ".alt2.test1.bar.sub2." + domain,
+			testhttp.AssertSuccess("Create key 4", apiv1.CreateKey(srv, t.CAID, "bob",
+				prefix+".test1.1337.sub1."+t.Domain, []string{
+					prefix + ".alt.test1.1337.sub1." + t.Domain,
+					prefix + ".alt2.test1.bar.sub2." + t.Domain,
 				}))
 
-			testhttp.AssertSuccess("Create key 5", apiv1.CreateKey(srv, caid, "alice",
-				prefix+".test2.bar.sub2."+domain, []string{
-					prefix + ".alt.foo.1337.sub2." + domain,
-					prefix + ".alt2.foo.bar.sub1." + domain,
+			testhttp.AssertSuccess("Create key 5", apiv1.CreateKey(srv, t.CAID, "alice",
+				prefix+".test2.bar.sub2."+t.Domain, []string{
+					prefix + ".alt.foo.1337.sub2." + t.Domain,
+					prefix + ".alt2.foo.bar.sub1." + t.Domain,
 				}))
 
 			// testhttp.AssertStatusCode("Create key 6", 500,
-			// 	apiv1.CreateKey(srv, caid, "bob",
-			// 		"test2.bar.sub2."+domain, []string{
-			// 			"alt.foo.bar.sub2." + domain,
-			// 			"alt2.foo.bar.sub1." + domain,
+			// 	apiv1.CreateKey(srv, t.CAID, "bob",
+			// 		"test2.bar.sub2."+t.Domain, []string{
+			// 			"alt.foo.bar.sub2." + t.Domain,
+			// 			"alt2.foo.bar.sub1." + t.Domain,
 			// 		}))
 
 			testhttp.AssertStatusCode("Create key 6", 403,
-				apiv1.CreateKey(srv, caid, "bob",
-					prefix+".test3.bar.sub2."+domain, []string{
-						prefix + ".alt.foo.1337.sub2." + domain,
-						prefix + ".alt2.foo.bar.sub1." + domain,
+				apiv1.CreateKey(srv, t.CAID, "bob",
+					prefix+".test3.bar.sub2."+t.Domain, []string{
+						prefix + ".alt.foo.1337.sub2." + t.Domain,
+						prefix + ".alt2.foo.bar.sub1." + t.Domain,
 					}))
 
 			out := testhttp.AssertSuccess("List keys",
-				apiv1.ListKeys(srv, caid, "kilgore"))
+				apiv1.ListKeys(srv, t.CAID, "kilgore"))
 
-			if dump {
+			if t.Dump {
 				fmt.Println(out)
 			}
 			fmt.Printf("List keys: %d keys returned.\n", apiv1.CountJSONArray(out))
 
 			out = testhttp.AssertSuccess("List keys restricted",
-				apiv1.ListKeys(srv, caid, "clara")) //key 4 should not be seen
+				apiv1.ListKeys(srv, t.CAID, "clara")) //key 4 should not be seen
 
-			if dump {
+			if t.Dump {
 				fmt.Println(out)
 			}
 			fmt.Printf("List keys restricted: %d keys returned.\n", apiv1.CountJSONArray(out))
 
 			out = testhttp.AssertSuccess("List keys publicly readable",
-				apiv1.ListKeys(srv, caid, "fquux"))
+				apiv1.ListKeys(srv, t.CAID, "fquux"))
 
-			if dump {
+			if t.Dump {
 				fmt.Println(out)
 			}
 			fmt.Printf("List keys publicly readable: %d keys returned.\n", apiv1.CountJSONArray(out))
@@ -159,70 +159,70 @@ func RunDBFull(testconfig, caid, domain string, truncate bool, replicaOffset, nu
 			out = testhttp.AssertSuccess("List all keys",
 				apiv1.ListAllKeys(srv, "kilgore"))
 
-			if dump {
+			if t.Dump {
 				fmt.Println(out)
 			}
 
 			out = testhttp.AssertSuccess("List key all CA",
-				apiv1.ListKeyAllCA(srv, "kilgore", prefix+".test1.bar.sub1."+domain))
+				apiv1.ListKeyAllCA(srv, "kilgore", prefix+".test1.bar.sub1."+t.Domain))
 
-			if dump {
+			if t.Dump {
 				fmt.Println(out)
 			}
 
 			out = testhttp.AssertSuccess("Get key 3 info by alice",
-				apiv1.GetKeyById(srv, caid, "alice", prefix+".test1.bar.sub1."+domain))
-			if dump {
+				apiv1.GetKeyById(srv, t.CAID, "alice", prefix+".test1.bar.sub1."+t.Domain))
+			if t.Dump {
 				fmt.Println(out)
 			}
 
 			// These are the accesses that require checking all SANs for security
 			out = testhttp.AssertSuccess("Get key 3 by alice",
-				apiv1.GetCertResources(srv, caid, "alice", prefix+".test1.bar.sub1."+domain))
-			if dump {
+				apiv1.GetCertResources(srv, t.CAID, "alice", prefix+".test1.bar.sub1."+t.Domain))
+			if t.Dump {
 				fmt.Println(out)
 			}
 
 			out = testhttp.AssertSuccess("Get key 3 PEM key by alice",
-				apiv1.GetCertResource(srv, caid, "alice", prefix+".test1.bar.sub1."+domain, "key"))
+				apiv1.GetCertResource(srv, t.CAID, "alice", prefix+".test1.bar.sub1."+t.Domain, "key"))
 			out2 := testhttp.AssertSuccess("Get key 3 PEM fullchain by alice",
-				apiv1.GetCertResource(srv, caid, "alice", prefix+".test1.bar.sub1."+domain, "fullchain"))
+				apiv1.GetCertResource(srv, t.CAID, "alice", prefix+".test1.bar.sub1."+t.Domain, "fullchain"))
 			out3 := testhttp.AssertSuccess("Get key 3 PEM root by alice",
-				apiv1.GetCertResource(srv, caid, "alice", prefix+".test1.bar.sub1."+domain, "root"))
-			if dump {
+				apiv1.GetCertResource(srv, t.CAID, "alice", prefix+".test1.bar.sub1."+t.Domain, "root"))
+			if t.Dump {
 				fmt.Println("key", out)
 				fmt.Println("fullchain", out2)
 				fmt.Println("root", out3)
 			}
 
 			testhttp.AssertStatusCode("Get key 3 by clara", 403,
-				apiv1.GetCertResources(srv, caid, "clara", prefix+".test1.bar.sub1."+domain))
+				apiv1.GetCertResources(srv, t.CAID, "clara", prefix+".test1.bar.sub1."+t.Domain))
 			testhttp.AssertStatusCode("Get key 3 PEM cert by clara", 403,
-				apiv1.GetCertResource(srv, caid, "clara", prefix+".test1.bar.sub1."+domain, "crt"))
+				apiv1.GetCertResource(srv, t.CAID, "clara", prefix+".test1.bar.sub1."+t.Domain, "crt"))
 			testhttp.AssertStatusCode("Get key 5 by bob", 403,
-				apiv1.GetCertResources(srv, caid, "bob", prefix+".test2.bar.sub2."+domain))
+				apiv1.GetCertResources(srv, t.CAID, "bob", prefix+".test2.bar.sub2."+t.Domain))
 			testhttp.AssertStatusCode("Get key 5 PEM key by bob", 403,
-				apiv1.GetCertResource(srv, caid, "bob", prefix+".test2.bar.sub2."+domain, "key"))
+				apiv1.GetCertResource(srv, t.CAID, "bob", prefix+".test2.bar.sub2."+t.Domain, "key"))
 
 			// Accessing publicly available things
 			testhttp.AssertSuccess("Get key 4 info by fquux",
-				apiv1.GetKeyById(srv, caid, "fquux", prefix+".test1.bar.sub1."+domain))
+				apiv1.GetKeyById(srv, t.CAID, "fquux", prefix+".test1.bar.sub1."+t.Domain))
 			testhttp.AssertSuccess("Get key 3 PEM root by fquux",
-				apiv1.GetCertResource(srv, caid, "fquux", prefix+".test1.bar.sub1."+domain, "root"))
+				apiv1.GetCertResource(srv, t.CAID, "fquux", prefix+".test1.bar.sub1."+t.Domain, "root"))
 			testhttp.AssertStatusCode("Get key 3 PEM key by fquux", 403,
-				apiv1.GetCertResource(srv, caid, "fquux", prefix+".test1.bar.sub1."+domain, "key"))
+				apiv1.GetCertResource(srv, t.CAID, "fquux", prefix+".test1.bar.sub1."+t.Domain, "key"))
 			testhttp.AssertStatusCode("Get key 3 PEM all by fquux", 403,
-				apiv1.GetCertResources(srv, caid, "fquux", prefix+".test1.bar.sub1."+domain))
+				apiv1.GetCertResources(srv, t.CAID, "fquux", prefix+".test1.bar.sub1."+t.Domain))
 
-			// Key deletion only requires check for first domain name
+			// Key deletion only requires check for first t.Domain name
 			testhttp.AssertSuccess("Delete key 2",
-				apiv1.DeleteKeyById(srv, caid, "bob", prefix+".foo.bar.sub2."+domain))
+				apiv1.DeleteKeyById(srv, t.CAID, "bob", prefix+".foo.bar.sub2."+t.Domain))
 			testhttp.AssertStatusCode("Get key by ID 2", 404,
-				apiv1.GetKeyById(srv, caid, "kilgore", prefix+".foo.bar.sub2."+domain))
+				apiv1.GetKeyById(srv, t.CAID, "kilgore", prefix+".foo.bar.sub2."+t.Domain))
 			testhttp.AssertStatusCode("Delete key 3 by kilgore", 403,
-				apiv1.DeleteKeyById(srv, caid, "kilgore", prefix+".test1.bar.sub1."+domain))
+				apiv1.DeleteKeyById(srv, t.CAID, "kilgore", prefix+".test1.bar.sub1."+t.Domain))
 			testhttp.AssertStatusCode("Delete key 5 by bob", 403,
-				apiv1.DeleteKeyById(srv, caid, "bob", prefix+".test1.1337.sub2."+domain))
+				apiv1.DeleteKeyById(srv, t.CAID, "bob", prefix+".test1.1337.sub2."+t.Domain))
 
 		}
 

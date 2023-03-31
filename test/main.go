@@ -46,15 +46,77 @@ var testruns = map[string]func(){
 
 	}, "dbfull": func() {
 
-		testconf := filepath.Join(util.GetExecDir(), "test", "config-comptest.yaml")
+		r := runs.TestRunner{
+			TestConfig:    filepath.Join(util.GetExecDir(), "test", "config-comptest.yaml"),
+			CAID:          "bogus",
+			Domain:        "test.example.com.",
+			Truncate:      true,
+			ReplicaOffset: 0,
+			NumReplicas:   20,
+			Dump:          false,
+			WithACME:      false,
+		}
 
-		runs.RunDBFull(testconf, "bogus", "test.example.com.", true, 0, 20, false)
+		r.RunDBFull()
+
+	}, "acmestep": func() {
+
+		// Tests currently do not run stable because DNS cache
+		// propagation artifacts may occur on a local instance
+
+		r := runs.TestRunner{
+			TestConfig:    filepath.Join(util.GetExecDir(), "test", "config-comptest.yaml"),
+			CAID:          "step-comptest",
+			Domain:        "test.example.com.",
+			Truncate:      true,
+			ReplicaOffset: 0,
+			NumReplicas:   10,
+			Dump:          false,
+			WithACME:      true,
+		}
+
+		r.RunSingleEntry()
+
+	}, "acmestep-external": func() {
+
+		rootdomain := os.Getenv("DNS3L_TEST_ROOTDOMAIN")
+		if rootdomain == "" {
+			panic(errors.New("DNS3L_TEST_ROOTDOMAIN not set"))
+		}
+
+		testconf := os.Getenv("DNS3L_TESTCONFIG")
+		if testconf == "" {
+			panic(errors.New("DNS3L_TESTCONFIG not set"))
+		}
+
+		r := runs.TestRunner{
+			TestConfig:    testconf,
+			CAID:          "step-comptest",
+			Domain:        rootdomain,
+			Truncate:      false,
+			ReplicaOffset: 0,
+			NumReplicas:   1,
+			Dump:          false,
+			WithACME:      true,
+		}
+
+		r.RunACMEUsers()
 
 	}, "bogus": func() {
 
-		testconf := filepath.Join(util.GetExecDir(), "test", "config-comptest.yaml")
+		r := runs.TestRunner{
+			TestConfig:        filepath.Join(util.GetExecDir(), "test", "config-comptest.yaml"),
+			CAID:              "bogus",
+			Domain:            "test.example.com.",
+			Truncate:          true,
+			ReplicaOffset:     0,
+			NumReplicas:       1,
+			Dump:              false,
+			WithACME:          false,
+			CheckIntermediate: true,
+		}
 
-		runs.RunSingleEntry(testconf, "bogus", "test.example.com.", true, 0, 1, false)
+		r.RunSingleEntry()
 
 	}, "le-staging": func() {
 
@@ -68,7 +130,18 @@ var testruns = map[string]func(){
 			panic(errors.New("DNS3L_TESTCONFIG not set"))
 		}
 
-		runs.RunSingleEntry(testconf, "le-staging", rootdomain, false, 0, 1, false)
+		r := runs.TestRunner{
+			TestConfig:    testconf,
+			CAID:          "le-staging",
+			Domain:        rootdomain,
+			Truncate:      false,
+			ReplicaOffset: 0,
+			NumReplicas:   1,
+			Dump:          false,
+			WithACME:      false,
+		}
+
+		r.RunSingleEntry()
 
 	}, "renewexisting": func() {
 

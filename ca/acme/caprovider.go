@@ -10,9 +10,11 @@ import (
 )
 
 type CAProvider struct {
-	engine *Engine
-	C      *Config `validate:"required"`
-	ID     string
+	engine     *Engine
+	userScheme ACMEUserScheme
+	C          *Config `validate:"required"`
+	ID         string
+	Ctxt       types.ProviderConfigurationContext
 }
 
 func (p *CAProvider) GetInfo() *types.CAProviderInfo {
@@ -32,6 +34,7 @@ func (p *CAProvider) GetInfo() *types.CAProviderInfo {
 func (p *CAProvider) Init(c types.ProviderConfigurationContext) error {
 
 	p.ID = c.GetCAID()
+	p.Ctxt = c
 
 	smgr, err := makeACMEStateManager(c)
 	if err != nil {
@@ -44,6 +47,11 @@ func (p *CAProvider) Init(c types.ProviderConfigurationContext) error {
 		Context:           c,
 		State:             smgr,
 		RecalcRenewalDate: false,
+	}
+
+	p.userScheme, err = GetACMEUserScheme(p.C.ACMEUserScheme)
+	if err != nil {
+		return err
 	}
 
 	log.Debugf("ACME CA provider initialized.")
@@ -61,24 +69,6 @@ func makeACMEStateManager(c types.ProviderConfigurationContext) (ACMEStateManage
 	}
 }
 
-func (p *CAProvider) AddAllowedRootZone() int {
-
-	return 42 //TODO
-
-}
-
-func (p *CAProvider) GetTotalValid() uint {
-
-	return 42 //TODO
-
-}
-
-func (p *CAProvider) GetTotalIssued() uint {
-
-	return 68 //TODO
-
-}
-
 func (p *CAProvider) IsEnabled() bool {
 
 	return true //TODO
@@ -87,10 +77,10 @@ func (p *CAProvider) IsEnabled() bool {
 
 func (p *CAProvider) ClaimCertificate(cinfo *types.CertificateClaimInfo) error {
 
-	acmeuser := "acme-" + cinfo.Name
+	acmeuser := p.userScheme.GetUserFor(cinfo.Name, cinfo.IssuedBy)
 
 	return p.engine.TriggerUpdate(acmeuser, cinfo.Name, cinfo.Domains,
-		cinfo.IssuedBy, cinfo.IssuedByEmail)
+		cinfo.IssuedBy)
 
 }
 
@@ -101,13 +91,22 @@ func (p *CAProvider) RenewCertificate(cinfo *types.CertificateRenewInfo) error {
 			"Certificate to renew (caID '%s') does not belong to CA provider '%s'", cinfo.CAID, p.ID)}
 	}
 
-	return p.engine.TriggerUpdate("", cinfo.CertKey, nil, "", "")
+	return p.engine.TriggerUpdate("", cinfo.CertKey, nil, nil)
 
 }
 
-func (p *CAProvider) CleanupAfterDeletion(keyID string) error {
+func (p *CAProvider) CleanupAfterDeletion(keyID string, crt *types.CACertInfo) error {
 
-	acmeuser := "acme-" + keyID
+	//TODO check this func to be executed only if actual deletion occurred.
+
+	acmeuser, err := p.userScheme.GetUserToDelete(keyID, crt.IssuedBy, p.Ctxt)
+	if err != nil {
+		return err
+	}
+	if acmeuser == "" {
+		//shall not be deleted
+		return nil
+	}
 
 	return p.engine.DeleteACMEUser(acmeuser)
 

@@ -19,6 +19,7 @@ type Config struct {
 	LogoPath                 string `yaml:"logopath" validate:"url|remotefile"`
 	HTTPInsecureSkipVerify   bool   `yaml:"httpInsecureSkipVerify"`
 	ACMERegisterWithoutEMail bool   `yaml:"acmeRegisterWithoutEmail"`
+	ACMEUserScheme           string `yaml:"acmeUserScheme"` //key, user, or one
 }
 
 func (c *Config) NewInstance() (ca_types.CAProvider, error) {

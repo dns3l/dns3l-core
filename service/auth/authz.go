@@ -24,21 +24,48 @@ type AuthorizationInfo interface {
 	GetDomainsAllowed() []string
 	CanListPublicData() bool
 
-	GetUserID() string
-	GetName() string
-	GetEmail() string
+	GetUserInfo() *UserInfo
 	IsAuthzDisabled() bool
 
 	String() string
 }
 
+type UserInfo struct {
+	Name  string //May be a full name (containing whitespaces and Unicode) or a M2M username
+	Email string
+}
+
+func (ui *UserInfo) Validate() error {
+	if strings.TrimSpace(ui.Email) == "" && strings.TrimSpace(ui.Name) == "" {
+		return &common.NotAuthnedError{Msg: "neither 'user' nor 'email' has been provided in OIDC token claims"}
+	}
+	return nil
+}
+
+func (ui *UserInfo) GetPreferredName() string {
+	if ui.Email != "" {
+		return ui.Email
+	}
+	return ui.Name
+}
+
+func (ui *UserInfo) String() string {
+	return fmt.Sprintf("%s,%s", ui.Name, ui.Email)
+}
+
+func (ui *UserInfo) Equal(other *UserInfo) bool {
+	if ui.Name != other.Name {
+		return false
+	}
+	if ui.Email != other.Email {
+		return false
+	}
+	return true
+}
+
 // Authorization info for a specific user, along with some personal data
 type DefaultAuthorizationInfo struct {
-
-	//May be a full name (containing whitespaces and Unicode) or a M2M username
-	Name                  string
-	Username              string
-	Email                 string
+	UserInfo              *UserInfo
 	DomainsAllowed        []string
 	WriteAllowed          bool
 	ReadAllowed           bool
@@ -47,21 +74,13 @@ type DefaultAuthorizationInfo struct {
 }
 
 func (i *DefaultAuthorizationInfo) String() string {
-	return fmt.Sprintf("name=%s, username=%s, email=%s, domains=%s, write=%t, read=%t, readpub=%t, authzdis=%t",
-		i.Name, i.Username, i.Email, i.DomainsAllowed, i.WriteAllowed, i.ReadAllowed,
+	return fmt.Sprintf("userinfo=%s, domains=%s, write=%t, read=%t, readpub=%t, authzdis=%t",
+		i.UserInfo, i.DomainsAllowed, i.WriteAllowed, i.ReadAllowed,
 		i.ReadAnyPublicAllowed, i.AuthorizationDisabled)
 }
 
-func (i *DefaultAuthorizationInfo) GetUserID() string {
-	return i.Username
-}
-
-func (i *DefaultAuthorizationInfo) GetName() string {
-	return i.Name
-}
-
-func (i *DefaultAuthorizationInfo) GetEmail() string {
-	return i.Email
+func (i *DefaultAuthorizationInfo) GetUserInfo() *UserInfo {
+	return i.UserInfo
 }
 
 func (i *DefaultAuthorizationInfo) IsAuthzDisabled() bool {

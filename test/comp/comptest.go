@@ -5,15 +5,18 @@ import (
 	"github.com/dns3l/dns3l-core/state"
 	testauth "github.com/dns3l/dns3l-core/test/auth"
 	"github.com/dns3l/dns3l-core/test/mariadb"
+	"github.com/dns3l/dns3l-core/test/step"
 	"github.com/dns3l/dns3l-core/util"
 )
 
 const MariaDB_Port = 15234
+const StepCA_Port = 8081
 
 // Generic component test mini-framework
 type ComponentTest struct {
 	TestConfig string
 	StubUsers  map[string]testauth.AuthStubUser
+	WithACME   bool
 }
 
 func (c *ComponentTest) Exec(testfn func(*service.Service) error) error {
@@ -41,6 +44,19 @@ func (c *ComponentTest) Exec(testfn func(*service.Service) error) error {
 	err = state.CreateSQLTables(conf.DB, true)
 	if err != nil {
 		return err
+	}
+
+	if c.WithACME {
+		acme := step.StepCAController{
+			Port: StepCA_Port,
+		}
+		err = acme.Start()
+		if err != nil {
+			return err
+		}
+		defer func() {
+			util.LogDefer(log, acme.Stop())
+		}()
 	}
 
 	srv := service.Service{
