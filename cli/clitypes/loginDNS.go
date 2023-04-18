@@ -76,6 +76,9 @@ func (loginData *LoginDNSType) DoCommand() error {
 			return NewValueError(520, fmt.Errorf("DNS get password from terminal failed, %v", inErr.Error()))
 		}
 	} else {
+		if loginData.Verbose {
+			fmt.Fprintf(os.Stderr, "DNS get password from config \n")
+		}
 		switch {
 		case loginData.Password == "NOT_SET":
 			_, secret = getProviderData(loginData.DNSBackend, false)
@@ -90,7 +93,7 @@ func (loginData *LoginDNSType) DoCommand() error {
 		return NewValueError(530, fmt.Errorf("can not store secrete in the password safe"))
 	}
 	time.Sleep(time.Millisecond * 10)
-	data , inErr = cliutil.GetPasswordfromRing(user, loginData.Verbose)
+	data, inErr = cliutil.GetPasswordfromRing(user, loginData.Verbose)
 	if inErr != nil {
 		return NewValueError(540, fmt.Errorf("write to password safe was not OK: Error %v", inErr.Error()))
 	}
