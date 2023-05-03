@@ -119,9 +119,15 @@ func (h *OIDCHandler) Init() error {
 }
 
 func (h *OIDCHandler) GetServerInfoAuth() ServerInfoAuth {
+
+	delim := h.GroupsDomainDelimiter
+	if delim == "" {
+		delim = "." //. is default
+	}
+
 	return OIDCServerInfoAuth{
 		GroupsPrefix:          h.GroupsPrefix,
-		GroupsDomainDelimiter: h.GroupsDomainDelimiter,
+		GroupsDomainDelimiter: delim,
 	}
 }
 
@@ -304,7 +310,7 @@ func (h *OIDCHandler) groupsToDomain(group string) (string, bool) {
 		return "", false
 	}
 
-	if h.GroupsDomainDelimiter == "" || h.GroupsDomainDelimiter != "." {
+	if h.GroupsDomainDelimiter != "" && h.GroupsDomainDelimiter != "." {
 
 		group = strings.Replace(group, h.GroupsDomainDelimiter, ".", -1) //corner cases where we need an underscore are removed
 
