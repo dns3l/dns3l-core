@@ -24,21 +24,9 @@ func (p *CAProvider) GetInfo() *types.CAProviderInfo {
 
 }
 
-func (p *CAProvider) GetTotalValid() uint {
-
-	return 23 //TODO
-
-}
-
-func (p *CAProvider) GetTotalIssued() uint {
-
-	return 34 //TODO
-
-}
-
 func (p *CAProvider) IsEnabled() bool {
 
-	return true //TODO
+	return !p.C.Disabled
 
 }
 
@@ -48,6 +36,10 @@ func (p *CAProvider) Init(c types.ProviderConfigurationContext) error {
 
 	return nil
 
+}
+
+func (p *CAProvider) PrecheckClaimCertificate(cinfo *types.CertificateClaimInfo) error {
+	return nil
 }
 
 func (p *CAProvider) ClaimCertificate(cinfo *types.CertificateClaimInfo) error {

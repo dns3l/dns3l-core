@@ -20,6 +20,7 @@ func (s *V1) GetServerInfo() *apiv1.ServerInfo {
 			URL:   s.Service.Config.URL,
 			EMail: s.Service.Config.AdminEMail,
 		},
+		Auth: s.Service.Config.Auth.Provider.GetServerInfoAuth(),
 	}
 }
 

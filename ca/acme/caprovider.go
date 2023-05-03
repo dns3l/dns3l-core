@@ -7,6 +7,7 @@ import (
 	castate "github.com/dns3l/dns3l-core/ca/state"
 	"github.com/dns3l/dns3l-core/ca/types"
 	"github.com/dns3l/dns3l-core/common"
+	"github.com/dns3l/dns3l-core/util"
 )
 
 type CAProvider struct {
@@ -71,8 +72,24 @@ func makeACMEStateManager(c types.ProviderConfigurationContext) (ACMEStateManage
 
 func (p *CAProvider) IsEnabled() bool {
 
-	return true //TODO
+	return !p.C.Disabled
 
+}
+
+func (p *CAProvider) PrecheckClaimCertificate(cinfo *types.CertificateClaimInfo) error {
+	if p.C.DisableSAN {
+		if len(cinfo.Domains) > 1 {
+			return &common.InvalidInputError{Msg: "Subject Alternative names (SANs) provided but not permitted for this CA provider."}
+		}
+	}
+	if p.C.DisableWildcards {
+		for _, domain := range cinfo.Domains {
+			if util.IsWildcard(domain) {
+				return &common.InvalidInputError{Msg: fmt.Sprintf("Domain '%s' is a wildcard domain, not permitted for this CA provider.", domain)}
+			}
+		}
+	}
+	return nil
 }
 
 func (p *CAProvider) ClaimCertificate(cinfo *types.CertificateClaimInfo) error {

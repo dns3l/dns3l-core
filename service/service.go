@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/dns3l/dns3l-core/service/apiv1"
-	"github.com/dns3l/dns3l-core/service/auth"
 	"github.com/gorilla/mux"
 )
 
@@ -18,8 +17,6 @@ type Service struct {
 	router  *mux.Router
 	running bool
 	runerr  error
-
-	AuthStub auth.RESTAPIAuthProvider
 }
 
 func (s *Service) GetV1() *V1 {

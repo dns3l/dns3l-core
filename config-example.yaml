@@ -19,6 +19,7 @@ dns: # DNS service providers
       # sslverify: "false" #only set this in case cert validation shall be disabled
     infblxB:
       type: infoblox
+      disabled: true
       name: Infoblox B
       host: foo.bar.local
       port: 1234
@@ -30,6 +31,7 @@ dns: # DNS service providers
       #sslverify: "false"
     dns3l:
       type: otc # Open Telekom Cloud (OTC) DNS
+      disabled: false
       name: DNS3L Labs Inc. OTC tenant
       auth:
         authurl: https://iam.eu-de.otc.t-systems.com/v3
@@ -87,6 +89,8 @@ ca: #ACME and none ACME CA
       httpInsecureSkipVerify: true #if TLS cert check shall be disabled
       acmeRegisterWithoutEmail: true # if registration of new ACME users should 
                                      # be done without e-mail address
+      disableWildcards: false #e.g. if the acme provider does not support wildcard certs
+      disableSAN: false #e.g. if the acme provider does not support subject alt names (SANs)
     step:
       type: acme
       name: ACME RA for Smallstep CM
@@ -208,17 +212,16 @@ auth:
   # Default: ""
   groups_prefix: dns3l_
 
-  # Replace all occurrences of single '_' with  '.'
-  # Useful if your authz provider does not support groups with a '.' in the name
-  # This replacement is done *after* the goups prefix has been stripped (see above).
-  # If you have underscores in your root zone, use "__" (double underscore) and they will
-  # be replaced by a single underscore.
-  groups_replace_dot: false
+  # If not an empty string or '.', replace all occurrences of the groups_domain_delim character
+  # with '.' for every OIDC group of a user. Useful if your authz provider does not support groups
+  # with a '.' in the name. This replacement is done *after* the groups prefix has been stripped (see above).
+  # Note that if you select a domain delimiter, you cannot use the character in an actual domain
+  # name specified in the groups.
+  groups_domain_delim: "_"
 
-  # === Example for groups_prefix: dns3l_ and groups_replace_dot: true 
-  # "dns3l_foo_bar_com" will allow domain "foo.bar.com"
-  # "dns3l_under__score_corp" will allow domain "under_score.corp"
-  # "dns3l_read" will allow read access
+  # === Example for groups_prefix: dns3l_ and groups_domain_delim: _
+  # OIDC group "dns3l_foo_bar_com" will allow domain "foo.bar.com"
+  # OIDC group "dns3l_read" will allow read access
 
 renew:
   #Renewal jobs start every day at the specified time (UTC).

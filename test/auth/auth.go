@@ -52,3 +52,11 @@ func (a *AuthStub) AuthnGetAuthzInfo(r *http.Request) (auth.AuthorizationInfo, e
 	return authzinfo, nil
 
 }
+
+func (a *AuthStub) GetServerInfoAuth() auth.ServerInfoAuth {
+	return &struct {
+		Foo string `yaml:"foo"`
+	}{
+		Foo: "Test",
+	}
+}

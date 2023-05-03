@@ -7,6 +7,7 @@ import (
 type RESTAPIAuthProvider interface {
 	Init() error
 	AuthnGetAuthzInfo(r *http.Request) (AuthorizationInfo, error)
+	GetServerInfoAuth() ServerInfoAuth
 }
 
 type AuthConfig struct {
@@ -20,3 +21,5 @@ func (c *AuthConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	c.Provider = &OIDCHandler{}
 	return unmarshal(c.Provider)
 }
+
+type ServerInfoAuth interface{}

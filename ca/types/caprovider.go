@@ -19,6 +19,8 @@ type CAProvider interface {
 	GetInfo() *CAProviderInfo
 	IsEnabled() bool
 
+	PrecheckClaimCertificate(cinfo *CertificateClaimInfo) error
+
 	ClaimCertificate(cinfo *CertificateClaimInfo) error
 
 	RenewCertificate(cinfo *CertificateRenewInfo) error

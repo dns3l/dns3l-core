@@ -48,8 +48,12 @@ func (p *CAProvider) Init(c types.ProviderConfigurationContext) error {
 
 func (p *CAProvider) IsEnabled() bool {
 
-	return true
+	return !p.C.Disabled
 
+}
+
+func (p *CAProvider) PrecheckClaimCertificate(cinfo *types.CertificateClaimInfo) error {
+	return nil
 }
 
 func (p *CAProvider) ClaimCertificate(cinfo *types.CertificateClaimInfo) error {
