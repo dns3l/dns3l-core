@@ -22,7 +22,8 @@ var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Print the version number of dns3l CLI",
 	Long:  `All software has versions. This is dns3l CLIs`,
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		fmt.Printf("Version:=%s\n", context.CLIVersion)
+		return nil
 	},
 }

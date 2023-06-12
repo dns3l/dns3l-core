@@ -1,4 +1,8 @@
-package clitypes
+//go:build linux && (amd64 || arm)
+// +build linux
+// +build amd64 arm
+
+package cliutil
 
 import (
 	"fmt"
@@ -15,22 +19,22 @@ import (
 func CachePassword(name, password string, timeoutSeconds uint, verbose bool) error {
 	// Create session
 	if password == "" {
-		return fmt.Errorf("function cachePassword(): empty secret")
+		return fmt.Errorf("function cachePassword(): name:%s empty secret\n", name)
 	}
 	keyring, err := keyctl.SessionKeyring()
 	if err != nil {
-		return fmt.Errorf("function cachePassword(): couldn't create keyring session: %v", err)
+		return fmt.Errorf("function cachePassword(): name:%s couldn't create keyring session: %v\n", name, err)
 	}
 	// Store key
 	keyring.SetDefaultTimeout(timeoutSeconds)
 	key, err := keyring.Add(name, []byte(password))
 	if err != nil {
-		return fmt.Errorf("function cachePassword(): couldn't store '%s': %v", name, err)
+		return fmt.Errorf("function cachePassword(): name:%s couldn't store '%s'\n", name, err)
 	}
 	// OK case
 	if verbose {
 		info, _ := key.Info()
-		fmt.Fprintf(os.Stderr, "Function CachePassword(): key: %+v\n", info)
+		fmt.Fprintf(os.Stderr, "Function CachePassword():name:%s key description:'%v'\n", name, info)
 	}
 	return nil
 }
@@ -39,22 +43,22 @@ func GetPasswordfromRing(name string, verbose bool) ([]byte, error) {
 	// Create session
 	keyring, err := keyctl.SessionKeyring()
 	if err != nil {
-		return nil, fmt.Errorf("function getPasswordfromRing(): couldn't create keyring session: %v", err)
+		return nil, fmt.Errorf("function getPasswordfromRing(): couldn't create keyring session: %v\n", err)
 	}
 	// Retrieve
 	key, err := keyring.Search(name)
 	if err == nil {
 		data, err := key.Get()
 		if err != nil {
-			return nil, fmt.Errorf("function getPasswordfromRing(): couldn't retrieve key data: %v", err)
+			return nil, fmt.Errorf("function getPasswordfromRing(): couldn't retrieve key data: %v\n", err)
 		}
 		if verbose {
 			info, _ := key.Info()
-			fmt.Fprintf(os.Stderr, "INFO Function GetPasswordfromRing() key: %+v\n", info)
+			fmt.Fprintf(os.Stderr, "INFO Function GetPasswordfromRing() description:'%v'\n", info)
 		}
 		return data, nil
 	}
-	return nil, fmt.Errorf("function getPasswordfromRing(): couldn't find key data: %v", err)
+	return nil, fmt.Errorf("function getPasswordfromRing(): couldn't find key data: %v\n", err)
 }
 
 // GetPassword - Gets a secret from the User Session Keyring.

@@ -8,11 +8,30 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/dns3l/dns3l-core/cli/cliutil"
+
 	"github.com/dns3l/dns3l-core/dns/infblx"
 	"github.com/dns3l/dns3l-core/dns/otc"
 	"github.com/dns3l/dns3l-core/dns/types"
 	"github.com/spf13/viper"
 )
+
+// custom error handling
+type ExitValueError struct {
+	Value int
+	Err   error
+}
+
+func NewValueError(value int, err error) *ExitValueError {
+	return &ExitValueError{
+		Value: value,
+		Err:   err,
+	}
+}
+
+func (ve *ExitValueError) Error() string {
+	return fmt.Sprintf("%s", ve.Err)
+}
 
 // NotImplemented print the message NOT IMPLENENTED
 func NotImplemented() {
@@ -65,12 +84,12 @@ func getProviderData(dnsbackend string, verbose bool) (string, string) {
 	}
 	if verbose {
 		fmt.Fprintf(os.Stderr, "INFO provider user '%s'\n", user)
-		fmt.Fprintf(os.Stderr, "INFO provider pass '%s'\n", secret)
+		fmt.Fprintf(os.Stderr, "INFO provider pass '%s'\n", secret[0:2])
 	}
 	return user, secret
 }
 
-func setProvider(dnsbackend string, id string, secret string, usePWSafe bool, verbose bool) types.DNSProvider {
+func setProvider(dnsbackend string, id string, secret string, usePWSafe bool, verbose bool) (types.DNSProvider, error) {
 	var dns types.DNSProvider
 	vip := viper.GetViper()
 	providerPath := "dns.providers." + dnsbackend + "."
@@ -92,7 +111,7 @@ func setProvider(dnsbackend string, id string, secret string, usePWSafe bool, ve
 		infblxConfig.Port = vip.GetString(providerPath + "port")
 		infblxConfig.Version = vip.GetString(providerPath + "version")
 		if infblxConfig.Name == "" || infblxConfig.Host == "" || infblxConfig.Port == "" || infblxConfig.Version == "" {
-			return nil
+			return nil, NewValueError(1101, fmt.Errorf("function Setprovider() failed due to missing config parameters"))
 		}
 		if verbose {
 			fmt.Fprintf(os.Stderr, "INFO setProvider()  User ID := %s\n", id)
@@ -103,12 +122,11 @@ func setProvider(dnsbackend string, id string, secret string, usePWSafe bool, ve
 		} else {
 			infblxConfig.Auth.User = vip.GetString(providerPath + "auth.user")
 			if verbose {
-				fmt.Fprintf(os.Stderr, "INFO  setProvider() User of the providers section %s is used infblk\n", dnsbackend)
-				fmt.Fprintf(os.Stderr, "INFO  setProvider() User:= %s ", infblxConfig.Auth.User)
+				fmt.Fprintf(os.Stderr, "INFO  setProvider() providers section '%s' selected \n", dnsbackend)
+				fmt.Fprintf(os.Stderr, "INFO  setProvider() user:= '%s' ", infblxConfig.Auth.User)
 			}
 			if infblxConfig.Auth.User == "" {
-				fmt.Fprintf(os.Stderr, "ERROR:  setProvider() User/ID is empty command failed -- > exit")
-				return nil
+				return nil, NewValueError(1102, fmt.Errorf("fuction SetProvider() failed: User/ID is empty"))
 			}
 		}
 		// resolve the secret
@@ -118,13 +136,13 @@ func setProvider(dnsbackend string, id string, secret string, usePWSafe bool, ve
 			if verbose {
 				fmt.Fprintf(os.Stderr, "INFO setProvider(): User %s and password from safe \n", infblxConfig.Auth.User)
 			}
-			if sec, err = GetPasswordfromRing(infblxConfig.Auth.User, verbose); err != nil {
-				fmt.Fprintf(os.Stderr, "ERROR setProvider(), no secret provided in the Keyring for DNSBackend '%v' and ID:= '%v'\n", dnsbackend, infblxConfig.Auth.User)
+			if sec, err = cliutil.GetPasswordfromRing(infblxConfig.Auth.User, verbose); err != nil {
 				infblxConfig.Auth.Pass = ""
+				return nil, NewValueError(1103, fmt.Errorf("fucntion SetProvider() failed: no secret found in the Keyring for '%v' and ID:= '%v'", dnsbackend, infblxConfig.Auth.User))
 			} else {
 				infblxConfig.Auth.Pass = string(sec)
 				if verbose {
-					fmt.Fprintf(os.Stderr, "INFO setProvider() Secret provided by Keyring for DNSBackend '%v' and ID:= '%v''\n", dnsbackend, infblxConfig.Auth.User)
+					fmt.Fprintf(os.Stderr, "INFO setProvider() Secret provided by Keyring for DNSBackend '%v' and ID:= '%v'\n", dnsbackend, infblxConfig.Auth.User)
 				}
 			}
 		} else {
@@ -144,12 +162,12 @@ func setProvider(dnsbackend string, id string, secret string, usePWSafe bool, ve
 		infblxConfig.DNSView = vip.GetString(providerPath + "dnsview")
 		infblxConfig.SSLVerify = vip.GetString(providerPath + "sslverify")
 		if infblxConfig.DNSView == "" || infblxConfig.SSLVerify == "" {
-			return nil
+			return nil, NewValueError(1104, fmt.Errorf("function SetProvider() failed:DNSView or and SSLVerify is empty"))
 		}
 		infblxProvider.C = &infblxConfig
 		// infblx-Provider eine Interface zuweisen
 		dns = &infblxProvider
-		return dns
+		return dns, nil
 	} else if providerT == "otc" {
 		fmt.Fprintf(os.Stderr, "case otc\n")
 		otcProvider := otc.DNSProvider{}
@@ -161,15 +179,14 @@ func setProvider(dnsbackend string, id string, secret string, usePWSafe bool, ve
 		otcConfig.Auth.SecretKey = vip.GetString(providerPath + "auth.secretkey")
 		otcConfig.OSRegion = vip.GetString(providerPath + "osregion")
 		if otcConfig.Name == "" || otcConfig.Auth.AuthURL == "" || otcConfig.Auth.ProjectName == "" || otcConfig.Auth.AccessKey == "" || otcConfig.Auth.SecretKey == "" || otcConfig.OSRegion == "" {
-			return nil
+			return nil, NewValueError(1105, fmt.Errorf("function SetProvider() failed due to missing config parameters"))
 		}
 		otcProvider.C = &otcConfig
 		// otc-Provider eine Interface zuweisen
 		dns = &otcProvider
-		return dns
+		return dns, nil
 	}
-	fmt.Fprintf(os.Stderr, "not match for %s %s \n", dnsbackend, providerT)
-	return nil
+	return nil, NewValueError(1106, fmt.Errorf("function SetProvider() not match for %s %s", dnsbackend, providerT))
 }
 
 func SetCertClaimHints(hintsSection string) hintsType {
@@ -209,7 +226,7 @@ func FinalCertToken(inToken string) string {
 	var aToken string
 	switch inToken {
 	case "USE_RING_TOKEN":
-		token, inErr := GetPasswordfromRing("CertAccountToken", false)
+		token, inErr := cliutil.GetPasswordfromRing("CertIdToken", false)
 		if inErr == nil {
 			aToken = string(token)
 		} else {
@@ -218,7 +235,7 @@ func FinalCertToken(inToken string) string {
 		}
 	case "USE_ENV_TOKEN":
 		vip := viper.GetViper()
-		envToken := vip.GetString("cert.accessToken")
+		envToken := vip.GetString("cert.token")
 		if envToken != "" {
 			aToken = envToken
 		} else {
@@ -240,7 +257,7 @@ func PrintDNSProvider(provider types.DNSProvider) {
 		fmt.Fprintf(os.Stderr, "Infblk Provider Config Port     	'%s' \n", value.C.Port)
 		fmt.Fprintf(os.Stderr, "Infblk Provider Config Version    	'%s' \n", value.C.Version)
 		fmt.Fprintf(os.Stderr, "Infblk Provider Config Auth User 	'%s' \n", value.C.Auth.User)
-		fmt.Fprintf(os.Stderr, "Infblk Provider Config Auth Pass 	'%s' \n", value.C.Auth.Pass)
+		fmt.Fprintf(os.Stderr, "Infblk Provider Config Auth Pass 	'%s' \n", value.C.Auth.Pass[0:2])
 		fmt.Fprintf(os.Stderr, "Infblk Provider Config DNSView   	'%s' \n", value.C.DNSView)
 		fmt.Fprintf(os.Stderr, "Infblk Provider Config SSLVerify 	'%s' \n", value.C.SSLVerify)
 	case *(otc.DNSProvider):
@@ -262,12 +279,12 @@ func PrintViperConfigDNS() {
 	// Provider = viper.GetString("provider")
 	//BackendAPIEndPoint = viper.GetString("api")
 	vip := viper.GetViper()
-	fmt.Fprintf(os.Stderr, "resulting value Provider Name 	'%s' \n", vip.GetString("dns.backend"))
-	fmt.Fprintf(os.Stderr, "resulting value  dns force flag	'%s' \n", vip.GetString("force"))
-	fmt.Fprintf(os.Stderr, "resulting value  debug flag 	    '%s' \n", vip.GetString("debug"))
-	fmt.Fprintf(os.Stderr, "resulting value  json output 	    '%s' \n", vip.GetString("json"))
-	fmt.Fprintf(os.Stderr, "resulting value  User/ Id 	        '%s' \n", vip.GetString("dns.id"))
-	fmt.Fprintf(os.Stderr, "resulting value  secret / Password '%s' \n", vip.GetString("dns.secret"))
+	fmt.Fprintf(os.Stderr, "value read from config Provider Name 	'%s' \n", vip.GetString("dns.backend"))
+	fmt.Fprintf(os.Stderr, "value read from config  dns force flag	'%s' \n", vip.GetString("force"))
+	fmt.Fprintf(os.Stderr, "value read from config  debug flag 	    '%s' \n", vip.GetString("debug"))
+	fmt.Fprintf(os.Stderr, "value read from config  json output 	    '%s' \n", vip.GetString("json"))
+	fmt.Fprintf(os.Stderr, "value read from config  User/ Id 	        '%s' \n", vip.GetString("dns.id"))
+	fmt.Fprintf(os.Stderr, "value read from config  secret / Password '%s' \n", vip.GetString("dns.secret"))
 
 }
 
@@ -276,14 +293,14 @@ func PrintViperConfigCert() {
 	// Provider = viper.GetString("provider")
 	//BackendAPIEndPoint = viper.GetString("api")
 	vip := viper.GetViper()
-	fmt.Fprintf(os.Stderr, "resulting value  cert.ca 	    '%s' \n", vip.GetString("cert.ca"))
-	fmt.Fprintf(os.Stderr, "resulting value  cert.wildcard	'%v' \n", vip.GetString("cert.wildcard"))
-	fmt.Fprintf(os.Stderr, "resulting value  cert.autodns 	'%s' \n", vip.GetString("cert.autodns"))
-	fmt.Fprintf(os.Stderr, "resulting value  cert.mode 	'%s' \n", vip.GetString("cert.mode"))
-	fmt.Fprintf(os.Stderr, "resulting value  cert.api  	'%s' \n", vip.GetString("cert.api"))
-	fmt.Fprintf(os.Stderr, "resulting value  force flag	'%s' \n", vip.GetString("force"))
-	fmt.Fprintf(os.Stderr, "resulting value  debug flag 	'%s' \n", vip.GetString("debug"))
-	fmt.Fprintf(os.Stderr, "resulting value  json output 	'%s' \n", vip.GetString("json"))
+	fmt.Fprintf(os.Stderr, "value read from config  cert.ca 	    '%s' \n", vip.GetString("cert.ca"))
+	fmt.Fprintf(os.Stderr, "value read from config  cert.wildcard	'%v' \n", vip.GetString("cert.wildcard"))
+	fmt.Fprintf(os.Stderr, "value read from config  cert.autodns 	'%s' \n", vip.GetString("cert.autodns"))
+	fmt.Fprintf(os.Stderr, "value read from config  cert.mode 	'%s' \n", vip.GetString("cert.mode"))
+	fmt.Fprintf(os.Stderr, "value read from config  cert.api  	'%s' \n", vip.GetString("cert.api"))
+	fmt.Fprintf(os.Stderr, "value read from config  force flag	'%s' \n", vip.GetString("force"))
+	fmt.Fprintf(os.Stderr, "value read from config  debug flag 	'%s' \n", vip.GetString("debug"))
+	fmt.Fprintf(os.Stderr, "value read from config  json output 	'%s' \n", vip.GetString("json"))
 }
 
 var dnsTypeList [3]string = [...]string{"a", "txt", "cname"}

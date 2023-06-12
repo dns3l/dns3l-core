@@ -24,7 +24,7 @@ func (dnsList *DNSListType) PrintParams() {
 }
 
 // CheckParams prints the parameters of the command dns list
-func (dnsList *DNSListType) CheckParams() bool {
-	OK := true
-	return OK
+func (dnsList *DNSListType) CheckParams() error {
+	// OK := true
+	return nil
 }

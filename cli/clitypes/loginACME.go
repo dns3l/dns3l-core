@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/dns3l/dns3l-core/cli/cliutil"
 	"github.com/spf13/viper"
 )
 
@@ -55,10 +56,8 @@ type LoginACMEType struct {
 
 func (loginData *LoginACMEType) GetOpenIdConfiguration() (*OpenIdInfo, error) {
 	resp, err := http.Get(loginData.ClientInfo.OidcUrl)
-	// make sure to close the body
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "ERROR: Request for OpenIdConfiguration of the ACME failed\n")
-		return nil, err
+		return nil, NewValueError(610, fmt.Errorf("request for OpenIdConfiguration of the ACME failed reason %v", err.Error()))
 	}
 	defer resp.Body.Close()
 	if loginData.Verbose {
@@ -66,28 +65,41 @@ func (loginData *LoginACMEType) GetOpenIdConfiguration() (*OpenIdInfo, error) {
 	}
 	var msg OpenIdInfo
 	if resp.StatusCode != http.StatusOK {
-		fmt.Fprintf(os.Stderr, "ERROR: Respond for OpenIdConfiguration() HTTP StatusCode:='%v'\n", resp.StatusCode)
-		return nil, err
+		return nil, NewValueError(620, fmt.Errorf("call for OpenIdConfiguration() failed HTTP StatusCode:='%v' ", resp.StatusCode))
 	}
 	err = json.NewDecoder(resp.Body).Decode(&msg)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "ERROR OpenIdConfiguration data: json decoding Error %v\n", err.Error())
-		return nil, err
+		return nil, NewValueError(630, fmt.Errorf("received OpenIdConfiguration data: json decoding Error, '%v' ", err.Error()))
 	}
 	return &msg, nil
 }
 
+/*
+ ID_TOKEN=`curl "${CURL_OPTS[@]}" -X POST -u "${CLIENT_ID}:${CLIENT_SECRET}" \
+    -d "grant_type=password&scope=openid profile email groups offline_access audience:server:client_id:${DAEMON_CLIENT_ID}&username=${AUTH_USER}&password=${AUTH_PASS}" \
+    ${TOKEN_URL} | jq -r .id_token`
+*/
 // the call for retriving the tokens from the server
 func (loginData *LoginACMEType) GetDEXToken(msg *OpenIdInfo) (*TokenInfo, error) {
+	vip := viper.GetViper()
+	daemonClientId := vip.GetString("acme.daemonClientId")
+	if loginData.Verbose {
+		fmt.Fprintf(os.Stderr, "INFO: daemonClientId :='%s'\n", daemonClientId)
+	}
 	client := &http.Client{}
 	var aToken TokenInfo
-	dataStr := "grant_type=password&scope=openid profile email groups offline_access&username=" +
-		url.QueryEscape(loginData.ACMEProviderID) + "&password=" + url.QueryEscape(loginData.ACMEProviderPASS)
+	var dataStr string
+	if daemonClientId == "" {
+		dataStr = "grant_type=password&scope=openid profile email groups offline_access&username=" +
+			url.QueryEscape(loginData.ACMEProviderID) + "&password=" + url.QueryEscape(loginData.ACMEProviderPASS)
+	} else {
+		dataStr = "grant_type=password&scope=openid profile email groups offline_access audience:server:client_id:" + url.QueryEscape(daemonClientId) +
+			"&username=" + url.QueryEscape(loginData.ACMEProviderID) + "&password=" + url.QueryEscape(loginData.ACMEProviderPASS)
+	}
 	var data = strings.NewReader(dataStr)
 	req, err := http.NewRequest("POST", msg.TokenEndpoint, data)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "ERROR: could not create Request for Token")
-		return nil, err
+		return nil, NewValueError(640, fmt.Errorf("could not create Request for Token Error, '%s' ", err.Error()))
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	// OAuth2, both arguments must be URL encoded first with url.QueryEscape.
@@ -97,8 +109,7 @@ func (loginData *LoginACMEType) GetDEXToken(msg *OpenIdInfo) (*TokenInfo, error)
 	}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "ERROR: Request for the token failed\n")
-		return nil, err
+		return nil, NewValueError(650, fmt.Errorf("request for the token failed Error, '%s' ", err.Error()))
 	}
 	defer resp.Body.Close()
 	if loginData.Verbose {
@@ -106,8 +117,7 @@ func (loginData *LoginACMEType) GetDEXToken(msg *OpenIdInfo) (*TokenInfo, error)
 	}
 
 	if err = json.NewDecoder(resp.Body).Decode(&aToken); err != nil {
-		fmt.Fprintf(os.Stderr, "ERROR token data: json decoding Error %v\n", err.Error())
-		return nil, err
+		return nil, NewValueError(660, fmt.Errorf("token data: json decoding Error '%s' ", err.Error()))
 	}
 	if loginData.Verbose {
 		fmt.Fprintf(os.Stderr, "INFO: AccesssToken ===========\n%s\n", string(aToken.AccesssToken))
@@ -147,42 +157,45 @@ func (loginData *LoginACMEType) PrintParams() {
 		if loginData.ACMEProviderPASS == "" {
 			fmt.Fprintf(os.Stderr, "INFO: ACMEProviderSecret 'is empty \n")
 		} else {
-			fmt.Fprintf(os.Stderr, "INFO: ACMEProviderSecret '%v'\n", loginData.ACMEProviderPASS[0:2])
+			if len(loginData.ACMEProviderPASS) > 2 {
+				fmt.Fprintf(os.Stderr, "INFO: ACMEProviderSecret '%v'\n", loginData.ACMEProviderPASS[0:2])
+			}
 		}
 		fmt.Fprintf(os.Stderr, "INFO: DATA READ FROM KONFIG FILE / ENVIROMENT \n")
 		fmt.Fprintf(os.Stderr, "INFO: acme.OicdUrl='%v'\n", loginData.ClientInfo.OidcUrl)
 		fmt.Fprintf(os.Stderr, "INFO: acme.ClientId='%v'\n", loginData.ClientInfo.ClientId) // Anwendung
-		fmt.Fprintf(os.Stderr, "INFO: acme.ClientSecret='%v'\n", loginData.ClientInfo.ClientSecret)
+		if len(loginData.ClientInfo.ClientSecret) > 4 {
+			fmt.Fprintf(os.Stderr, "INFO: acme.ClientSecret='%v'\n", loginData.ClientInfo.ClientSecret[1:4])
+		} else {
+			fmt.Fprintf(os.Stderr, "INFO: acme.ClientSecret='%v'\n", loginData.ClientInfo.ClientSecret)
+		}
 	}
 }
 
-func (loginData *LoginACMEType) CheckParams() bool {
+func (loginData *LoginACMEType) CheckParams() error {
 	// || accountInfo.ClientSecret == ""
 	if loginData.ClientInfo.OidcUrl == "" ||
 		loginData.ClientInfo.ClientId == "" ||
 		loginData.ACMEProviderID == "" ||
 		(loginData.ACMEProviderPASS == "" && !loginData.FromTerminal) {
-		fmt.Fprintf(os.Stderr, "ERROR: ACME AccountInfo not complete valid, found epmpty entries \n")
-		return false
+		return NewValueError(610, fmt.Errorf("AccountInfo not complete valid, found epmpty entries"))
 	}
-	return true
+	return nil
 }
 
-func (loginData *LoginACMEType) DoCommand() {
+func (loginData *LoginACMEType) DoCommand() error {
 	if loginData.FromTerminal {
-		bIn, inErr := GetPasswordFromConsole("Password for acme account " + loginData.ACMEProviderID + " =")
+		bIn, inErr := cliutil.GetPasswordFromConsole("Password for acme account " + loginData.ACMEProviderID + " =")
 		if inErr == nil {
 			loginData.ACMEProviderPASS = string(bIn)
 		} else {
-			fmt.Fprintf(os.Stderr, "ERROR: ACME GET Token occured during input of password %v", inErr)
-			return
+			return NewValueError(620, inErr)
 		}
 	}
 	// here we retrive the API-ENDPOINT from which we can query for tokens
 	msg, err := loginData.GetOpenIdConfiguration()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "ERROR: ACME GET Token in GetOpenIdConfiguration() %v\n", err.Error())
-		return
+		return NewValueError(630, err)
 	}
 	if loginData.Verbose {
 		fmt.Fprintf(os.Stderr, "INFO: API Endpoint for Token request: %v\n", msg.TokenEndpoint)
@@ -190,27 +203,24 @@ func (loginData *LoginACMEType) DoCommand() {
 	// here we make the call for the tokens
 	tok, err := loginData.GetDEXToken(msg)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "ERROR: ACME GET Token Get access token  in GetDEXToken() %v\n", err.Error())
-		return
+		return NewValueError(640, err)
 	}
 	// put into the ring
 	if !loginData.ACMEForceOStream {
-		err := CachePassword("CertAccountToken", tok.AccesssToken, uint(tok.Expire+60), loginData.Verbose)
+		err := cliutil.CachePassword("CertAccountToken", tok.AccesssToken, uint(tok.Expire+60), loginData.Verbose)
 		if nil != err {
-			fmt.Fprintf(os.Stderr, "ERROR: ACME GET Token CertAccountToken into keyring::Error: %v\n", err.Error())
-			return
+			return NewValueError(650, err)
 		}
-		err = CachePassword("CertIdToken", tok.IdToken, uint(tok.Expire+60), loginData.Verbose)
+		err = cliutil.CachePassword("CertIdToken", tok.IdToken, uint(tok.Expire+60), loginData.Verbose)
 		if nil != err {
-			fmt.Fprintf(os.Stderr, "INFO: ACME GET Token CertIdToken into keyring::Error: %v\n", err.Error())
-			return
+			return NewValueError(660, err)
 		}
-		err = CachePassword("CertRefreshToken", tok.RefreshToken, uint(tok.Expire+60), loginData.Verbose)
+		err = cliutil.CachePassword("CertRefreshToken", tok.RefreshToken, uint(tok.Expire+60), loginData.Verbose)
 		if nil != err {
-			fmt.Fprintf(os.Stderr, "INFO: ACME GET Token CertRefreshToken into keyring::Error: %v\n", err.Error())
-			return
+			return NewValueError(670, err)
 		}
 	} else {
 		fmt.Fprintf(os.Stdout, "%v\n", tok.AccesssToken)
 	}
+	return nil
 }

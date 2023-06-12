@@ -265,8 +265,8 @@ Allgemeine Optionen
 --Kommando cert
 
     Zur Zeit unterstützte Subkommandos
-        -- Subkommandos     ca      Alle unterstützte Zertifizierungsstellen ausgeben
-        -- Subkommandos     list    Alle Zertifikate der "dns3l" Instanz ausgeben
+        -- Subkommandos     listca  Alle unterstützte Zertifizierungsstellen ausgeben
+        -- Subkommandos     list    Alle Zertifikate zur einer durch dies acme Instanz unterstützden ca ausgeben
         -- Subkommandos     claim   Übertragen einer CSR (Zertifikat-Anfrage)
         -- Subkommandos     get     Ein Zertifikat von "dns3l" herunterladen
         -- Subkommandos     del     Löschen eines Zertifikats
@@ -277,7 +277,7 @@ Allgemeine Optionen
         -- Subkommandos     push    Übertragen eines Zertifikats nach DNS3L für CAs die kein ACME unterstützen
 
 -----------------------------------------------------------------------------------------
-./dns3lcli cert ca
+./dns3lcli cert listca
 
     typischer Aufruf
     Wichtig zuvor wurde das Access-Token im Schlüsselbund bzw. ENV gespeichert
@@ -287,7 +287,7 @@ Allgemeine Optionen
         # Ausgabe im JSON-Formatt
         # API Endpunkt Benutzer .. wird aus der Konfigurations Datei entnommen
         # AccessToken aus dem KeyRing bzw. ENV
-        ./dns3lcli --config=dns3cli_config_example.yaml json=true  cert ca  
+        ./dns3lcli --config=dns3cli_config_example.yaml json=true  cert listca  
 
     Argumente
         keine
@@ -302,8 +302,8 @@ Allgemeine Optionen
 	    --tok           Das Access-Token für ACME API Endpunkt 
                         Überschreibt alle anderen Optionen einen Benutzer anzugeben
                         andere Optionen in absteigender Priorität
-                                Umgebungsvariable               $DNS3L_CERT_API
-                                Konfigurationsdatei Wert aus    cert.accessToken
+                                Umgebungsvariable               $DNS3L_CERT_TOKEN
+                                Konfigurationsdatei Wert aus    cert.token
                                 Wenn vorhanden Wert aus KeyRing  
 
 -----------------------------------------------------------------------------------------
@@ -337,8 +337,8 @@ Allgemeine Optionen
 	    --tok           Das Access-Token für ACME API Endpunkt 
                         Überschreibt alle anderen Optionen einen Benutzer anzugeben
                         andere Optionen in absteigender Priorität
-                            Umgebungsvariable               $DNS3L_CERT_API
-                            Konfigurationsdatei Wert aus    cert.accessToken
+                            Umgebungsvariable               $DNS3L_CERT_TOKEN
+                            Konfigurationsdatei Wert aus    cert.token
                             Wenn vorhanden Wert aus KeyRing  
         --ca            CA die verwendet werden soll
         --filter        regulärer re2 Ausdruck
@@ -374,8 +374,8 @@ Allgemeine Optionen
 	    --tok           Das Access-Token für ACME API Endpunkt 
                         Überschreibt alle anderen Optionen einen Benutzer anzugeben
                                 andere Optionen in absteigender Priorität
-                                    Umgebungsvariable               $DNS3L_CERT_API
-                                    Konfigurationsdatei Wert aus    cert.accessToken
+                                    Umgebungsvariable               $DNS3L_CERT_TOKEN
+                                    Konfigurationsdatei Wert aus    cert.token
                                     Wenn vorhanden Wert aus KeyRing  
         --api           ACME Backend API Endpunkt 
                         Überschreibt alle anderen Optionen einen Benutzer anzugeben
@@ -384,6 +384,7 @@ Allgemeine Optionen
                                     Konfigurationsdatei Wert aus    cert.api
         --ca            CA die verwendet werden soll
         --wildcard      erzeugt ein Wildcard Zertifikate kann nicht mit --autodns verwendet werden 
+                        es fügt einen * an den Anfang des FQDN an ( test.test.cloud.de -> *.test.test.cloud.de )
   		--autodns       erzeugt aus der angegebene IP eine DNS A-Record, kann nicht mit wildcard verwedet werden
         --hints         string[="default"] "hints"-Abschnitt in der Konfigurationsdatei, welche verwendet werden soll
                         Standardwert ist cert.hints.default 
@@ -418,8 +419,8 @@ Allgemeine Optionen
 	    --tok           Das Access-Token für ACME API Endpunkt 
                         Überschreibt alle anderen Optionen einen Benutzer anzugeben
                                 andere Optionen in absteigender Priorität
-                                    Umgebungsvariable               $DNS3L_CERT_API
-                                    Konfigurationsdatei Wert aus    cert.accessToken
+                                    Umgebungsvariable               $DNS3L_CERT_TOKEN
+                                    Konfigurationsdatei Wert aus    cert.token
                                     Wenn vorhanden Wert aus KeyRing  
         --ca            CA die verwendet werden soll
         --mode          Was genau alles zu diesem FQDN herunter geladen wird
@@ -454,8 +455,8 @@ Allgemeine Optionen
 	    --tok           Das Access-Token für ACME API Endpunkt 
                         Überschreibt alle anderen Optionen einen Benutzer anzugeben
                                 andere Optionen in absteigender Priorität
-                                    Umgebungsvariable               $DNS3L_CERT_API
-                                    Konfigurationsdatei Wert aus    cert.accessToken
+                                    Umgebungsvariable               $DNS3L_CERT_TOKEN
+                                    Konfigurationsdatei Wert aus    cert.token
                                     Wenn vorhanden Wert aus KeyRing  
         --api           ACME Backend API Endpunkt 
                         Überschreibt alle anderen Optionen einen Benutzer anzugeben

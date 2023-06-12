@@ -1,0 +1,95 @@
+.PHONY : test cli  service
+
+
+DOCKER = /usr/bin/docker
+GOARCH = amd64
+# GOARCH = arm
+DNS3LD_VERSION = $(shell awk -v FS="dns3ld=" 'NF>1{print $$2}' VERSIONS)
+DNS3LCLI_VERSION = $(shell awk -v FS="dns3lcli=" 'NF>1{print $$2}' VERSIONS)
+GO_LDFLAGS := "\
+	-X 'github.com/dns3l/dns3l-core/context.ServiceVersion=$(DNS3LD_VERSION)' \
+	-X 'github.com/dns3l/dns3l-core/context.CLIVersion=$(DNS3LCLI_VERSION)'\
+	-extldflags '-static' -w -s"
+GOENV := GOARCH=$(GOARCH) GOOS=linux
+GODIRS := ./acme/... ./ca/... ./commands/... ./cmd/... ./context/...  ./dns/... ./service/... ./util/... ./cli/... ./renew/...
+
+all: service cli
+
+service:
+	$(GOENV) go build -v -ldflags $(GO_LDFLAGS) -o dns3ld ./cmd/dns3ld/.
+
+# cli: cli_linux_arm cli_linux_amd64  cli_win_amd64  cli_win_arm
+cli: CGO_ENABLED=0
+cli: cli_linux_amd64
+	$(GOENV)  go build -v -a -tags netgo -ldflags $(GO_LDFLAGS) -o ./dns3lcli ./cmd/dns3lcli/.
+
+cli_linux_amd64: GOARCH = amd64
+cli_linux_amd64: GOOS = linux
+cli_linux_amd64: GOENV := GOARCH=$(GOARCH) GOOS=$(GOOS)
+cli_linux_amd64: DNS3LCLI_RELEASE_FLAG = -X github.com/dns3l/dns3l-core/context.CLIVersion=$(DNS3LCLI_VERSION)
+cli_linux_amd64: DNS3LD_RELEASE_FLAG = -X github.com/dns3l/dns3l-core/context.ServiceVersion=$(DNS3LD_VERSION)
+cli_linux_amd64: GO_LDFLAGS := '$(DNS3LCLI_RELEASE_FLAG) $(DNS3LD_RELEASE_FLAG) -extldflags "-fno-PIC -static" -w -s' -buildmode pie -tags 'osusergo netgo static_build'
+cli_linux_amd64: CGO_ENABLED=0
+cli_linux_amd64:
+	$(GOENV)  go build  -tags static_build -v -a -ldflags $(GO_LDFLAGS)  -o ./$(GOOS)/$(GOARCH)/dns3lcli ./cmd/dns3lcli/.
+#	$(GOENV)  go build -v -a -ldflags $(GO_LDFLAGS) -o ./$(GOOS)/$(GOARCH)/dns3lcli ./cmd/dns3lcli/.
+# the following line compiles a static application even glibc!  
+# GOARCH=amd64 GOOS=linux  go build  -v -a -ldflags '-extldflags "-fno-PIC -static"' -buildmode pie -tags 'osusergo netgo static_build'  -o ./linux/amd64/dns3lcli ./cmd/dns3lcli/.
+
+
+cli_linux_arm: GOARCH = arm
+cli_linux_arm: GOOS = linux
+cli_linux_arm: GOENV := GOARCH=$(GOARCH) GOOS=$(GOOS)
+cli_linux_arm: DNS3LCLI_RELEASE_FLAG = -X github.com/dns3l/dns3l-core/context.CLIVersion=$(DNS3LCLI_VERSION)
+cli_linux_arm: DNS3LD_RELEASE_FLAG = -X github.com/dns3l/dns3l-core/context.ServiceVersion=$(DNS3LD_VERSION)
+cli_linux_arm: GO_LDFLAGS := '$(DNS3LCLI_RELEASE_FLAG) $(DNS3LD_RELEASE_FLAG) -extldflags "-static -w -s"'
+cli_linux_arm: CGO_ENABLED=0
+# cli_linux_arm: CGO_LDFLAGS="-Xlinker -rpath=/path/to/another_glibc/lib -static"
+cli_linux_arm:
+	$(GOENV)  go build -v -a -ldflags $(GO_LDFLAGS) -o ./$(GOOS)/$(GOARCH)/dns3lcli ./cmd/dns3lcli/.
+
+cli_win_amd64: GOARCH = amd64
+cli_win_amd64: GOOS = windows
+cli_win_amd64: GOENV := GOARCH=$(GOARCH) GOOS=$(GOOS)
+cli_win_amd64: DNS3LCLI_RELEASE_FLAG = -X github.com/dns3l/dns3l-core/context.CLIVersion=$(DNS3LCLI_VERSION)
+cli_win_amd64: DNS3LD_RELEASE_FLAG = -X github.com/dns3l/dns3l-core/context.ServiceVersion=$(DNS3LD_VERSION)
+cli_win_amd64: CGO_ENABLED=0
+cli_win_amd64:
+	$(GOENV)  go build -v -ldflags $(GO_LDFLAGS) -o ./$(GOOS)/$(GOARCH)/dns3lcli ./cmd/dns3lcli/.
+
+cli_win_arm: GOARCH = arm
+cli_win_arm: GOOS = windows
+cli_win_arm: GOENV := GOARCH=$(GOARCH) GOOS=$(GOOS)
+cli_win_arm: DNS3LCLI_RELEASE_FLAG = -X github.com/dns3l/dns3l-core/context.CLIVersion=$(DNS3LCLI_VERSION)
+cli_win_arm: DNS3LD_RELEASE_FLAG = -X github.com/dns3l/dns3l-core/context.ServiceVersion=$(DNS3LD_VERSION)
+cli_win_arm: CGO_ENABLED=0
+cli_win_arm:
+	$(GOENV)  go build -v -ldflags $(GO_LDFLAGS) -o ./$(GOOS)/$(GOARCH)/dns3lcli ./cmd/dns3lcli/.
+
+
+docker: service-docker
+
+docker-simple: service-docker-simple
+
+service-docker:
+	$(DOCKER) build -t dns3ld:$(DNS3LD_VERSION)-dev -f docker/Dockerfile-dns3ld .
+
+service-docker-simple:
+	$(DOCKER) build -t dns3ld-simple:$(DNS3LD_VERSION)-dev -f docker/Dockerfile-dns3ld-simple .
+
+test: unittest comptest
+
+unittest:
+	$(GOENV) go test $(GODIRS) -coverprofile coverage.out
+	$(GOENV) go tool cover -func=coverage.out
+
+comptest:
+	$(GOENV) go run ./test/main.go dbfull
+
+comptest-docker:
+	$(DOCKER) run -v $(shell pwd):/workdir -t golang:1.19-alpine /workdir/docker/run-in-docker golang-alpine
+
+clean: comptest-clean
+
+comptest-clean:
+	rm -r testdata

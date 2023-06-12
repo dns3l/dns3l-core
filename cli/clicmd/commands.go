@@ -33,10 +33,11 @@ IMPLEMENTATION
 var Verbose bool
 
 // JSONOutput ===========================
-//-j, --json      | Results as JSON
+// -j, --json      | Results as JSON
 var JSONOutput bool
 
-/*Force flag
+/*
+Force flag
 // -f, --force     | Change existing DATA
 */
 var Force bool
@@ -92,16 +93,12 @@ var rootCmd = &cobra.Command{
 	},
 }
 
-//Execute this function will be called from main()
+// Execute this function will be called from main()
 // and at the this will call the final command e.g dns_add_Command
-func Execute() {
+func Execute() error {
 	// start with the root element of our commands tree
 	err := rootCmd.Execute()
-	if err != nil && err.Error() != "" {
-		fmt.Fprintf(os.Stderr, "ERROR: Where was an fatal error while executing your dns3l CLI '%s'", err)
-		os.Exit(1)
-	}
-	// fmt.Printf("Exit of commands.Execute()\n")
+	return err
 }
 
 // this function is called from golang before main
@@ -186,6 +183,7 @@ func initViperConfig() {
 	vip.BindEnv("cert.autodns", viperShellPrefix+"_CERT_AUTODNS")   //nolint:errcheck
 	vip.BindEnv("cert.modeFull", viperShellPrefix+"_CERT_MODE")     //nolint:errcheck
 	vip.BindEnv("cert.api", viperShellPrefix+"_CERT_API")           //nolint:errcheck
+	vip.BindEnv("cert.token", viperShellPrefix+"_CERT_TOKEN")       //nolint:errcheck
 
 	// if in the commandline was no --config
 	if Config == "" {
@@ -199,7 +197,7 @@ func initViperConfig() {
 		err := vip.ReadInConfig() // Find and read the config file
 		if err != nil {           // Handle errors reading the config file
 			fmt.Fprintf(os.Stderr, "ERROR: Init fatal error config file:%v \n Using config file: %s\n", err, vip.ConfigFileUsed())
-			// os.Exit(1)
+			os.Exit(2)
 		} else if Verbose {
 			fmt.Fprintf(os.Stderr, "SUCCESS: Init Configuration sucessfully read: %s\n", vip.ConfigFileUsed())
 			// printViperConfigRoot()
@@ -237,7 +235,7 @@ func parseCommandLineForConfig() (string, bool) {
 	return string(""), false
 }
 
-//  -h, --help
+// -h, --help
 func parseCommandLineForHelp() bool {
 	for _, v := range os.Args {
 		if strings.EqualFold(v, "-h") || strings.EqualFold(v, "--help") {

@@ -8,21 +8,28 @@ import (
 	"regexp"
 )
 
-/*CertListType ---------------------------------------------------------------------------------
- cert	ca
- 	List all certificate authorities (CA) utilized by DNS3L
-  Flags
-	-a, --api   	| DNS3L API endpoint [$DNS3L_API]
-	  , --ca        | Claim from a specific ACME CA [$DNS3L_CA]
+/*
+CertListType ---------------------------------------------------------------------------------
 
-  curl -X GET "https://dns3l.example.com/api/v1/ca/4/crt?search=*.acme.com" -H "Accept: application/json"
-	  ?search=*.acme.com
------------------------------------------------------------------------------------------ */
+	 cert	list
+	 	List all certificate authorities (CA) utilized by DNS3L
+	  Flags
+		-a, --api   	| DNS3L API endpoint [$DNS3L_API]
+		  , --ca        | Claim from a specific ACME CA [$DNS3L_CA]
+
+	 200 = OK
+	 404 = not Found
+
+	  curl -X GET "https://dns3l.example.com/api/v1/ca/4/crt?search=*.acme.com" -H "Accept: application/json"
+		  ?search=*.acme.com
+
+-----------------------------------------------------------------------------------------
+*/
 type CertListType struct {
 	Verbose     bool
 	JSONOutput  bool
 	APIEndPoint string
-	AccessToken string
+	CertToken   string
 	CA          string
 	Filter      string
 }
@@ -50,30 +57,34 @@ func (CertList *CertListType) PrintParams() {
 	if CertList.Verbose {
 		fmt.Fprintf(os.Stderr, "INFO: Command Cert List called \n")
 		PrintViperConfigCert()
-		fmt.Fprintf(os.Stderr, "INFO:JsonOut 	     '%t' \n", CertList.JSONOutput)
-		fmt.Fprintf(os.Stderr, "INFO:Api EndPoint    '%s' \n", CertList.APIEndPoint)
-		fmt.Fprintf(os.Stderr, "AccessToken  (4 < len)='%t' \n", (len(CertList.AccessToken) > 4))
+		fmt.Fprintf(os.Stderr, "INFO:JsonOut 	   '%t' \n", CertList.JSONOutput)
+		fmt.Fprintf(os.Stderr, "INFO:Api EndPoint  '%s' \n", CertList.APIEndPoint)
+		fmt.Fprintf(os.Stderr, "Token len >  4     '%t' \n", (len(CertList.CertToken) > 4))
 		// the id of the CA, which can be obtained through the ca command
-		fmt.Fprintf(os.Stderr, "INFO:CA          	 '%s' \n", CertList.CA)
-		fmt.Fprintf(os.Stderr, "INFO:Filter          	 '%s' \n", CertList.Filter)
+		fmt.Fprintf(os.Stderr, "INFO:CA            '%s' \n", CertList.CA)
+		fmt.Fprintf(os.Stderr, "INFO:Filter        '%s' \n", CertList.Filter)
 
 	}
 	//
 }
 
 // CheckParams prints the parameters of the command cert list
-func (CertList *CertListType) CheckParams() bool {
+func (CertList *CertListType) CheckParams() error {
 	// check api
 	// check CA
+	var errText string
 	OK := true
-	if len(CertList.AccessToken) <= 4 {
+	if len(CertList.CertToken) <= 4 {
 		OK = false
-		fmt.Fprintf(os.Stderr, "ERRORE: Cert AccessToken  heuristic check failed \n")
+		errText = "cert Token  heuristic check failed"
 	}
-	return OK
+	if !OK {
+		return NewValueError(11301, fmt.Errorf(errText))
+	}
+	return nil
 }
 
-func (CertList *CertListType) DoCommand() {
+func (CertList *CertListType) DoCommand() error {
 	client := &http.Client{}
 	var listCaUrl string
 	if CertList.APIEndPoint[len(CertList.APIEndPoint)-1] == byte('/') {
@@ -86,45 +97,58 @@ func (CertList *CertListType) DoCommand() {
 	}
 	req, err := http.NewRequest(http.MethodGet, listCaUrl, nil)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "ERROR: Command.certList: url='%v' Error'%v' \n", listCaUrl, err.Error())
+		return NewValueError(11401, fmt.Errorf("cert list: url='%v' Error'%v'", listCaUrl, err.Error()))
 	}
 	qVals := req.URL.Query()
 	qVals.Add("search", CertList.Filter)
 	req.URL.RawQuery = qVals.Encode()
 	req.Header.Set("Accept", "application/json")
 	// Create a Bearer string by appending string access token
-	var bearer = "Bearer " + FinalCertToken(CertList.AccessToken)
+	if CertList.Verbose {
+		fmt.Fprintf(os.Stderr, "INFO: token before bearer construction'%s' \n", CertList.CertToken)
+	}
+	var bearer = "Bearer " + FinalCertToken(CertList.CertToken)
+	if CertList.Verbose {
+		fmt.Fprintf(os.Stderr, "INFO: berar+token '%s' \n", bearer)
+	}
 	// add authorization header to the req
 	req.Header.Add("Authorization", bearer)
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "ERROR: Command.certList: Request failed Error:= '%v' \n", err.Error())
-		return
+		return NewValueError(11402, fmt.Errorf("cert list: Request failed Error:= '%v'", err.Error()))
 	}
 	defer resp.Body.Close()
 	if CertList.Verbose {
-		PrintFullRespond("INFO: Command.certList: Request dump", resp)
+		PrintFullRespond("INFO: Cert List: Request dump", resp)
 	}
+	if resp.StatusCode != 200 {
+		return NewValueError(20000+resp.StatusCode, fmt.Errorf("request failed http statuscode:= '%v'", resp.StatusCode))
+	}
+	//404 = not Found
 	var aCertList []CertInfo
 	if err = json.NewDecoder(resp.Body).Decode(&aCertList); err != nil {
-		fmt.Fprintf(os.Stderr, "ERROR: Command.certList: decoding Error '%v' \n  No Data received ?? \n ", err.Error())
-		return
+		return NewValueError(11403, fmt.Errorf("cert list: decoding Error '%v' No Data received", err.Error()))
 	}
 	var certListJson []byte
 	filteredList := make([]CertInfo, 0, len(aCertList))
-	pattern, compileErr := regexp.Compile(CertList.Filter)
-	if compileErr == nil {
-		for _, aVal := range aCertList {
-			if pattern.MatchString(aVal.SubjectCN) {
-				filteredList = append(filteredList, aVal)
+	if CertList.Filter != "" {
+		pattern, compileErr := regexp.Compile(CertList.Filter)
+		if compileErr == nil {
+			for _, aVal := range aCertList {
+				if pattern.MatchString(aVal.SubjectCN) {
+					filteredList = append(filteredList, aVal)
+				}
 			}
+			certListJson, _ = json.MarshalIndent(filteredList, "\t", "\t")
+			aCertList = filteredList
+		} else {
+			return NewValueError(11405, fmt.Errorf("cert list: can not compile search pattern Error '%v'", compileErr.Error()))
 		}
-		certListJson, _ = json.MarshalIndent(filteredList, "\t", "\t")
-		aCertList = filteredList
 	} else {
-		//Json Output
-		fmt.Fprintf(os.Stderr, "ERROR: Command.certList: can not compile search pattern Error '%v' \n", compileErr.Error())
-		certListJson, _ = json.MarshalIndent(aCertList, "\t", "\t")
+		certListJson, err = json.MarshalIndent(aCertList, "\t", "\t")
+		if err != nil {
+			return NewValueError(1140, fmt.Errorf("cert list: json marshal fails '%v'", err.Error()))
+		}
 	}
 	// Screen oder JSON File output
 	if CertList.JSONOutput {
@@ -132,4 +156,5 @@ func (CertList *CertListType) DoCommand() {
 	} else {
 		fmt.Fprintf(os.Stdout, "%v\n", aCertList)
 	}
+	return nil
 }

@@ -33,7 +33,7 @@ type DNSDelType struct {
 }
 
 // Init inits the parameters of the command dns del
-func (dnsDel *DNSDelType) Init(verbose bool, jsonOutput bool, backend string, id string, secret string, usePWSafe bool, args []string) {
+func (dnsDel *DNSDelType) Init(verbose bool, jsonOutput bool, backend string, id string, secret string, usePWSafe bool, args []string) error {
 	dnsDel.Verbose = verbose
 	dnsDel.JSONOutput = jsonOutput
 	dnsDel.Backend = backend
@@ -42,8 +42,13 @@ func (dnsDel *DNSDelType) Init(verbose bool, jsonOutput bool, backend string, id
 	dnsDel.UsePWSafe = usePWSafe
 	dnsDel.FQDN = args[0]
 	dnsDel.Type = args[1]
+	var err error
 	// viper read the config from the requested DNS provider from the yaml file with the help of viper
-	dnsDel.P = setProvider(backend, id, secret, usePWSafe, verbose)
+	dnsDel.P , err = setProvider(backend, id, secret, usePWSafe, verbose)
+	if err != nil {
+		return err
+	}
+	return nil
 
 }
 
@@ -64,21 +69,25 @@ func (dnsDel *DNSDelType) PrintParams() {
 }
 
 // CheckParams prints the parameters of the command dns del
-func (dnsDel *DNSDelType) CheckParams() bool {
+func (dnsDel *DNSDelType) CheckParams() error {
 	OK := true
+	var errText string
 	if !CheckTypeOfFQDN(dnsDel.FQDN) {
 		OK = false
-		fmt.Fprintf(os.Stderr, "ERROR: Command DNS DEL dnsFQDN  '%s' is not valid \n", dnsDel.FQDN)
+		errText = fmt.Sprintf("Command DNS DEL dnsFQDN  '%s' is not valid \n", dnsDel.FQDN)
 	}
 	if !CheckTypeOfDNSRecord(dnsDel.Type) {
 		OK = false
-		fmt.Fprintf(os.Stderr, "ERROR: Command DNS DEL dnsType  '%s'  is not valid \n", dnsDel.Type)
+		errText = fmt.Sprintf("Command DNS DEL dnsType  '%s'  is not valid \n", dnsDel.Type)
 	}
 	vip := viper.GetViper()
 	host := vip.GetString("dns.providers." + dnsDel.Backend + ".host")
 	if host == "" {
-		fmt.Fprintf(os.Stderr, "ERROR DNS DEl dns provider not in config '%s' \n", "dns.providers."+dnsDel.Backend+".host")
+		errText = fmt.Sprintf("Command DNS DEl dns provider not in config '%s' \n", "dns.providers."+dnsDel.Backend+".host")
 		OK = false
 	}
-	return OK
+	if !OK {
+		return NewValueError(2101, fmt.Errorf(errText))
+	}
+	return nil
 }
