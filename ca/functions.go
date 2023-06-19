@@ -341,14 +341,19 @@ func (h *CAFunctionHandler) DeleteCertificatesAllCA(keyID string) error {
 			return err
 		}
 	*/
-
 	for id := range h.Config.Providers {
 		err := h.DeleteCertificate(id, keyID)
-		if _, is := err.(*cmn.NotFoundError); is {
-			log.WithError(err).WithField("caID", keyID).Debugf("Provider '%s' not managing "+
-				"key '%s', this is normal.", id, keyID)
-		} else {
-			return fmt.Errorf("problems deleting key '%s' in ca '%s', %w", id, keyID, err)
+		// try to cast err to *cmn.NotFoundError
+		// drop the result and put success into is
+		// if err=nil type of err is interface{}
+		// in this case variable "is" is false
+		if err != nil {
+			if _, is := err.(*cmn.NotFoundError); is {
+				log.WithError(err).WithField("caID", keyID).Debugf("Provider '%s' not managing "+
+					"key '%s', this is normal.", id, keyID)
+			} else {
+				return fmt.Errorf("problems deleting key '%s' in ca '%s', %w", id, keyID, err)
+			}
 		}
 	}
 
