@@ -112,6 +112,16 @@ func (p *CAProvider) RenewCertificate(cinfo *types.CertificateRenewInfo) error {
 
 }
 
+func (p *CAProvider) RevokeCertificate(keyID string, crt *types.CACertInfo) error {
+
+	acmeuser := p.userScheme.GetUserFor(crt.Name, crt.IssuedBy)
+
+	log.WithField("keyID", keyID).Debug("Revoking certificate...")
+
+	return p.engine.Revoke(acmeuser, crt.CertPEM)
+
+}
+
 func (p *CAProvider) CleanupAfterDeletion(keyID string, crt *types.CACertInfo) error {
 
 	//TODO check this func to be executed only if actual deletion occurred.

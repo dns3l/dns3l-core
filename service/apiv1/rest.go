@@ -382,6 +382,8 @@ func httpErrorFromErr(w http.ResponseWriter, r *http.Request, e error) {
 		httpError(w, r, http.StatusForbidden, e.Error())
 	case *common.InvalidInputError:
 		httpError(w, r, http.StatusBadRequest, e.Error())
+	case *common.Warning:
+		httpError(w, r, http.StatusOK, e.Error())
 	default:
 		httpError(w, r, 500, e.Error())
 	}

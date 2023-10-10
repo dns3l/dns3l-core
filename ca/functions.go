@@ -103,6 +103,11 @@ func (h *CAFunctionHandler) DeleteCertificate(caID, keyID string) error {
 		return err
 	}
 
+	revokeerr := prov.Prov.RevokeCertificate(keyID, crt)
+	if revokeerr != nil {
+		log.WithError(err).WithField("caID", caID).Errorf("Problems revoking certificate, continuing nevertheless")
+	}
+
 	err = sess.DelCACertByID(keyID, caID)
 	if err != nil {
 		return err
@@ -116,7 +121,7 @@ func (h *CAFunctionHandler) DeleteCertificate(caID, keyID string) error {
 	h.Config.Providers[caID].TotalValid.Invalidate()
 	h.Config.Providers[caID].TotalIssued.Invalidate()
 
-	return nil
+	return revokeerr
 
 }
 
