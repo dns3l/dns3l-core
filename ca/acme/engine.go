@@ -81,6 +81,12 @@ func (e *Engine) TriggerUpdate(acmeuser string, keyname string, domains []string
 	if err != nil {
 		return err
 	}
+	if info != nil {
+		info.Domains, err = sanitizeDomains(info.Domains)
+		if err != nil {
+			return err
+		}
+	}
 
 	noKey := info == nil
 
