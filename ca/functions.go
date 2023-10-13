@@ -103,6 +103,10 @@ func (h *CAFunctionHandler) DeleteCertificate(caID, keyID string) error {
 		return err
 	}
 
+	if crt == nil {
+		return &cmn.NotFoundError{RequestedResource: keyID}
+	}
+
 	revokeerr := prov.Prov.RevokeCertificate(keyID, crt)
 	if revokeerr != nil {
 		log.WithError(err).WithField("caID", caID).Errorf("Problems revoking certificate, continuing nevertheless")
