@@ -81,6 +81,12 @@ func (e *Engine) TriggerUpdate(acmeuser string, keyname string, domains []string
 	if err != nil {
 		return err
 	}
+	if info != nil {
+		info.Domains, err = sanitizeDomains(info.Domains)
+		if err != nil {
+			return err
+		}
+	}
 
 	noKey := info == nil
 
@@ -151,7 +157,7 @@ func (e *Engine) TriggerUpdate(acmeuser string, keyname string, domains []string
 		Email:  e.getACMEEmail(info),
 	}
 
-	err = u.InitUser()
+	err = u.InitUser(false)
 	if err != nil {
 		return err
 	}
@@ -321,5 +327,29 @@ func (e *Engine) DeleteACMEUser(acmeuser string) error {
 	}
 
 	return u.DeleteUser()
+
+}
+
+func (e *Engine) Revoke(acmeuser string, certPEM string) error {
+
+	state, err := e.State.NewSession()
+	if err != nil {
+		return err
+	}
+	defer state.Close()
+
+	var u User = &DefaultUser{
+		Config: e.Conf,
+		State:  state,
+		UID:    acmeuser,
+		Email:  "",
+	}
+
+	err = u.InitUser(true)
+	if err != nil {
+		return err
+	}
+
+	return u.GetClient().Certificate.Revoke([]byte(certPEM))
 
 }

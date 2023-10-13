@@ -177,3 +177,10 @@ func (p *CAProvider) CleanupAfterDeletion(keyID string, crt *types.CACertInfo) e
 	return nil
 
 }
+
+func (p *CAProvider) RevokeCertificate(keyID string, crt *types.CACertInfo) error {
+
+	//Nothing to do with the bogus provider
+	return nil
+
+}

@@ -53,3 +53,12 @@ func (e *DisabledError) Error() string {
 	return fmt.Sprintf("requested resource '%s' is disabled", e.RequestedResource)
 
 }
+
+type Warning struct {
+	SubErr error
+}
+
+func (e *Warning) Error() string {
+	return e.SubErr.Error()
+
+}

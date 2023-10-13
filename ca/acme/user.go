@@ -58,7 +58,7 @@ import (
 // and provides a simpler interface than just the ACME interface.
 // Inherits functions from lego's AcmeUser
 type User interface {
-	InitUser() error
+	InitUser(mustBeRegistered bool) error
 	GetEmail() string
 	GetRegistration() *registration.Resource
 	GetPrivateKey() crypto.PrivateKey
@@ -101,7 +101,7 @@ func (u *DefaultUser) GetClient() *lego.Client {
 // it automatically cares about that any non-existing user is created at Let's Encrypt and
 // keep authentication and identification state. If the user already exists, it does nothing
 // at LE but loads its authentication / identification state.
-func (u *DefaultUser) InitUser() error {
+func (u *DefaultUser) InitUser(mustBeRegistered bool) error {
 
 	log.Debugf("Initializing ACME user '%s'", u.UID)
 
@@ -110,6 +110,10 @@ func (u *DefaultUser) InitUser() error {
 		return err
 	}
 	notRegistered := keyStr == ""
+
+	if notRegistered && mustBeRegistered {
+		return &common.NotFoundError{RequestedResource: u.UID}
+	}
 
 	if notRegistered {
 		log.Debugf("User '%s' is not yet initialized with ACME provider, creating new key "+

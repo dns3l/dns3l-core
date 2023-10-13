@@ -59,3 +59,9 @@ func (p *CAProvider) RenewCertificate(cinfo *types.CertificateRenewInfo) error {
 	return errors.New("RenewCertificate(..) not yet implemented")
 
 }
+
+func (p *CAProvider) RevokeCertificate(keyID string, crt *types.CACertInfo) error {
+
+	return errors.New("RevokeCertificate(..) not yet implemented")
+
+}
