@@ -55,10 +55,11 @@ func (s *V1) ClaimCertificate(caID string, cinfo *apiv1.CertClaimInfo, authz aut
 		DoFunc: func() error {
 			var err error
 			ClaimFunc, err = fu.PrepareClaimCertificate(caID, &types.CertificateClaimInfo{
-				Name:     cinfo.Name,
-				NameRZ:   namerz.Root,
-				Domains:  domains,
-				IssuedBy: authz.GetUserInfo(),
+				Name:        cinfo.Name,
+				NameRZ:      namerz.Root,
+				Domains:     domains,
+				IssuedBy:    authz.GetUserInfo(),
+				TTLSelected: util.DaysToDuration(cinfo.Hints.TTL),
 			})
 			return err
 		},

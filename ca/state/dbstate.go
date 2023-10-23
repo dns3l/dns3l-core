@@ -48,6 +48,7 @@ var caCertsQueryColumns = []string{
 	"valid_start_time",
 	"valid_end_time",
 	"cert",
+	"ttl_seconds",
 }
 
 func (s *CAStateManagerSQLSession) GetCACertByID(keyname string, caid string) (*types.CACertInfo, error) {
@@ -66,13 +67,15 @@ func (s *CAStateManagerSQLSession) GetCACertByID(keyname string, caid string) (*
 	if !rows.Next() {
 		return nil, nil
 	}
+	var ttlsec int
 	err = rows.Scan(&info.Name, &info.PrivKey, &info.ACMEUser, &info.IssuedBy.Name, &info.IssuedBy.Email,
-		&info.ClaimTime, &info.RenewedTime, &info.ValidStartTime, &info.ValidEndTime, &info.CertPEM)
+		&info.ClaimTime, &info.RenewedTime, &info.ValidStartTime, &info.ValidEndTime, &info.CertPEM, &ttlsec)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	} else if err != nil {
 		return nil, err
 	}
+	info.TTLSelected = time.Duration(ttlsec) * time.Second
 
 	info.Domains, err = s.GetDomains(keyname, caid)
 	if err != nil {
@@ -202,8 +205,11 @@ func (s *CAStateManagerSQLSession) ListCACerts(keyName string, caid string, auth
 func (s *CAStateManagerSQLSession) rowToCACertInfo(rows *sql.Rows, info *types.CACertInfo) error {
 	var domainsRevStr string
 	info.IssuedBy = &auth.UserInfo{}
+	var ttlsec int
 	err := rows.Scan(&info.Name, &info.PrivKey, &info.ACMEUser, &info.IssuedBy.Name, &info.IssuedBy.Email,
-		&info.ClaimTime, &info.RenewedTime, &info.ValidStartTime, &info.ValidEndTime, &info.CertPEM, &domainsRevStr)
+		&info.ClaimTime, &info.RenewedTime, &info.ValidStartTime, &info.ValidEndTime, &info.CertPEM, &ttlsec,
+		&domainsRevStr)
+	info.TTLSelected = time.Duration(ttlsec) * time.Second
 	if err != nil {
 		return err
 	}
@@ -289,12 +295,13 @@ func (s *CAStateManagerSQLSession) PutCACertData(keyname string, caid string, in
 		keyname, info.IssuedBy.GetPreferredName())
 	_, err = tx.Exec(`INSERT INTO `+s.prov.Prov.DBName("keycerts")+` (key_name, ca_id,`+
 		`acme_user, issued_by, issued_by_email, priv_key, cert, issuer_cert, claim_time,
-	renewed_time, next_renewal_time, valid_start_time, valid_end_time, renew_count) `+
-		`values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0);`,
+	renewed_time, next_renewal_time, valid_start_time, valid_end_time, renew_count, ttl_seconds) `+
+		`values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?);`,
 		keyname, caid, info.ACMEUser, info.IssuedBy.Name, info.IssuedBy.Email,
 		info.PrivKey, certStr,
 		issuerCertStr, info.ClaimTime.UTC(), info.RenewedTime.UTC(),
-		info.NextRenewalTime.UTC(), info.ValidStartTime.UTC(), info.ValidEndTime.UTC())
+		info.NextRenewalTime.UTC(), info.ValidStartTime.UTC(), info.ValidEndTime.UTC(),
+		info.TTLSelected.Seconds())
 	if err != nil {
 		return fmt.Errorf("problem while storing new key and cert in database: %w", err)
 	}
@@ -463,7 +470,7 @@ func (s *CAStateManagerSQLSession) ListToRenew(atTime time.Time,
 
 func (s *CAStateManagerSQLSession) listTimeExpired(atTime time.Time, limit uint,
 	field string) ([]types.CertificateRenewInfo, error) {
-	q := squirrel.Select("key_name", "ca_id", "valid_end_time", "next_renewal_time").From(
+	q := squirrel.Select("key_name", "ca_id", "valid_end_time", "next_renewal_time", "ttl_seconds").From(
 		s.prov.Prov.DBName("keycerts")).Where(squirrel.Lt{field: atTime})
 
 	rows, err := q.RunWith(s.db).Query()
@@ -477,8 +484,10 @@ func (s *CAStateManagerSQLSession) listTimeExpired(atTime time.Time, limit uint,
 	i := 0
 	for rows.Next() {
 		res = append(res, types.CertificateRenewInfo{})
+		var ttlsec int
 		info := &res[i]
-		err := rows.Scan(&info.CertKey, &info.CAID, &info.ExpiresAt, &info.NextRenewal)
+		err := rows.Scan(&info.CertKey, &info.CAID, &info.ExpiresAt, &info.NextRenewal, &ttlsec)
+		info.TTLSelected = time.Duration(ttlsec) * time.Second
 		if err != nil {
 			return nil, err
 		}

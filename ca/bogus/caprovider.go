@@ -11,6 +11,7 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/dns3l/dns3l-core/ca/common"
 	"github.com/dns3l/dns3l-core/ca/types"
 )
 
@@ -83,9 +84,21 @@ func (p *CAProvider) ClaimCertificate(cinfo *types.CertificateClaimInfo) error {
 		Bytes: x509.MarshalPKCS1PrivateKey(key),
 	})
 
+	ttl, err := common.GetTTL(cinfo, p.C.TTL)
+	if err != nil {
+		return err
+	}
+	if ttl <= 0 {
+		//default if unset in config and hint
+		ttl = 90 * 24 * time.Hour
+		log.Debugf("Using TTL %d for renewal (default).", ttl/24/time.Hour)
+	} else {
+		log.Debugf("Using TTL %d for renewal (custom).", ttl/24/time.Hour)
+	}
+
 	certStruct := x509.Certificate{
 		NotBefore:    time.Now(),
-		NotAfter:     time.Now().Add(90 * 24 * time.Hour),
+		NotAfter:     time.Now().Add(ttl),
 		SerialNumber: big.NewInt(123456),
 		Subject: pkix.Name{
 			CommonName:   cinfo.Name,
@@ -128,11 +141,12 @@ func (p *CAProvider) ClaimCertificate(cinfo *types.CertificateClaimInfo) error {
 		IssuedBy:        cinfo.IssuedBy,
 		ClaimTime:       time.Now(),
 		RenewedTime:     time.Now(),
-		NextRenewalTime: time.Now().Add(90 * 24 * time.Hour),
+		NextRenewalTime: time.Now().Add(ttl),
 		ValidStartTime:  time.Now(),
-		ValidEndTime:    time.Now().Add(90 * 24 * time.Hour),
+		ValidEndTime:    time.Now().Add(ttl),
 		Domains:         cinfo.Domains,
 		CertPEM:         string(certPem),
+		TTLSelected:     cinfo.TTLSelected,
 	} //TODO maybe there is the need to configure specific lifetimes for our tests
 
 	return castate.PutCACertData(cinfo.Name, p.ID, info,
@@ -157,8 +171,13 @@ func (p *CAProvider) RenewCertificate(cinfo *types.CertificateRenewInfo) error {
 		return fmt.Errorf("Key %s does not exist, cannot renew.", cinfo.CertKey)
 	}
 
+	var ttl time.Duration = 90 * 24 * time.Hour
+	if cinfo.TTLSelected > 0 {
+		ttl = cinfo.TTLSelected
+	}
+
 	info.RenewedTime = time.Now()
-	info.NextRenewalTime = time.Now().Add(90 * 24 * time.Hour)
+	info.NextRenewalTime = time.Now().Add(ttl)
 	info.ValidStartTime = time.Now()
 	info.ValidEndTime = time.Now()
 	info.ACMEUser = "bogus"

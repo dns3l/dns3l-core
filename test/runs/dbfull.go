@@ -118,6 +118,27 @@ func (t *TestRunner) RunDBFull() {
 					prefix + ".alt2.foo.bar.sub1." + t.Domain,
 				}))
 
+			testhttp.AssertSuccess("Create key 6 with custom TTL",
+				apiv1.CreateKeyExtended(srv, t.CAID, "alice",
+					prefix+".test3.bar.sub2."+t.Domain, []string{
+						prefix + ".alt.foo.1337.sub2." + t.Domain,
+						prefix + ".alt2.foo.bar.sub1." + t.Domain,
+					}, 82))
+
+			testhttp.AssertStatusCode("Create key 6 with too long TTL", 400,
+				apiv1.CreateKeyExtended(srv, t.CAID, "alice",
+					prefix+".test4.bar.sub2."+t.Domain, []string{
+						prefix + ".alt.foo.1337.sub2." + t.Domain,
+						prefix + ".alt2.foo.bar.sub1." + t.Domain,
+					}, 100))
+
+			testhttp.AssertStatusCode("Create key 6 with too short TTL", 400,
+				apiv1.CreateKeyExtended(srv, t.CAID, "alice",
+					prefix+".test4.bar.sub2."+t.Domain, []string{
+						prefix + ".alt.foo.1337.sub2." + t.Domain,
+						prefix + ".alt2.foo.bar.sub1." + t.Domain,
+					}, 3))
+
 			// testhttp.AssertStatusCode("Create key 6", 500,
 			// 	apiv1.CreateKey(srv, t.CAID, "bob",
 			// 		"test2.bar.sub2."+t.Domain, []string{

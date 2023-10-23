@@ -10,6 +10,11 @@ import (
 )
 
 func CreateKey(srv *service.Service, caid string, user string, name string, sans []string) *httptest.HttpResult {
+	return CreateKeyExtended(srv, caid, user, name, sans, 0)
+}
+
+func CreateKeyExtended(srv *service.Service, caid string, user string, name string, sans []string,
+	ttl uint16) *httptest.HttpResult {
 	return httptest.TestSendRequest(
 		srv.GetRouter(), httptest.CreateNewRequestJSON(
 			"POST",
@@ -23,7 +28,9 @@ func CreateKey(srv *service.Service, caid string, user string, name string, sans
 				AutoDNS: &apiv1.AutoDNSInfo{
 					IPv4: "1.2.3.4",
 				},
-				Hints: nil,
+				Hints: apiv1.CertClaimHints{
+					TTL: ttl,
+				},
 			},
 		))
 }

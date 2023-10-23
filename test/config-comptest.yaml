@@ -58,6 +58,10 @@ ca:
       roots: https://bogus.org/certificates/
       description: "BOGUS certificates"
       logopath: "/images/bogus.png"
+      ttl:
+        min: 5
+        max: 90
+        default: 60
     bogus2:
       type: bogus
       name: Bogus 2 certificates to test the database

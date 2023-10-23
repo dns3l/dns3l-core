@@ -115,7 +115,7 @@ func TestWithLEStaging() {
 	}
 
 	err = e.TriggerUpdate(acmeuser, domainName1, []string{domainName1, domainName2},
-		issuedBy)
+		issuedBy, time.Duration(720)*time.Hour)
 	if err != nil {
 		var norenew *acme.NoRenewalDueError
 		if errors.As(err, &norenew) {
@@ -127,7 +127,7 @@ func TestWithLEStaging() {
 	}
 
 	//this should trigger updating the existing key while getting details from database
-	err = e.TriggerUpdate("", domainName1, nil, nil)
+	err = e.TriggerUpdate("", domainName1, nil, nil, time.Duration(720)*time.Hour)
 	if err != nil {
 		var norenew *acme.NoRenewalDueError
 		if errors.As(err, &norenew) {

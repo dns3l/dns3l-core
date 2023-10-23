@@ -38,7 +38,8 @@ type Engine struct {
 // is authenticated and authorized for the requested domain.
 // It will look up the current state of the user and the key/certificate and ensures that the user and
 // the requested key/cert is present.
-func (e *Engine) TriggerUpdate(acmeuser string, keyname string, domains []string, issuedBy *auth.UserInfo) error {
+func (e *Engine) TriggerUpdate(acmeuser string, keyname string, domains []string,
+	issuedBy *auth.UserInfo, ttl time.Duration) error {
 
 	keyMustExist := acmeuser == "" || issuedBy == nil || len(domains) <= 0
 
@@ -174,10 +175,19 @@ func (e *Engine) TriggerUpdate(acmeuser string, keyname string, domains []string
 		return err
 	}
 
+	var notafter time.Time
+	if ttl > 0 {
+		notafter = time.Time{}
+	} else {
+		log.Debugf("Using custom TTL %s for certificate with key '%s'", ttl.String(), keyname)
+		notafter = time.Now().Add(ttl)
+	}
+
 	request := certificate.ObtainRequest{
 		Domains:    info.Domains,
 		PrivateKey: privKey,
 		Bundle:     false,
+		NotAfter:   notafter,
 	}
 	log.Debugf("Requesting new certificate for key '%s', user '%s' via ACME",
 		keyname, acmeuser)
@@ -199,6 +209,7 @@ func (e *Engine) TriggerUpdate(acmeuser string, keyname string, domains []string
 	info.NextRenewalTime = info.ValidEndTime.Add(
 		time.Duration(-e.Conf.DaysRenewBeforeExpiry*24) * time.Hour)
 	info.RenewedTime = time.Now()
+	info.TTLSelected = ttl
 	info.ClaimTime = info.RenewedTime
 	certStr, err := util.ConvertCertBundleToPEMStr([]*x509.Certificate{cert[0]})
 	if err != nil {

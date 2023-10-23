@@ -18,11 +18,11 @@ type CertificateResources struct {
 }
 
 type CertificateClaimInfo struct {
-	Name     string
-	NameRZ   string
-	Domains  []string
-	IssuedBy *auth.UserInfo
-	//TODO implement hints
+	Name        string
+	NameRZ      string
+	Domains     []string
+	IssuedBy    *auth.UserInfo
+	TTLSelected time.Duration
 }
 
 type CertificateRenewInfo struct {
@@ -30,6 +30,7 @@ type CertificateRenewInfo struct {
 	CertKey     string
 	ExpiresAt   time.Time
 	NextRenewal time.Time
+	TTLSelected time.Duration
 }
 
 func (c *CertificateRenewInfo) String() string {

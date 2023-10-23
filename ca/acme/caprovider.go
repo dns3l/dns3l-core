@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	cacmn "github.com/dns3l/dns3l-core/ca/common"
 	castate "github.com/dns3l/dns3l-core/ca/state"
 	"github.com/dns3l/dns3l-core/ca/types"
 	"github.com/dns3l/dns3l-core/common"
@@ -96,8 +97,13 @@ func (p *CAProvider) ClaimCertificate(cinfo *types.CertificateClaimInfo) error {
 
 	acmeuser := p.userScheme.GetUserFor(cinfo.Name, cinfo.IssuedBy)
 
+	ttl, err := cacmn.GetTTL(cinfo, p.C.TTL)
+	if err != nil {
+		return err
+	}
+
 	return p.engine.TriggerUpdate(acmeuser, cinfo.Name, cinfo.Domains,
-		cinfo.IssuedBy)
+		cinfo.IssuedBy, ttl)
 
 }
 
@@ -108,7 +114,7 @@ func (p *CAProvider) RenewCertificate(cinfo *types.CertificateRenewInfo) error {
 			"Certificate to renew (caID '%s') does not belong to CA provider '%s'", cinfo.CAID, p.ID)}
 	}
 
-	return p.engine.TriggerUpdate("", cinfo.CertKey, nil, nil)
+	return p.engine.TriggerUpdate("", cinfo.CertKey, nil, nil, cinfo.TTLSelected)
 
 }
 

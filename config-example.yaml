@@ -70,6 +70,12 @@ ca: #ACME and none ACME CA
       acmeUserScheme: key # 1 ACME user per dns3ld-managed certificate (default)
       #acmeUserScheme: user # 1 ACME user per API user
       #acmeUserScheme: one # 1 ACME user for all certs managed by this ACME provider
+      ttl: #Certificate lifetime value (unit: days)
+        min: 5 #Minimum ttl value accepted in the hints section of the claim request body
+        max: 90 #Maximum ttl value accepted
+        default: 60 #Default value if no user input was set in the hints section (if omitted, ACME service sets TTL)
+        # ignoreUserTTL: true #set if ttl user input from the hints section in the
+                              #request shall be ignored
     tsec-staging:
       type: acme
       name: T-Sec Trust Center ACME Staging
