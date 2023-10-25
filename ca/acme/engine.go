@@ -176,7 +176,7 @@ func (e *Engine) TriggerUpdate(acmeuser string, keyname string, domains []string
 	}
 
 	var notafter time.Time
-	if ttl > 0 {
+	if ttl <= 0 {
 		notafter = time.Time{}
 	} else {
 		log.Debugf("Using custom TTL %s for certificate with key '%s'", ttl.String(), keyname)
