@@ -66,7 +66,7 @@ ca: #ACME and none ACME CA
       roots: https://letsencrypt.org/certificates/
       description: "Let's Encrypt Official"
       logopath: "/images/logo.png"
-      daysRenewBeforeExpiry: 30
+      relativeLifetimeUntilRenew: 0.7
       acmeUserScheme: key # 1 ACME user per dns3ld-managed certificate (default)
       #acmeUserScheme: user # 1 ACME user per API user
       #acmeUserScheme: one # 1 ACME user for all certs managed by this ACME provider
@@ -91,7 +91,7 @@ ca: #ACME and none ACME CA
       roots: https://www.telesec.de/en/root-program/root-program/overview/
       description: "Telesec Trust Center ACME Staging"
       logopath: "../logo.png"
-      daysRenewBeforeExpiry: 30
+      relativeLifetimeUntilRenew: 0.7
       httpInsecureSkipVerify: true #if TLS cert check shall be disabled
       acmeRegisterWithoutEmail: true # if registration of new ACME users should 
                                      # be done without e-mail address
@@ -106,7 +106,7 @@ ca: #ACME and none ACME CA
       roots: null
       description: "ACME RA for Smallstep CM. Lorem Ipsum."
       logopath: "https://foo.bar/logo.png"
-      daysRenewBeforeExpiry: 30
+      relativeLifetimeUntilRenew: 0.7
     tsec:
       type: legacy
       name: T-Sec Trust Center

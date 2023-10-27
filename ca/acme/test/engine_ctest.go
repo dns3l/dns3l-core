@@ -75,11 +75,11 @@ func TestWithLEStaging() {
 	e := acme.Engine{
 		CAID: caID,
 		Conf: &acme.Config{
-			Name:                  "Test LE Staging",
-			CAType:                "public",
-			API:                   "https://acme-staging-v02.api.letsencrypt.org/directory",
-			Roots:                 "",
-			DaysRenewBeforeExpiry: 100, //this is to test immediale renewal
+			Name:                       "Test LE Staging",
+			CAType:                     "public",
+			API:                        "https://acme-staging-v02.api.letsencrypt.org/directory",
+			Roots:                      "",
+			RelativeLifetimeUntilRenew: 0.7, //this is to test immediale renewal
 		},
 		State: &acme.ACMEStateManagerSQL{
 			CAID: caID,

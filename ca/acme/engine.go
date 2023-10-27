@@ -116,7 +116,9 @@ func (e *Engine) TriggerUpdate(acmeuser string, keyname string, domains []string
 		if !forceUpdate {
 			var renewalDate time.Time
 			if e.RecalcRenewalDate {
-				renewalDate = info.ValidEndTime.AddDate(0, 0, -e.Conf.DaysRenewBeforeExpiry)
+				lifetime := info.ValidEndTime.Sub(info.ValidStartTime)
+				renewalDate = info.ValidStartTime.Add(time.Duration(float64(lifetime) * e.Conf.RelativeLifetimeUntilRenew))
+
 			} else {
 				renewalDate = info.NextRenewalTime
 			}
@@ -206,8 +208,8 @@ func (e *Engine) TriggerUpdate(acmeuser string, keyname string, domains []string
 
 	info.ValidStartTime = cert[0].NotBefore
 	info.ValidEndTime = cert[0].NotAfter
-	info.NextRenewalTime = info.ValidEndTime.Add(
-		time.Duration(-e.Conf.DaysRenewBeforeExpiry*24) * time.Hour)
+	lifetime := info.ValidEndTime.Sub(info.ValidStartTime)
+	info.NextRenewalTime = info.ValidStartTime.Add(time.Duration(float64(lifetime) * e.Conf.RelativeLifetimeUntilRenew))
 	info.RenewedTime = time.Now()
 	info.TTLSelected = ttl
 	info.ClaimTime = info.RenewedTime

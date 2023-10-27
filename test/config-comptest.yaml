@@ -48,7 +48,7 @@ ca:
       roots: https://letsencrypt.org/certificates/
       description: "Let's Encrypt Staging"
       logopath: "/images/logo.png"
-      daysRenewBeforeExpiry: 30
+      relativeLifetimeUntilRenew: 0.7
       acmeRegisterWithoutEmail: true
     bogus:
       type: bogus
@@ -79,7 +79,7 @@ ca:
       roots: https://localhost
       description: "Step CA for the component tests"
       logopath: "/images/logo.png"
-      daysRenewBeforeExpiry: 30
+      relativeLifetimeUntilRenew: 0.7
       acmeRegisterWithoutEmail: true
       httpInsecureSkipVerify: true
       acmeUserScheme: user
