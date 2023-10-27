@@ -16,7 +16,7 @@ type Config struct {
 		HMAC string `yaml:"hmac"`
 	} `yaml:"eab"`
 	Roots                      string           `yaml:"roots"`
-	RelativeLifetimeUntilRenew float64          `yaml:"relativeLifetimeUntilRenew" default:"0,7" validate:"required"`
+	RelativeLifetimeUntilRenew float64          `yaml:"relativeLifetimeUntilRenew" default:"0.7" validate:"required"`
 	Description                string           `yaml:"description"`
 	LogoPath                   string           `yaml:"logopath" validate:"url|remotefile"`
 	HTTPInsecureSkipVerify     bool             `yaml:"httpInsecureSkipVerify"`
