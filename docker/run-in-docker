@@ -7,9 +7,9 @@ set -e
 
 case "$1" in 
   golang-alpine)
-    echo '@testing https://dl-cdn.alpinelinux.org/alpine/edge/testing' >> /etc/apk/repositories
+    echo '@community https://dl-cdn.alpinelinux.org/alpine/edge/community' >> /etc/apk/repositories
     apk update
-    apk add mariadb step-cli step-certificates@testing
+    apk add mariadb step-cli step-certificates@community
     echo "uut:x:1000:1000:uut:/go:/bin/ash" >> /etc/passwd
     su uut -c "cd /workdir; go run test/main.go $2"
     ;;
