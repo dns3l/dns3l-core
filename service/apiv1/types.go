@@ -52,11 +52,15 @@ type AutoDNSInfo struct {
 }
 
 type CertClaimInfo struct {
-	Name            string       `json:"name" validate:"required,fqdn"`
-	Wildcard        bool         `json:"wildcard"`
-	SubjectAltNames []string     `json:"san" validate:"dive,required,fqdn|fqdnWildcard"`
-	AutoDNS         *AutoDNSInfo `json:"autodns"`
-	Hints           interface{}  `json:"hints"`
+	Name            string         `json:"name" validate:"required,fqdn"`
+	Wildcard        bool           `json:"wildcard"`
+	SubjectAltNames []string       `json:"san" validate:"dive,required,fqdn|fqdnWildcard"`
+	AutoDNS         *AutoDNSInfo   `json:"autodns"`
+	Hints           CertClaimHints `json:"hints"`
+}
+
+type CertClaimHints struct {
+	TTL uint16 `json:"ttl"` //Time from now until cert expiry in days
 }
 
 type CertResources struct {

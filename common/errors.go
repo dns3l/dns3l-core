@@ -34,10 +34,14 @@ func (e *UnauthzedError) Error() string {
 }
 
 type InvalidInputError struct {
-	Msg string
+	Msg    string
+	SubErr error
 }
 
 func (e *InvalidInputError) Error() string {
+	if e.SubErr != nil {
+		return e.SubErr.Error()
+	}
 	return e.Msg
 }
 

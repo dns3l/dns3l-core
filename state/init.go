@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS ` + dbProv.DBName("keycerts") + ` (
 	valid_start_time TIMESTAMP,
 	valid_end_time TIMESTAMP,
 	renew_count INTEGER,
+	ttl_seconds INTEGER,
 	PRIMARY KEY (key_name, ca_id)
 	);
 `
@@ -86,6 +87,7 @@ func createWithMySQL(db *sql.DB, dbProv SQLDBProvider, createdb bool) error {
 	valid_start_time TIMESTAMP DEFAULT 0,
 	valid_end_time TIMESTAMP DEFAULT 0,
 	renew_count INTEGER,
+	ttl_seconds INTEGER DEFAULT 0,
 	PRIMARY KEY (key_name, ca_id)
 	);`)
 	if err != nil {

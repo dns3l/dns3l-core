@@ -57,4 +57,5 @@ type CACertInfo struct {
 	ACMEUser        string
 	CertPEM         string
 	RenewCount      uint
+	TTLSelected     time.Duration
 }
