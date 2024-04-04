@@ -102,4 +102,17 @@ func TestRootCert(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, issuerCert, intermediate1)
 
+	we := Engine{
+		Conf: &Config{
+			RootCertUrls: []string{
+				"https://letsencrypt.org/certs/staging/letsencrypt-stg-root-x1.pem",
+				"https://letsencrypt.org/certs/staging/letsencrypt-stg-root-x2.pem",
+			},
+		},
+	}
+
+	issuerCert = intermediate1
+	_, err = we.appendRootCertificate(issuerCert)
+	assert.Error(t, err)
+
 }
