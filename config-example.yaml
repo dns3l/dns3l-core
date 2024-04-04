@@ -83,7 +83,7 @@ ca: #ACME and none ACME CA
                     # they are successively tried, in case the cert is a valid root certificate for the chain it is appended
                     # to the chain. Fails with an error if no cert in the chain is a valid root cert.
         - "https://letsencrypt.org/certs/isrgrootx1.pem"
-				- "https://letsencrypt.org/certs/isrg-root-x2.pem"
+        - "https://letsencrypt.org/certs/isrg-root-x2.pem"
     tsec-staging:
       type: acme
       name: T-Sec Trust Center ACME Staging
