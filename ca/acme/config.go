@@ -25,6 +25,7 @@ type Config struct {
 	DisableWildcards           bool             `yaml:"disableWildcards"`
 	DisableSAN                 bool             `yaml:"disableSAN"`
 	TTL                        common.TTLConfig `yaml:"ttl"`
+	RootCertUrls               []string         `yaml:"rootCertUrls"`
 }
 
 func (c *Config) NewInstance() (ca_types.CAProvider, error) {
