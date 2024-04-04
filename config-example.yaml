@@ -78,6 +78,12 @@ ca: #ACME and none ACME CA
         default: 60 #Default value if no user input was set in the hints section (if omitted, ACME service sets TTL)
         # ignoreUserTTL: true #set if ttl user input from the hints section in the
                               #request shall be ignored
+      rootCertUrls: # List of URLs where dns3ld can retrieve the PEM-encoded root certificate in case the ACME service
+                    # does not provide it in its chain. If empty, chain is provided as-is. If multiple URLs are given,
+                    # they are successively tried, in case the cert is a valid root certificate for the chain it is appended
+                    # to the chain. Fails with an error if no cert in the chain is a valid root cert.
+        - "https://letsencrypt.org/certs/isrgrootx1.pem"
+        - "https://letsencrypt.org/certs/isrg-root-x2.pem"
     tsec-staging:
       type: acme
       name: T-Sec Trust Center ACME Staging

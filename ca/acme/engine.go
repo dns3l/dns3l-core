@@ -1,11 +1,14 @@
 package acme
 
 import (
+	"bytes"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
 	"strings"
 	"time"
 
@@ -219,12 +222,87 @@ func (e *Engine) TriggerUpdate(acmeuser string, keyname string, domains []string
 	}
 	issuerCertStr := string(certificates.IssuerCertificate)
 
+	issuerCertStr, err = e.appendRootCertificate(issuerCertStr)
+	if err != nil {
+		return fmt.Errorf("could not append the root certificate: %w", err)
+	}
+
 	if noKey {
 		return castate.PutCACertData(keyname, e.CAID, info, certStr, issuerCertStr)
 	}
 
 	return castate.UpdateCACertData(keyname, e.CAID, info.RenewedTime, info.NextRenewalTime,
 		info.ValidStartTime, info.ValidEndTime, certStr, issuerCertStr)
+
+}
+
+func (e *Engine) appendRootCertificate(issuerCertStr string) (string, error) {
+	if len(e.Conf.RootCertUrls) <= 0 {
+		return issuerCertStr, nil
+	}
+	var err error
+
+	issuerCert, err := util.ParseCertificatePEM([]byte(issuerCertStr))
+	if err != nil {
+		return "", fmt.Errorf("could not parse issuer certificate: %w", err)
+	}
+	if len(issuerCert) <= 0 {
+		return "", fmt.Errorf("no issuer cert is given, which is required by dns3l")
+	}
+
+	for _, rcu := range e.Conf.RootCertUrls {
+		var rootCert []byte
+		rootCert, err = e.fetchRootCertFromUrlRaw(rcu)
+		if err != nil {
+			log.WithError(err).WithField("url", rcu).Warn("could not retrieve root certificate from URL")
+			continue
+		}
+		pool := x509.NewCertPool()
+		ok := pool.AppendCertsFromPEM(rootCert)
+		if !ok {
+			err = errors.New("could not find any legal PEM data at URL")
+			log.WithError(err).WithField("url", rcu).Warn("could not find any legal PEM data at URL")
+			continue
+		}
+
+		opts := x509.VerifyOptions{
+			Roots:     pool,
+			KeyUsages: []x509.ExtKeyUsage{x509.ExtKeyUsageAny},
+		}
+
+		lastcert := issuerCert[len(issuerCert)-1]
+
+		_, err := lastcert.Verify(opts)
+		if err != nil {
+			log.WithError(err).WithField("url", rcu).Warn("could not verify fetched root certificate matches given chain")
+			continue
+		}
+		log.WithField("url", rcu).Info("Taking root certificate from URL and appending it to chain")
+		return issuerCertStr + "\n" + string(rootCert), nil
+	}
+
+	return "", fmt.Errorf("no URL to fetch root certificate was working properly, giving up: %w", err)
+}
+
+func (e *Engine) fetchRootCertFromUrlRaw(url string) ([]byte, error) {
+
+	log.WithField("url", url).Debug("Fetching root cert from URL...")
+
+	response, err := http.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+
+	buf := new(bytes.Buffer)
+	_, err = io.Copy(buf, response.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	log.WithField("url", url).Debug("Successfully fetched root cert from URL.")
+
+	return buf.Bytes(), nil
 
 }
 
