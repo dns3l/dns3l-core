@@ -26,6 +26,7 @@ type Config struct {
 	DisableSAN                 bool             `yaml:"disableSAN"`
 	TTL                        common.TTLConfig `yaml:"ttl"`
 	RootCertUrls               []string         `yaml:"rootCertUrls"`
+	DisableAIARetrieval        bool             `yaml:"disableAIARetrieval"`
 }
 
 func (c *Config) NewInstance() (ca_types.CAProvider, error) {
