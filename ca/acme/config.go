@@ -27,6 +27,7 @@ type Config struct {
 	TTL                        common.TTLConfig `yaml:"ttl"`
 	RootCertUrls               []string         `yaml:"rootCertUrls"`
 	DisableAIARetrieval        bool             `yaml:"disableAIARetrieval"`
+	DisableRootValidityCheck   bool             `yaml:"disableRootValidityCheck"`
 }
 
 func (c *Config) NewInstance() (ca_types.CAProvider, error) {

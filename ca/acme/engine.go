@@ -276,7 +276,7 @@ func (e *Engine) appendRootCertFromAIA(issuerCertStr string) (string, bool, erro
 	}
 	log.WithField("urls", urls).Debug("Found URLs in Authority Information Access (AIA) field to fetch the root cert.")
 
-	issuerCertStrNew, err := appendRootCertX(issuerCertStr, urls, true)
+	issuerCertStrNew, err := e.appendRootCertX(issuerCertStr, urls, true)
 	if err != nil {
 		return "", false, err
 	}
@@ -285,10 +285,10 @@ func (e *Engine) appendRootCertFromAIA(issuerCertStr string) (string, bool, erro
 }
 
 func (e *Engine) appendRootCertFromConf(issuerCertStr string) (string, error) {
-	return appendRootCertX(issuerCertStr, e.Conf.RootCertUrls, false)
+	return e.appendRootCertX(issuerCertStr, e.Conf.RootCertUrls, false)
 }
 
-func appendRootCertX(issuerCertStr string, rootCertURLs []string, der bool) (string, error) {
+func (e *Engine) appendRootCertX(issuerCertStr string, rootCertURLs []string, der bool) (string, error) {
 	if len(rootCertURLs) <= 0 {
 		return issuerCertStr, nil
 	}
@@ -309,25 +309,27 @@ func appendRootCertX(issuerCertStr string, rootCertURLs []string, der bool) (str
 			log.WithError(err).WithField("url", rcu).Warn("could not retrieve root certificate from URL")
 			continue
 		}
-		pool := x509.NewCertPool()
-		ok := pool.AppendCertsFromPEM(rootCert)
-		if !ok {
-			err = errors.New("could not find any legal PEM data at URL")
-			log.WithError(err).WithField("url", rcu).Warn("could not find any legal PEM data at URL")
-			continue
-		}
+		if !e.Conf.DisableRootValidityCheck {
+			pool := x509.NewCertPool()
+			ok := pool.AppendCertsFromPEM(rootCert)
+			if !ok {
+				err = errors.New("could not find any legal PEM data at URL")
+				log.WithError(err).WithField("url", rcu).Warn("could not find any legal PEM data at URL")
+				continue
+			}
 
-		opts := x509.VerifyOptions{
-			Roots:     pool,
-			KeyUsages: []x509.ExtKeyUsage{x509.ExtKeyUsageAny},
-		}
+			opts := x509.VerifyOptions{
+				Roots:     pool,
+				KeyUsages: []x509.ExtKeyUsage{x509.ExtKeyUsageAny},
+			}
 
-		lastcert := issuerCert[len(issuerCert)-1]
+			lastcert := issuerCert[len(issuerCert)-1]
 
-		_, err := lastcert.Verify(opts)
-		if err != nil {
-			log.WithError(err).WithField("url", rcu).Warn("could not verify fetched root certificate matches given chain")
-			continue
+			_, err = lastcert.Verify(opts)
+			if err != nil {
+				log.WithError(err).WithField("url", rcu).Warn("could not verify fetched root certificate matches given chain")
+				continue
+			}
 		}
 		log.WithField("url", rcu).Info("Taking root certificate from URL and appending it to chain")
 		return issuerCertStr + "\n" + string(rootCert), nil
