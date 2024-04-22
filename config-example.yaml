@@ -86,6 +86,8 @@ ca: #ACME and none ACME CA
         - "https://letsencrypt.org/certs/isrg-root-x2.pem"
       disableAIARetrieval: false  # if the Authority Information Access field shall be ignored and no root cert shall be 
                                   #fetched during claim
+      disableRootValidityCheck: false # if the fetched root certificate (either AIA or rootCertUrls) shall not be checked
+                                      # for validity
     tsec-staging:
       type: acme
       name: T-Sec Trust Center ACME Staging
