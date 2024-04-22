@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
+	"encoding/pem"
 	"errors"
 	"fmt"
 	"io"
@@ -236,8 +237,59 @@ func (e *Engine) TriggerUpdate(acmeuser string, keyname string, domains []string
 
 }
 
+const AIAMaxDepth = 15
+
 func (e *Engine) appendRootCertificate(issuerCertStr string) (string, error) {
-	if len(e.Conf.RootCertUrls) <= 0 {
+
+	if !e.Conf.DisableAIARetrieval {
+		for i := 0; i < AIAMaxDepth; i++ {
+			// recursion if multiple root certs
+			var hasAIA bool
+			var err error
+			issuerCertStr, hasAIA, err = e.appendRootCertFromAIA(issuerCertStr)
+			if err != nil {
+				return "", err
+			}
+			if !hasAIA {
+				break
+			}
+		}
+	}
+
+	return e.appendRootCertFromConf(issuerCertStr)
+}
+
+func (e *Engine) appendRootCertFromAIA(issuerCertStr string) (string, bool, error) {
+
+	issuerCert, err := util.ParseCertificatePEM([]byte(issuerCertStr))
+	if err != nil {
+		return "", false, fmt.Errorf("could not parse issuer certificate: %w", err)
+	}
+	if len(issuerCert) <= 0 {
+		return "", false, fmt.Errorf("no issuer cert is given, which is required by dns3l")
+	}
+
+	lastCert := issuerCert[len(issuerCert)-1]
+	urls := lastCert.IssuingCertificateURL
+	if len(urls) <= 0 {
+		return issuerCertStr, false, nil
+	}
+	log.WithField("urls", urls).Debug("Found URLs in Authority Information Access (AIA) field to fetch the root cert.")
+
+	issuerCertStrNew, err := e.appendRootCertX(issuerCertStr, urls, true)
+	if err != nil {
+		return "", false, err
+	}
+	return issuerCertStrNew, true, nil
+
+}
+
+func (e *Engine) appendRootCertFromConf(issuerCertStr string) (string, error) {
+	return e.appendRootCertX(issuerCertStr, e.Conf.RootCertUrls, false)
+}
+
+func (e *Engine) appendRootCertX(issuerCertStr string, rootCertURLs []string, der bool) (string, error) {
+	if len(rootCertURLs) <= 0 {
 		return issuerCertStr, nil
 	}
 	var err error
@@ -250,32 +302,34 @@ func (e *Engine) appendRootCertificate(issuerCertStr string) (string, error) {
 		return "", fmt.Errorf("no issuer cert is given, which is required by dns3l")
 	}
 
-	for _, rcu := range e.Conf.RootCertUrls {
+	for _, rcu := range rootCertURLs {
 		var rootCert []byte
-		rootCert, err = e.fetchRootCertFromUrlRaw(rcu)
+		rootCert, err = fetchRootCertFromUrlRaw(rcu, der)
 		if err != nil {
 			log.WithError(err).WithField("url", rcu).Warn("could not retrieve root certificate from URL")
 			continue
 		}
-		pool := x509.NewCertPool()
-		ok := pool.AppendCertsFromPEM(rootCert)
-		if !ok {
-			err = errors.New("could not find any legal PEM data at URL")
-			log.WithError(err).WithField("url", rcu).Warn("could not find any legal PEM data at URL")
-			continue
-		}
+		if !e.Conf.DisableRootValidityCheck {
+			pool := x509.NewCertPool()
+			ok := pool.AppendCertsFromPEM(rootCert)
+			if !ok {
+				err = errors.New("could not find any legal PEM data at URL")
+				log.WithError(err).WithField("url", rcu).Warn("could not find any legal PEM data at URL")
+				continue
+			}
 
-		opts := x509.VerifyOptions{
-			Roots:     pool,
-			KeyUsages: []x509.ExtKeyUsage{x509.ExtKeyUsageAny},
-		}
+			opts := x509.VerifyOptions{
+				Roots:     pool,
+				KeyUsages: []x509.ExtKeyUsage{x509.ExtKeyUsageAny},
+			}
 
-		lastcert := issuerCert[len(issuerCert)-1]
+			lastcert := issuerCert[len(issuerCert)-1]
 
-		_, err := lastcert.Verify(opts)
-		if err != nil {
-			log.WithError(err).WithField("url", rcu).Warn("could not verify fetched root certificate matches given chain")
-			continue
+			_, err = lastcert.Verify(opts)
+			if err != nil {
+				log.WithError(err).WithField("url", rcu).Warn("could not verify fetched root certificate matches given chain")
+				continue
+			}
 		}
 		log.WithField("url", rcu).Info("Taking root certificate from URL and appending it to chain")
 		return issuerCertStr + "\n" + string(rootCert), nil
@@ -284,7 +338,7 @@ func (e *Engine) appendRootCertificate(issuerCertStr string) (string, error) {
 	return "", fmt.Errorf("no URL to fetch root certificate was working properly, giving up: %w", err)
 }
 
-func (e *Engine) fetchRootCertFromUrlRaw(url string) ([]byte, error) {
+func fetchRootCertFromUrlRaw(url string, der bool) ([]byte, error) {
 
 	log.WithField("url", url).Debug("Fetching root cert from URL...")
 
@@ -302,7 +356,19 @@ func (e *Engine) fetchRootCertFromUrlRaw(url string) ([]byte, error) {
 
 	log.WithField("url", url).Debug("Successfully fetched root cert from URL.")
 
-	return buf.Bytes(), nil
+	if der {
+		var block pem.Block
+		block.Bytes = buf.Bytes()
+		block.Type = "CERTIFICATE"
+		buf2 := new(bytes.Buffer)
+		err := pem.Encode(buf2, &block)
+		if err != nil {
+			return nil, fmt.Errorf("could not convert DER-encoded certificate to PEM: %w", err)
+		}
+		return buf2.Bytes(), nil
+	} else {
+		return buf.Bytes(), nil
+	}
 
 }
 

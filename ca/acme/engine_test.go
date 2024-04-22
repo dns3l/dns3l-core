@@ -72,6 +72,26 @@ emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
 `
 )
 
+func TestAIA(t *testing.T) {
+
+	e := Engine{
+		Conf: &Config{},
+	}
+
+	issuerCert := intermediate1
+	issuerCert, hasAIA, err := e.appendRootCertFromAIA(issuerCert)
+	assert.NoError(t, err)
+	assert.True(t, hasAIA)
+	assert.Equal(t, issuerCert, intermediate1+"\n"+root)
+
+	issuerCert = root
+	issuerCert, hasAIA, err = e.appendRootCertFromAIA(issuerCert)
+	assert.NoError(t, err)
+	assert.False(t, hasAIA)
+	assert.Equal(t, issuerCert, root)
+
+}
+
 func TestRootCert(t *testing.T) {
 
 	e := Engine{
@@ -84,12 +104,12 @@ func TestRootCert(t *testing.T) {
 	}
 
 	issuerCert := intermediate1
-	issuerCert, err := e.appendRootCertificate(issuerCert)
+	issuerCert, err := e.appendRootCertFromConf(issuerCert)
 	assert.NoError(t, err)
 	assert.Equal(t, issuerCert, intermediate1+"\n"+root)
 
 	issuerCert = ""
-	_, err = e.appendRootCertificate(issuerCert)
+	_, err = e.appendRootCertFromConf(issuerCert)
 	assert.Error(t, err)
 
 	e2 := Engine{
@@ -98,7 +118,7 @@ func TestRootCert(t *testing.T) {
 		},
 	}
 	issuerCert = intermediate1
-	issuerCert, err = e2.appendRootCertificate(issuerCert)
+	issuerCert, err = e2.appendRootCertFromConf(issuerCert)
 	assert.NoError(t, err)
 	assert.Equal(t, issuerCert, intermediate1)
 

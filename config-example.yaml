@@ -84,6 +84,10 @@ ca: #ACME and none ACME CA
                     # to the chain. Fails with an error if no cert in the chain is a valid root cert.
         - "https://letsencrypt.org/certs/isrgrootx1.pem"
         - "https://letsencrypt.org/certs/isrg-root-x2.pem"
+      disableAIARetrieval: false  # if the Authority Information Access field shall be ignored and no root cert shall be 
+                                  #fetched during claim
+      disableRootValidityCheck: false # if the fetched root certificate (either AIA or rootCertUrls) shall not be checked
+                                      # for validity
     tsec-staging:
       type: acme
       name: T-Sec Trust Center ACME Staging
