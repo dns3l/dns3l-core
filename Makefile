@@ -4,22 +4,17 @@
 DOCKER = /usr/bin/docker
 GOARCH = amd64
 DNS3LD_VERSION = $(shell awk -v FS="dns3ld=" 'NF>1{print $$2}' VERSIONS)
-DNS3LCLI_VERSION = $(shell awk -v FS="dns3lcli=" 'NF>1{print $$2}' VERSIONS)
 GO_LDFLAGS := "\
 	-X 'github.com/dns3l/dns3l-core/context.ServiceVersion=$(DNS3LD_VERSION)' \
-	-X 'github.com/dns3l/dns3l-core/context.CLIVersion=$(DNS3LCLI_VERSION)' \
 	-extldflags '-static' -w -s"
 GOENV := GOARCH=$(GOARCH) GOOS=linux
-GODIRS := ./acme/... ./ca/... ./commands/... ./cmd/... ./context/...  ./dns/... ./service/... ./util/... ./cli/... ./renew/...
+GODIRS := ./acme/... ./ca/... ./commands/... ./cmd/... ./context/...  ./dns/... ./service/... ./util/... ./renew/...
 DOCKER_COMPTEST := $(DOCKER) run -v $(shell pwd):/workdir -t golang:1.20-alpine /workdir/docker/run-in-docker golang-alpine
 
-all: service cli
+all: service
 
 service:
 	$(GOENV) go build -v -ldflags $(GO_LDFLAGS) -o dns3ld ./cmd/dns3ld/.
-
-cli:
-	$(GOENV) go build -v -ldflags $(GO_LDFLAGS) -o dns3lcli ./cmd/dns3lcli/.	
 
 docker: service-docker
 
