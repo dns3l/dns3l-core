@@ -1,6 +1,7 @@
 package runs
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/dns3l/dns3l-core/service"
@@ -247,6 +248,25 @@ func (t *TestRunner) RunDBFull() {
 
 		}
 
+		// Testing domain name equals permissions filter
+
+		testhttp.AssertSuccess("Create key 0", apiv1.CreateKey(srv, t.CAID, "bob",
+			"bar.sub2."+t.Domain, []string{}))
+
+		testhttp.AssertSuccess("Create key 0.1", apiv1.CreateKey(srv, t.CAID, "bob",
+			"footest.bar.sub2."+t.Domain, []string{}))
+
+		out := testhttp.AssertSuccess("List all keys visible for Bob",
+			apiv1.ListAllKeys(srv, "alice"))
+		assertContainsKey(out, "bar.sub2."+t.Domain)
+		assertContainsKey(out, "footest.bar.sub2."+t.Domain)
+
+		testhttp.AssertSuccess("Delete key 0",
+			apiv1.DeleteKeyById(srv, t.CAID, "bob", "bar.sub2."+t.Domain))
+
+		testhttp.AssertSuccess("Delete key 0.1",
+			apiv1.DeleteKeyById(srv, t.CAID, "bob", "footest.bar.sub2."+t.Domain))
+
 		testStateClean(srv.Config.DB)
 
 		log.Info("All tests succeeded.")
@@ -280,4 +300,28 @@ func testStateClean(dbProvider *state.SQLDBProviderDefault) {
 			"implemented for '%s'", dbtype)
 	}
 
+}
+
+func assertContainsKey(output, keyname string) {
+	var data []map[string]interface{}
+	err := json.Unmarshal([]byte(output), &data)
+	if err != nil {
+		panic(err)
+	}
+
+	for _, elem := range data {
+
+		name, exists := elem["name"]
+		if !exists {
+			continue
+		}
+		if name != keyname {
+			continue
+		}
+
+		return
+
+	}
+
+	panic(fmt.Sprintf("could not find %s key in output", keyname))
 }

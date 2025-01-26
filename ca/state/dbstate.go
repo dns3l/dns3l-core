@@ -89,15 +89,15 @@ func (s *CAStateManagerSQLSession) GetCACertByID(keyname string, caid string) (*
 
 }
 
-func domainToReverseQueryForm(domain string) string {
+func domainToReverseQueryForm(domain string) (string, string) {
 
 	ndomain := util.StringReverse(util.GetDomainFQDNDot(domain))
 	//ensure backend standard form and then reverse
 
 	if strings.HasSuffix(ndomain, ".") {
-		return ndomain
+		return ndomain, ndomain + "%"
 	}
-	return ndomain + ".%" //thus we cannot break out to equal-suffixed higher-level domains
+	return ndomain, ndomain + ".%" //thus we cannot break out to equal-suffixed higher-level domains
 
 }
 
@@ -124,15 +124,17 @@ func constructListCACertsQuery(dbn func(name string) string, keyName string, cai
 	}
 
 	if queryFilter != "" {
-		filters = append(filters, "dom_name_rev LIKE ?")
-		filterParams = append(filterParams, domainToReverseQueryForm(queryFilter))
+		filters = append(filters, "(dom_name_rev = ? OR dom_name_rev LIKE ?)")
+		filter1, filter2 := domainToReverseQueryForm(queryFilter)
+		filterParams = append(filterParams, filter1, filter2)
 	}
 
 	if len(authzFilter) > 0 {
 		filterAuth := make([]string, 0, 10)
 		for _, elem := range authzFilter {
-			filterAuth = append(filterAuth, "dom_name_rev LIKE ?")
-			filterParams = append(filterParams, domainToReverseQueryForm(elem))
+			filterAuth = append(filterAuth, "dom_name_rev = ? OR dom_name_rev LIKE ?")
+			filter1, filter2 := domainToReverseQueryForm(elem)
+			filterParams = append(filterParams, filter1, filter2)
 		}
 		filters = append(filters, fmt.Sprintf("(%s)", strings.Join(filterAuth, " OR ")))
 	}
