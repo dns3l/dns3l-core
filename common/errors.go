@@ -58,6 +58,19 @@ func (e *DisabledError) Error() string {
 
 }
 
+type AlreadyExistsError struct {
+	RequestedResource string
+}
+
+func (e *AlreadyExistsError) Error() string {
+	if e.RequestedResource == "" {
+		return "requested resource already exists"
+	}
+
+	return fmt.Sprintf("requested resource '%s' already exists", e.RequestedResource)
+
+}
+
 type Warning struct {
 	SubErr error
 }
