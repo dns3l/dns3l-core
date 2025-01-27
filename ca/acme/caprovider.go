@@ -103,7 +103,7 @@ func (p *CAProvider) ClaimCertificate(cinfo *types.CertificateClaimInfo) error {
 	}
 
 	return p.engine.TriggerUpdate(acmeuser, cinfo.Name, cinfo.Domains,
-		cinfo.IssuedBy, ttl)
+		cinfo.IssuedBy, ttl, true)
 
 }
 
@@ -114,7 +114,7 @@ func (p *CAProvider) RenewCertificate(cinfo *types.CertificateRenewInfo) error {
 			"Certificate to renew (caID '%s') does not belong to CA provider '%s'", cinfo.CAID, p.ID)}
 	}
 
-	return p.engine.TriggerUpdate("", cinfo.CertKey, nil, nil, cinfo.TTLSelected)
+	return p.engine.TriggerUpdate("", cinfo.CertKey, nil, nil, cinfo.TTLSelected, false)
 
 }
 

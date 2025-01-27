@@ -43,7 +43,7 @@ type Engine struct {
 // It will look up the current state of the user and the key/certificate and ensures that the user and
 // the requested key/cert is present.
 func (e *Engine) TriggerUpdate(acmeuser string, keyname string, domains []string,
-	issuedBy *auth.UserInfo, ttl time.Duration) error {
+	issuedBy *auth.UserInfo, ttl time.Duration, mustNotExist bool) error {
 
 	keyMustExist := acmeuser == "" || issuedBy == nil || len(domains) <= 0
 
@@ -96,7 +96,9 @@ func (e *Engine) TriggerUpdate(acmeuser string, keyname string, domains []string
 	noKey := info == nil
 
 	if !noKey {
-
+		if mustNotExist {
+			return &cmn.AlreadyExistsError{RequestedResource: keyname}
+		}
 		forceUpdate := false
 		if len(domainsSanitized) > 0 && !util.StringSlicesEqual(info.Domains, domainsSanitized) {
 			log.Warnf("Domains for key %s have changed from %v to %v, must force update.",
