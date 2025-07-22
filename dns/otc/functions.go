@@ -8,10 +8,10 @@ import (
 	"github.com/dns3l/dns3l-core/dns/common"
 	dnscommon "github.com/dns3l/dns3l-core/dns/common"
 	"github.com/dns3l/dns3l-core/util"
-	"github.com/huaweicloud/golangsdk"
-	"github.com/huaweicloud/golangsdk/openstack"
-	"github.com/huaweicloud/golangsdk/openstack/dns/v2/recordsets"
-	"github.com/huaweicloud/golangsdk/openstack/dns/v2/zones"
+	golangsdk "github.com/opentelekomcloud/gophertelekomcloud"
+	"github.com/opentelekomcloud/gophertelekomcloud/openstack"
+	"github.com/opentelekomcloud/gophertelekomcloud/openstack/dns/v2/recordsets"
+	"github.com/opentelekomcloud/gophertelekomcloud/openstack/dns/v2/zones"
 	"github.com/sirupsen/logrus"
 )
 
@@ -24,8 +24,8 @@ func validateTTL(ttl uint32) error {
 	return fmt.Errorf("TTL of %d exceeds limit of 2^31", ttl)
 }
 
-// DNSSetter is an implementation of the dns01.DNSSetter interface which uses Huawei's
-// gophercloud OpenStack client fork to set/remove a DNS01 challenge in the OTC's
+// DNSSetter is an implementation of the dns01.DNSSetter interface which uses the
+// gophertelekomcloud OpenStack client fork to set/remove a DNS01 challenge in the OTC's
 // DNS service.
 
 // SetAcmeChallengeRecord sets a DNS01 challenge TXT record in the OTC's DNS service.

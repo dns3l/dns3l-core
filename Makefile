@@ -21,10 +21,10 @@ docker: service-docker
 docker-simple: service-docker-simple
 
 service-docker:
-	$(DOCKER) build -t dns3ld:$(DNS3LD_VERSION)-dev -f docker/Dockerfile-dns3ld .
+	$(DOCKER) buildx build --network host --build-arg https_proxy=${https_proxy} -t dns3ld:$(DNS3LD_VERSION)-dev -f docker/Dockerfile-dns3ld .
 
 service-docker-simple:
-	$(DOCKER) build -t dns3ld-simple:$(DNS3LD_VERSION)-dev -f docker/Dockerfile-dns3ld-simple .
+	$(DOCKER) buildx build --network host --build-arg https_proxy=${https_proxy} -t dns3ld-simple:$(DNS3LD_VERSION)-dev -f docker/Dockerfile-dns3ld-simple .
 
 test: unittest comptest
 

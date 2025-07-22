@@ -3,8 +3,8 @@ package otc
 import (
 	"errors"
 
-	"github.com/huaweicloud/golangsdk"
-	huaweisdk "github.com/huaweicloud/golangsdk/openstack"
+	golangsdk "github.com/opentelekomcloud/gophertelekomcloud"
+	"github.com/opentelekomcloud/gophertelekomcloud/openstack"
 )
 
 // AKSKOptionsFromEnv configures the OTC/OpenStack client to use AK/SK authentication,
@@ -53,12 +53,12 @@ func (p *DNSProvider) Auth() (*golangsdk.ProviderClient, error) {
 		return nil, err
 	}
 
-	client, err := huaweisdk.NewClient(opts.GetIdentityEndpoint())
+	client, err := openstack.NewClient(opts.GetIdentityEndpoint())
 	if err != nil {
 		return nil, err
 	}
 
-	err = huaweisdk.Authenticate(client, opts)
+	err = openstack.Authenticate(client, opts)
 	if err != nil {
 		return nil, err
 	}
