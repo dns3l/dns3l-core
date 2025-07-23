@@ -33,7 +33,7 @@ func (p *DNSProvider) GetPrecheckConfig() *types.PrecheckConfig {
 func (s *DNSProvider) SetRecordAcmeChallenge(domainName string, challenge string) error {
 
 	log.WithFields(logrus.Fields{"domainName": domainName, "challenge": challenge}).Warnf(
-		"ACTION NEEDED: You must set %s to \"%s\" (sleeping %s time)...", domainName, challenge, s.C.WaitTime)
+		"ACTION NEEDED: You must set _acme-challenge.%s to %s (sleeping %s time)...", domainName, challenge, s.C.WaitTime)
 	time.Sleep(s.C.WaitTime)
 	log.WithFields(logrus.Fields{"domainName": domainName, "challenge": challenge}).Debug(
 		"Sleeping time ended.")
