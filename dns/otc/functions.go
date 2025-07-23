@@ -250,15 +250,11 @@ func setRecordInZone(sc *golangsdk.ServiceClient, zoneID string, domainName stri
 	}
 
 	for _, rr := range allRRs {
-		if rr.Name != domainName {
+		if rr.Name != domainName && rr.Name+"." != domainName {
+			log.Debugf("RR name: '%s', domain name: '%s'", rr.Name, domainName)
 			// somehow the filter in listOpts does not work
 			continue
 		}
-		if rr.Name+"." != domainName {
-			// somehow the filter in listOpts does not work
-			continue
-		}
-		log.Debugf("RR name: '%s', domain name: '%s'", rr.Name, domainName)
 		if strings.HasPrefix(rr.Description, "dns3l") {
 			log.Infof("Deleting previously existing record set by dns3l %s", rr.Name)
 			err := recordsets.Delete(sc, zoneID, rr.ID).ExtractErr()
@@ -302,15 +298,11 @@ func deleteRecordInZone(sc *golangsdk.ServiceClient, zoneID string, domainName s
 	}
 
 	for _, rr := range allRRs {
-		if rr.Name != domainName {
+		if rr.Name != domainName && rr.Name+"." != domainName {
+			log.Debugf("RR name: '%s', domain name: '%s'", rr.Name, domainName)
 			// somehow the filter in listOpts does not work
 			continue
 		}
-		if rr.Name+"." != domainName {
-			// somehow the filter in listOpts does not work
-			continue
-		}
-		log.Debugf("RR name: '%s', domain name: '%s'", rr.Name, domainName)
 		if strings.HasPrefix(rr.Description, "dns3l") {
 			log.Debugf("Deleting record set by dns3l %s", rr.Name)
 			return recordsets.Delete(sc, zoneID, rr.ID).ExtractErr()
