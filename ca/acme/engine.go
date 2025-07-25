@@ -74,13 +74,13 @@ func (e *Engine) TriggerUpdate(acmeuser string, keyname string, domains []string
 	if err != nil {
 		return err
 	}
-	defer state.Close()
+	defer util.LogDefer(log, state.Close())
 
 	castate, err := e.Context.GetStateMgr().NewSession()
 	if err != nil {
 		return err
 	}
-	defer castate.Close()
+	defer util.LogDefer(log, castate.Close())
 
 	info, err := castate.GetCACertByID(keyname, e.CAID)
 	if err != nil {
@@ -348,7 +348,7 @@ func fetchRootCertFromUrlRaw(url string, der bool) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer response.Body.Close()
+	defer util.LogDefer(log, response.Body.Close())
 
 	buf := new(bytes.Buffer)
 	_, err = io.Copy(buf, response.Body)
@@ -476,7 +476,7 @@ func (e *Engine) DeleteACMEUser(acmeuser string) error {
 	if err != nil {
 		return err
 	}
-	defer state.Close()
+	defer util.LogDefer(log, state.Close())
 
 	var u User = &DefaultUser{
 		Config: e.Conf,
@@ -495,7 +495,7 @@ func (e *Engine) Revoke(acmeuser string, certPEM string) error {
 	if err != nil {
 		return err
 	}
-	defer state.Close()
+	defer util.LogDefer(log, state.Close())
 
 	var u User = &DefaultUser{
 		Config: e.Conf,

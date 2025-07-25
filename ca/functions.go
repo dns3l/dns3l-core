@@ -96,7 +96,7 @@ func (h *CAFunctionHandler) DeleteCertificate(caID, keyID string) error {
 	if err != nil {
 		return err
 	}
-	defer sess.Close()
+	defer util.LogDefer(log, sess.Close())
 
 	crt, err := sess.GetCACertByID(keyID, caID)
 	if err != nil {
@@ -173,7 +173,7 @@ func (h *CAFunctionHandler) getResourcesNoUpd(keyID, caID string) (*types.Certif
 	if err != nil {
 		return nil, err
 	}
-	defer sess.Close()
+	defer util.LogDefer(log, sess.Close())
 
 	domains, err := sess.GetDomains(keyID, caID)
 	if err != nil {

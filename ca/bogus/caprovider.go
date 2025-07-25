@@ -13,6 +13,7 @@ import (
 
 	"github.com/dns3l/dns3l-core/ca/common"
 	"github.com/dns3l/dns3l-core/ca/types"
+	"github.com/dns3l/dns3l-core/util"
 )
 
 type CAProvider struct {
@@ -63,7 +64,7 @@ func (p *CAProvider) ClaimCertificate(cinfo *types.CertificateClaimInfo) error {
 	if err != nil {
 		return err
 	}
-	defer castate.Close()
+	defer util.LogDefer(log, castate.Close())
 
 	oldinfo, err := castate.GetCACertByID(cinfo.Name, p.ID)
 	if err != nil {
@@ -71,7 +72,7 @@ func (p *CAProvider) ClaimCertificate(cinfo *types.CertificateClaimInfo) error {
 	}
 
 	if oldinfo != nil {
-		return fmt.Errorf("Key %s already existing, cannot create it again.", cinfo.Name)
+		return fmt.Errorf("key %s already existing, cannot create it again", cinfo.Name)
 	}
 
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
@@ -160,7 +161,7 @@ func (p *CAProvider) RenewCertificate(cinfo *types.CertificateRenewInfo) error {
 	if err != nil {
 		return err
 	}
-	defer castate.Close()
+	defer util.LogDefer(log, castate.Close())
 
 	info, err := castate.GetCACertByID(cinfo.CertKey, p.ID)
 	if err != nil {
@@ -168,7 +169,7 @@ func (p *CAProvider) RenewCertificate(cinfo *types.CertificateRenewInfo) error {
 	}
 
 	if info == nil {
-		return fmt.Errorf("Key %s does not exist, cannot renew.", cinfo.CertKey)
+		return fmt.Errorf("key %s does not exist, cannot renew", cinfo.CertKey)
 	}
 
 	var ttl time.Duration = 90 * 24 * time.Hour
