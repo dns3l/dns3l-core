@@ -332,7 +332,7 @@ func (h *CAFunctionHandler) ListExpiring(expiredAt time.Time, limit uint) ([]typ
 	if err != nil {
 		return nil, err
 	}
-	defer sess.Close()
+	defer util.LogDefer(log, sess.Close)
 
 	return sess.ListExpired(expiredAt, limit)
 
@@ -344,7 +344,7 @@ func (h *CAFunctionHandler) ListCertsToRenew(limit uint) ([]types.CertificateRen
 	if err != nil {
 		return nil, err
 	}
-	defer sess.Close()
+	defer util.LogDefer(log, sess.Close)
 
 	return sess.ListToRenew(time.Now(), limit)
 

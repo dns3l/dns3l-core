@@ -56,7 +56,7 @@ func (c *SQLDBProviderDefault) Init() error {
 
 func (c *SQLDBProviderDefault) checkInited() error {
 	if c.db == nil {
-		return errors.New("Database has not been initialized before first use")
+		return errors.New("database has not been initialized before first use")
 	}
 	return nil
 }

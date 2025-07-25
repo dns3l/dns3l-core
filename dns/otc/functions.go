@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/dns3l/dns3l-core/dns/common"
-	dnscommon "github.com/dns3l/dns3l-core/dns/common"
 	"github.com/dns3l/dns3l-core/util"
 	golangsdk "github.com/opentelekomcloud/gophertelekomcloud"
 	"github.com/opentelekomcloud/gophertelekomcloud/openstack"
@@ -49,7 +48,7 @@ func (s *DNSProvider) SetRecordAcmeChallenge(domainName string, challenge string
 		return err
 	}
 
-	ttl := dnscommon.ValidateSetDefaultTTL(s.C.TTL.Challenge, 300)
+	ttl := common.ValidateSetDefaultTTL(s.C.TTL.Challenge, 300)
 
 	log.WithFields(logrus.Fields{"domainName": dName, "ttl": ttl, "challenge": challenge}).Debug("Setting ACME challenge record.")
 

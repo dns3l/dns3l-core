@@ -30,7 +30,7 @@ func EnsureAcmeChallengeFormat(d string) (string, error) {
 // ACME challenge format.
 func ValidateAcmeChallengeInput(challenge string) error {
 	if challenge == "" {
-		return errors.New("Please provide \"challenge\"")
+		return errors.New("please provide \"challenge\"")
 	}
 	if acmeChallengeRe.MatchString(challenge) {
 		return nil
