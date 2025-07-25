@@ -31,7 +31,7 @@ func (p *DNSProvider) SetRecordAcmeChallenge(domainName string, challenge string
 	if err != nil {
 		return err
 	}
-	defer util.LogDefer(log, c.Logout())
+	defer util.LogDefer(log, c.Logout)
 
 	// _, err = p.getHighestPrefixZoneFor(c, p.c.DNSView, domainName)
 	// if err != nil {
@@ -66,7 +66,7 @@ func (p *DNSProvider) SetRecordA(domainName string, ttl uint32, addr net.IP) err
 	if err != nil {
 		return err
 	}
-	defer util.LogDefer(log, c.Logout())
+	defer util.LogDefer(log, c.Logout)
 
 	// _, err = p.getHighestPrefixZoneFor(c, p.c.DNSView, domainName)
 	// if err != nil {
@@ -100,7 +100,7 @@ func (p *DNSProvider) DeleteRecordAcmeChallenge(domainName string) error {
 	if err != nil {
 		return err
 	}
-	defer util.LogDefer(log, c.Logout())
+	defer util.LogDefer(log, c.Logout)
 
 	sf := map[string]string{
 		"view": p.C.DNSView,
@@ -139,7 +139,7 @@ func (p *DNSProvider) DeleteRecordA(domainName string) error {
 	if err != nil {
 		return err
 	}
-	defer util.LogDefer(log, c.Logout())
+	defer util.LogDefer(log, c.Logout)
 
 	sf := map[string]string{
 		"view": p.C.DNSView,

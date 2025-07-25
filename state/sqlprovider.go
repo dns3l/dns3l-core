@@ -151,7 +151,7 @@ func (c *SQLDBProviderDefault) TestDBConn() error {
 	if err != nil {
 		return fmt.Errorf("problems while obtaining established database connection: %v", err)
 	}
-	defer util.LogDefer(log, db.Close())
+	defer util.LogDefer(log, db.Close)
 	err = db.Ping()
 	if err != nil {
 		return fmt.Errorf("problems while pinging database: %v", err)

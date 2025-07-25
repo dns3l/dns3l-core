@@ -59,7 +59,7 @@ func (s *CAStateManagerSQLSession) GetCACertByID(keyname string, caid string) (*
 	if err != nil {
 		return nil, err
 	}
-	defer util.LogDefer(log, rows.Close())
+	defer util.LogDefer(log, rows.Close)
 
 	info := &types.CACertInfo{}
 	info.IssuedBy = &auth.UserInfo{}
@@ -184,7 +184,7 @@ func (s *CAStateManagerSQLSession) ListCACerts(keyName string, caid string, auth
 		log.Debugf("Failing query was %s", q)
 		return nil, err
 	}
-	defer util.LogDefer(log, rows.Close())
+	defer util.LogDefer(log, rows.Close)
 
 	res := make([]types.CACertInfo, 0, 100)
 
@@ -330,7 +330,7 @@ func (s *CAStateManagerSQLSession) GetDomains(keyName, caid string) ([]string, e
 	}
 
 	defer func() {
-		util.LogDefer(log, rows.Close())
+		util.LogDefer(log, rows.Close)
 	}()
 
 	domains := make([]string, 0, 10)
@@ -398,9 +398,7 @@ func (s *CAStateManagerSQLSession) DeleteCertAllCA(keyID string) error {
 	if err != nil {
 		return err
 	}
-	defer func() {
-		util.LogDefer(log, tx.Rollback())
-	}()
+	defer util.LogDefer(log, tx.Rollback)
 
 	res, err := tx.Exec(`DELETE FROM `+s.prov.Prov.DBName("keycerts")+` WHERE key_name=?;`, keyID)
 	if err != nil {
@@ -478,7 +476,7 @@ func (s *CAStateManagerSQLSession) listTimeExpired(atTime time.Time, limit uint,
 	if err != nil {
 		return nil, err
 	}
-	defer util.LogDefer(log, rows.Close())
+	defer util.LogDefer(log, rows.Close)
 
 	res := make([]types.CertificateRenewInfo, 0, 1024)
 

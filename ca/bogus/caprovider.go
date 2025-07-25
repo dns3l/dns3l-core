@@ -64,7 +64,7 @@ func (p *CAProvider) ClaimCertificate(cinfo *types.CertificateClaimInfo) error {
 	if err != nil {
 		return err
 	}
-	defer util.LogDefer(log, castate.Close())
+	defer util.LogDefer(log, castate.Close)
 
 	oldinfo, err := castate.GetCACertByID(cinfo.Name, p.ID)
 	if err != nil {
@@ -161,7 +161,7 @@ func (p *CAProvider) RenewCertificate(cinfo *types.CertificateRenewInfo) error {
 	if err != nil {
 		return err
 	}
-	defer util.LogDefer(log, castate.Close())
+	defer util.LogDefer(log, castate.Close)
 
 	info, err := castate.GetCACertByID(cinfo.CertKey, p.ID)
 	if err != nil {

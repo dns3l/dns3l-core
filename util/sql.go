@@ -16,6 +16,6 @@ func RollbackIfNotCommitted(log *logrus.Entry, tx *sql.Tx) {
 		return
 	}
 
-	LogDefer(log, err)
+	LogIfError(log, err)
 
 }

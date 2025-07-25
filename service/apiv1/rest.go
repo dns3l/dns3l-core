@@ -53,19 +53,19 @@ func (hdlr *RestV1Handler) NotFound(w http.ResponseWriter, r *http.Request) {
 func (hdlr *RestV1Handler) GetServerInfo(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(200)
-	util.LogDefer(log, json.NewEncoder(w).Encode(hdlr.Service.GetServerInfo()))
+	util.LogIfError(log, json.NewEncoder(w).Encode(hdlr.Service.GetServerInfo()))
 }
 
 func (hdlr *RestV1Handler) GetDNSInfo(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(200)
-	util.LogDefer(log, json.NewEncoder(w).Encode(hdlr.Service.GetDNSHandlers()))
+	util.LogIfError(log, json.NewEncoder(w).Encode(hdlr.Service.GetDNSHandlers()))
 }
 
 func (hdlr *RestV1Handler) GetDNSRootzones(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(200)
-	util.LogDefer(log, json.NewEncoder(w).Encode(hdlr.Service.GetDNSRootzones()))
+	util.LogIfError(log, json.NewEncoder(w).Encode(hdlr.Service.GetDNSRootzones()))
 }
 
 func (hdlr *RestV1Handler) GetCAs(w http.ResponseWriter, r *http.Request) {
@@ -78,7 +78,7 @@ func (hdlr *RestV1Handler) GetCAs(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(200)
-	util.LogDefer(log, json.NewEncoder(w).Encode(cas))
+	util.LogIfError(log, json.NewEncoder(w).Encode(cas))
 }
 
 func (hdlr *RestV1Handler) GetCA(w http.ResponseWriter, r *http.Request) {
@@ -97,7 +97,7 @@ func (hdlr *RestV1Handler) GetCA(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(200)
-	util.LogDefer(log, json.NewEncoder(w).Encode(ca))
+	util.LogIfError(log, json.NewEncoder(w).Encode(ca))
 	success(w, r)
 }
 
@@ -127,7 +127,7 @@ func (hdlr *RestV1Handler) HandleCAAnonCert(w http.ResponseWriter, r *http.Reque
 		}
 
 		w.WriteHeader(200)
-		util.LogDefer(log, json.NewEncoder(w).Encode(certInfos))
+		util.LogIfError(log, json.NewEncoder(w).Encode(certInfos))
 		success(w, r)
 		return
 	case http.MethodPost:
@@ -200,7 +200,7 @@ func (hdlr *RestV1Handler) HandleCANamedCert(w http.ResponseWriter, r *http.Requ
 			return
 		}
 		w.WriteHeader(200)
-		util.LogDefer(log, json.NewEncoder(w).Encode(certInfo))
+		util.LogIfError(log, json.NewEncoder(w).Encode(certInfo))
 		success(w, r)
 		return
 	default:
@@ -294,7 +294,7 @@ func (hdlr *RestV1Handler) HandleNamedCertObj(w http.ResponseWriter, r *http.Req
 		w.Header().Add("Content-Type", ctype)
 		w.WriteHeader(200)
 		_, err = w.Write([]byte(res))
-		util.LogDefer(log, err)
+		util.LogIfError(log, err)
 		success(w, r)
 		return
 	}
@@ -321,7 +321,7 @@ func (hdlr *RestV1Handler) HandleAnonCert(w http.ResponseWriter, r *http.Request
 			return
 		}
 		w.WriteHeader(200)
-		util.LogDefer(log, json.NewEncoder(w).Encode(certInfos))
+		util.LogIfError(log, json.NewEncoder(w).Encode(certInfos))
 		success(w, r)
 		return
 	}
@@ -354,7 +354,7 @@ func (hdlr *RestV1Handler) HandleNamedCert(w http.ResponseWriter, r *http.Reques
 			return
 		}
 		w.WriteHeader(200)
-		util.LogDefer(log, json.NewEncoder(w).Encode(certInfos))
+		util.LogIfError(log, json.NewEncoder(w).Encode(certInfos))
 		success(w, r)
 		return
 	case http.MethodDelete:
@@ -401,7 +401,7 @@ func httpError(w http.ResponseWriter, r *http.Request, sc int, message string) {
 		WithField("message", message).Debug("HTTP request failed.")
 	//TODO parse ForwardedFor
 	w.WriteHeader(sc)
-	util.LogDefer(log, json.NewEncoder(w).Encode(&ErrorMsg{
+	util.LogIfError(log, json.NewEncoder(w).Encode(&ErrorMsg{
 		Code:    sc,
 		Message: message,
 	}))

@@ -8,7 +8,7 @@ GO_LDFLAGS := "\
 	-X 'github.com/dns3l/dns3l-core/context.ServiceVersion=$(DNS3LD_VERSION)' \
 	-extldflags '-static' -w -s"
 GOENV := GOARCH=$(GOARCH) GOOS=linux
-GODIRS := ./acme/... ./ca/... ./commands/... ./cmd/... ./context/...  ./dns/... ./service/... ./util/... ./renew/...
+GODIRS := ./ca/... ./cmd/... ./context/...  ./dns/... ./service/... ./util/... ./renew/...
 DOCKER_COMPTEST := $(DOCKER) run -v $(shell pwd):/workdir -t golang:1.20-alpine /workdir/docker/run-in-docker golang-alpine
 
 all: service

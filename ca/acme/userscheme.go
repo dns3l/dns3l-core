@@ -63,7 +63,7 @@ func (s ACMEUserPerUser) GetUserToDelete(keyname string, userinfo *auth.UserInfo
 	if err != nil {
 		return "", err
 	}
-	defer util.LogDefer(log, st.Close())
+	defer util.LogDefer(log, st.Close)
 
 	acmeuser := "user-" + userinfo.GetPreferredName()
 

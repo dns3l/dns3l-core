@@ -7,9 +7,16 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func LogDefer(l *logrus.Entry, e error) {
-	if e != nil {
-		l.WithError(e).Errorf("Error occurred during deferred action")
+func LogDefer(l *logrus.Entry, f func() error) {
+	err := f()
+	if err != nil {
+		l.WithError(err).Errorf("Error occurred during deferred action")
+	}
+}
+
+func LogIfError(l *logrus.Entry, err error) {
+	if err != nil {
+		l.WithError(err).Errorf("Error occurred")
 	}
 }
 
