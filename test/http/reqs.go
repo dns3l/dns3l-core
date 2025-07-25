@@ -46,7 +46,7 @@ func TestSendRequest(rt *mux.Router, req *http.Request) *HttpResult {
 func AssertSuccess(desc string, result *HttpResult) string {
 
 	if result.ReturnCode < 200 || result.ReturnCode > 299 {
-		panic(fmt.Errorf("Test run %s: HTTP return code was not as expected. Body: %s",
+		panic(fmt.Errorf("test run %s: HTTP return code was not as expected. Body: %s",
 			desc, result.Body.String()))
 	}
 
@@ -57,7 +57,7 @@ func AssertSuccess(desc string, result *HttpResult) string {
 func AssertStatusCode(desc string, expected_rc int, result *HttpResult) string {
 
 	if result.ReturnCode != expected_rc {
-		panic(fmt.Errorf("Test run %s: HTTP return code was not as expected. Expected: %d, Actual: %d, Body: %s",
+		panic(fmt.Errorf("test run %s: HTTP return code was not as expected. Expected: %d, Actual: %d, Body: %s",
 			desc, expected_rc, result.ReturnCode, result.Body.String()))
 	}
 

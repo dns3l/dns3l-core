@@ -8,7 +8,7 @@ GO_LDFLAGS := "\
 	-X 'github.com/dns3l/dns3l-core/context.ServiceVersion=$(DNS3LD_VERSION)' \
 	-extldflags '-static' -w -s"
 GOENV := GOARCH=$(GOARCH) GOOS=linux
-GODIRS := ./acme/... ./ca/... ./commands/... ./cmd/... ./context/...  ./dns/... ./service/... ./util/... ./renew/...
+GODIRS := ./ca/... ./cmd/... ./context/...  ./dns/... ./service/... ./util/... ./renew/...
 DOCKER_COMPTEST := $(DOCKER) run -v $(shell pwd):/workdir -t golang:1.20-alpine /workdir/docker/run-in-docker golang-alpine
 
 all: service
@@ -21,10 +21,10 @@ docker: service-docker
 docker-simple: service-docker-simple
 
 service-docker:
-	$(DOCKER) build -t dns3ld:$(DNS3LD_VERSION)-dev -f docker/Dockerfile-dns3ld .
+	$(DOCKER) buildx build --network host --build-arg https_proxy=${https_proxy} -t dns3ld:$(DNS3LD_VERSION)-dev -f docker/Dockerfile-dns3ld .
 
 service-docker-simple:
-	$(DOCKER) build -t dns3ld-simple:$(DNS3LD_VERSION)-dev -f docker/Dockerfile-dns3ld-simple .
+	$(DOCKER) buildx build --network host --build-arg https_proxy=${https_proxy} -t dns3ld-simple:$(DNS3LD_VERSION)-dev -f docker/Dockerfile-dns3ld-simple .
 
 test: unittest comptest
 

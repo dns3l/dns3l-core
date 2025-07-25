@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/dns3l/dns3l-core/util"
 	"github.com/go-sql-driver/mysql"
 	//_ "github.com/mattn/go-sqlite3"
 )
@@ -55,7 +56,7 @@ func (c *SQLDBProviderDefault) Init() error {
 
 func (c *SQLDBProviderDefault) checkInited() error {
 	if c.db == nil {
-		return errors.New("Database has not been initialized before first use")
+		return errors.New("database has not been initialized before first use")
 	}
 	return nil
 }
@@ -150,7 +151,7 @@ func (c *SQLDBProviderDefault) TestDBConn() error {
 	if err != nil {
 		return fmt.Errorf("problems while obtaining established database connection: %v", err)
 	}
-	defer db.Close()
+	defer util.LogDefer(log, db.Close)
 	err = db.Ping()
 	if err != nil {
 		return fmt.Errorf("problems while pinging database: %v", err)

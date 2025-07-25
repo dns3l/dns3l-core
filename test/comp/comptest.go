@@ -27,9 +27,7 @@ func (c *ComponentTest) Exec(testfn func(*service.Service) error) error {
 	if err != nil {
 		return err
 	}
-	defer func() {
-		util.LogDefer(log, mdb.Stop())
-	}()
+	defer util.LogDefer(log, mdb.Stop)
 
 	conf, err := c.prepareTestConfig(&mdb)
 	if err != nil {
@@ -54,9 +52,7 @@ func (c *ComponentTest) Exec(testfn func(*service.Service) error) error {
 		if err != nil {
 			return err
 		}
-		defer func() {
-			util.LogDefer(log, acme.Stop())
-		}()
+		defer util.LogDefer(log, acme.Stop)
 	}
 
 	srv := service.Service{
@@ -69,9 +65,7 @@ func (c *ComponentTest) Exec(testfn func(*service.Service) error) error {
 	if err != nil {
 		return err
 	}
-	defer func() {
-		util.LogDefer(log, srv.Stop())
-	}()
+	defer util.LogDefer(log, srv.Stop)
 
 	return testfn(&srv)
 

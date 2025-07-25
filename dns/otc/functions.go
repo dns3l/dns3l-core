@@ -6,12 +6,11 @@ import (
 	"strings"
 
 	"github.com/dns3l/dns3l-core/dns/common"
-	dnscommon "github.com/dns3l/dns3l-core/dns/common"
 	"github.com/dns3l/dns3l-core/util"
-	"github.com/huaweicloud/golangsdk"
-	"github.com/huaweicloud/golangsdk/openstack"
-	"github.com/huaweicloud/golangsdk/openstack/dns/v2/recordsets"
-	"github.com/huaweicloud/golangsdk/openstack/dns/v2/zones"
+	golangsdk "github.com/opentelekomcloud/gophertelekomcloud"
+	"github.com/opentelekomcloud/gophertelekomcloud/openstack"
+	"github.com/opentelekomcloud/gophertelekomcloud/openstack/dns/v2/recordsets"
+	"github.com/opentelekomcloud/gophertelekomcloud/openstack/dns/v2/zones"
 	"github.com/sirupsen/logrus"
 )
 
@@ -24,8 +23,8 @@ func validateTTL(ttl uint32) error {
 	return fmt.Errorf("TTL of %d exceeds limit of 2^31", ttl)
 }
 
-// DNSSetter is an implementation of the dns01.DNSSetter interface which uses Huawei's
-// gophercloud OpenStack client fork to set/remove a DNS01 challenge in the OTC's
+// DNSSetter is an implementation of the dns01.DNSSetter interface which uses the
+// gophertelekomcloud OpenStack client fork to set/remove a DNS01 challenge in the OTC's
 // DNS service.
 
 // SetAcmeChallengeRecord sets a DNS01 challenge TXT record in the OTC's DNS service.
@@ -49,7 +48,7 @@ func (s *DNSProvider) SetRecordAcmeChallenge(domainName string, challenge string
 		return err
 	}
 
-	ttl := dnscommon.ValidateSetDefaultTTL(s.C.TTL.Challenge, 300)
+	ttl := common.ValidateSetDefaultTTL(s.C.TTL.Challenge, 300)
 
 	log.WithFields(logrus.Fields{"domainName": dName, "ttl": ttl, "challenge": challenge}).Debug("Setting ACME challenge record.")
 
@@ -250,6 +249,10 @@ func setRecordInZone(sc *golangsdk.ServiceClient, zoneID string, domainName stri
 	}
 
 	for _, rr := range allRRs {
+		if rr.Name != domainName {
+			// somehow the filter in listOpts does not work
+			continue
+		}
 		if strings.HasPrefix(rr.Description, "dns3l") {
 			log.Infof("Deleting previously existing record set by dns3l %s", rr.Name)
 			err := recordsets.Delete(sc, zoneID, rr.ID).ExtractErr()
@@ -293,6 +296,10 @@ func deleteRecordInZone(sc *golangsdk.ServiceClient, zoneID string, domainName s
 	}
 
 	for _, rr := range allRRs {
+		if rr.Name != domainName {
+			// somehow the filter in listOpts does not work
+			continue
+		}
 		if strings.HasPrefix(rr.Description, "dns3l") {
 			log.Debugf("Deleting record set by dns3l %s", rr.Name)
 			return recordsets.Delete(sc, zoneID, rr.ID).ExtractErr()

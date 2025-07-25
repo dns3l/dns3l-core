@@ -5,6 +5,7 @@ import (
 
 	"github.com/dns3l/dns3l-core/ca/types"
 	"github.com/dns3l/dns3l-core/service/auth"
+	"github.com/dns3l/dns3l-core/util"
 )
 
 var schemes = map[string]ACMEUserScheme{
@@ -62,7 +63,7 @@ func (s ACMEUserPerUser) GetUserToDelete(keyname string, userinfo *auth.UserInfo
 	if err != nil {
 		return "", err
 	}
-	defer st.Close()
+	defer util.LogDefer(log, st.Close)
 
 	acmeuser := "user-" + userinfo.GetPreferredName()
 

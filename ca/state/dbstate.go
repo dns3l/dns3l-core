@@ -2,7 +2,6 @@ package state
 
 import (
 	"database/sql"
-	sqlraw "database/sql"
 	"fmt"
 	"strings"
 	"time"
@@ -21,7 +20,7 @@ type CAStateManagerSQL struct {
 
 type CAStateManagerSQLSession struct {
 	prov *CAStateManagerSQL
-	db   *sqlraw.DB
+	db   *sql.DB
 }
 
 func (m *CAStateManagerSQL) NewSession() (types.CAStateManagerSession, error) {
@@ -60,7 +59,7 @@ func (s *CAStateManagerSQLSession) GetCACertByID(keyname string, caid string) (*
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer util.LogDefer(log, rows.Close)
 
 	info := &types.CACertInfo{}
 	info.IssuedBy = &auth.UserInfo{}
@@ -185,7 +184,7 @@ func (s *CAStateManagerSQLSession) ListCACerts(keyName string, caid string, auth
 		log.Debugf("Failing query was %s", q)
 		return nil, err
 	}
-	defer rows.Close()
+	defer util.LogDefer(log, rows.Close)
 
 	res := make([]types.CACertInfo, 0, 100)
 
@@ -331,7 +330,7 @@ func (s *CAStateManagerSQLSession) GetDomains(keyName, caid string) ([]string, e
 	}
 
 	defer func() {
-		util.LogDefer(log, rows.Close())
+		util.LogDefer(log, rows.Close)
 	}()
 
 	domains := make([]string, 0, 10)
@@ -383,7 +382,7 @@ func (s *CAStateManagerSQLSession) GetResources(keyName, caid string, resourceNa
 	WHERE key_name=? AND ca_id=? LIMIT 1;`, keyName, caid)
 
 	err := row.Scan(returnsPtr...)
-	if err == sqlraw.ErrNoRows {
+	if err == sql.ErrNoRows {
 		return nil, &common.NotFoundError{RequestedResource: keyName}
 	}
 	if err != nil {
@@ -399,9 +398,7 @@ func (s *CAStateManagerSQLSession) DeleteCertAllCA(keyID string) error {
 	if err != nil {
 		return err
 	}
-	defer func() {
-		util.LogDefer(log, tx.Rollback())
-	}()
+	defer util.LogDefer(log, tx.Rollback)
 
 	res, err := tx.Exec(`DELETE FROM `+s.prov.Prov.DBName("keycerts")+` WHERE key_name=?;`, keyID)
 	if err != nil {
@@ -473,13 +470,13 @@ func (s *CAStateManagerSQLSession) ListToRenew(atTime time.Time,
 func (s *CAStateManagerSQLSession) listTimeExpired(atTime time.Time, limit uint,
 	field string) ([]types.CertificateRenewInfo, error) {
 	q := squirrel.Select("key_name", "ca_id", "valid_end_time", "next_renewal_time", "ttl_seconds").From(
-		s.prov.Prov.DBName("keycerts")).Where(squirrel.Lt{field: atTime})
+		s.prov.Prov.DBName("keycerts")).Where(squirrel.Lt{field: atTime}).OrderBy("valid_end_time")
 
 	rows, err := q.RunWith(s.db).Query()
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer util.LogDefer(log, rows.Close)
 
 	res := make([]types.CertificateRenewInfo, 0, 1024)
 

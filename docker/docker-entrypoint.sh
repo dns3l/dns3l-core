@@ -69,6 +69,8 @@ export DNS3L_DB_USER=${DNS3L_DB_USER:-"dns3l"}
 export DNS3L_DB_PASS=${DNS3L_DB_PASS:-$(random_token)}
 export DNS3L_DB_HOST=${DNS3L_DB_HOST:-"db"}
 
+export MARIADB_ARGS=${MARIADB_ARGS:-""}
+
 production=false
 if [[ ${ENVIRONMENT,,} == "production" ]]; then
   production=true
@@ -103,12 +105,12 @@ if [ "${production}" == "false" -a -n "${MARIADB_ROOT_PASSWORD}" ]; then
   echo "Bootstrapping DNS3L Database..."
   set +e
   /dckrz -wait tcp://${DNS3L_DB_HOST}:3306 -timeout ${SERVICE_TIMEOUT} -- \
-    echo "quit" | mariadb -uroot -p"${MARIADB_ROOT_PASSWORD}" -h"${DNS3L_DB_HOST}" -D"${DNS3L_DATABASE}"
+    echo "quit" | mariadb -uroot -p"${MARIADB_ROOT_PASSWORD}" -h"${DNS3L_DB_HOST}" -D"${DNS3L_DATABASE}" ${MARIADB_ARGS}
   if [ "$?" != "0" ]; then # create DB
     set -e
     echo "Create ${DNS3L_DATABASE}..."
     /dckrz -wait tcp://${DNS3L_DB_HOST}:3306 -timeout ${SERVICE_TIMEOUT} -- \
-      cat <<EOSQL | mariadb -uroot -p"${MARIADB_ROOT_PASSWORD}" -h"${DNS3L_DB_HOST}"
+      cat <<EOSQL | mariadb -uroot -p"${MARIADB_ROOT_PASSWORD}" -h"${DNS3L_DB_HOST}" ${MARIADB_ARGS}
 CREATE DATABASE IF NOT EXISTS ${DNS3L_DATABASE};
 CREATE USER IF NOT EXISTS ${DNS3L_DB_USER}@'%' IDENTIFIED BY '${DNS3L_DB_PASS}';
 GRANT ALL ON ${DNS3L_DATABASE}.* TO ${DNS3L_DB_USER}@'%';
@@ -118,7 +120,7 @@ EOSQL
     set -e
     echo "Change password ${DNS3L_DB_PASS}..."
     /dckrz -wait tcp://${DNS3L_DB_HOST}:3306 -timeout ${SERVICE_TIMEOUT} -- \
-      cat <<EOSQL | mariadb -uroot -p"${MARIADB_ROOT_PASSWORD}" -h"${DNS3L_DB_HOST}"
+      cat <<EOSQL | mariadb -uroot -p"${MARIADB_ROOT_PASSWORD}" -h"${DNS3L_DB_HOST}" ${MARIADB_ARGS}
 ALTER USER IF EXISTS ${DNS3L_DB_USER}@'%' IDENTIFIED BY '${DNS3L_DB_PASS}';
 FLUSH PRIVILEGES;
 EOSQL

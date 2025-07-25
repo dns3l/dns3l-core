@@ -21,7 +21,6 @@ import (
 	"github.com/dns3l/dns3l-core/util"
 	"github.com/go-acme/lego/v4/certificate"
 	"github.com/go-acme/lego/v4/challenge/dns01"
-	legodns01 "github.com/go-acme/lego/v4/challenge/dns01"
 	"github.com/sirupsen/logrus"
 )
 
@@ -74,13 +73,13 @@ func (e *Engine) TriggerUpdate(acmeuser string, keyname string, domains []string
 	if err != nil {
 		return err
 	}
-	defer state.Close()
+	defer util.LogDefer(log, state.Close)
 
 	castate, err := e.Context.GetStateMgr().NewSession()
 	if err != nil {
 		return err
 	}
-	defer castate.Close()
+	defer util.LogDefer(log, castate.Close)
 
 	info, err := castate.GetCACertByID(keyname, e.CAID)
 	if err != nil {
@@ -348,7 +347,7 @@ func fetchRootCertFromUrlRaw(url string, der bool) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer response.Body.Close()
+	defer util.LogDefer(log, response.Body.Close)
 
 	buf := new(bytes.Buffer)
 	_, err = io.Copy(buf, response.Body)
@@ -410,7 +409,7 @@ func (p *DNSProviderWrapper) Present(domain, token, keyAuth string) error {
 		return err
 	}
 
-	fqdn, challenge := legodns01.GetRecord(domain, keyAuth)
+	fqdn, challenge := dns01.GetRecord(domain, keyAuth)
 	log.Debugf("Presenting challenge '%s', for domain '%s', fqdn '%s'...", challenge, domain, fqdn)
 	err = dnsprovider.SetRecordAcmeChallenge(domain, challenge)
 	if err != nil {
@@ -476,7 +475,7 @@ func (e *Engine) DeleteACMEUser(acmeuser string) error {
 	if err != nil {
 		return err
 	}
-	defer state.Close()
+	defer util.LogDefer(log, state.Close)
 
 	var u User = &DefaultUser{
 		Config: e.Conf,
@@ -495,7 +494,7 @@ func (e *Engine) Revoke(acmeuser string, certPEM string) error {
 	if err != nil {
 		return err
 	}
-	defer state.Close()
+	defer util.LogDefer(log, state.Close)
 
 	var u User = &DefaultUser{
 		Config: e.Conf,

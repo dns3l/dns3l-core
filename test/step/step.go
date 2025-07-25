@@ -230,7 +230,7 @@ func (c *StepCAController) addACMEModule() error {
 	err := addacmecmd.Run()
 	if err != nil {
 		log.Errorf("Add ACME module cmd returned error '%s'", out.String())
-		return fmt.Errorf("Step CA: Add ACME provisioner command exited with non-0: %w", err)
+		return fmt.Errorf("step CA: Add ACME provisioner command exited with non-0: %w", err)
 	} else {
 		log.Debugf("Add ACME module cmd returned '%s'", out.String())
 	}
