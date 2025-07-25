@@ -54,7 +54,7 @@ func ParseCertificatePEM(certificate []byte) ([]*x509.Certificate, error) {
 
 func SplitOffRootCertPEM(certChain string) (string, string, error) {
 
-	var previousCerts bytes.Buffer = bytes.Buffer{}
+	var previousCerts = bytes.Buffer{}
 	var lastCert *pem.Block = nil
 
 	decodeTodo := []byte(certChain)

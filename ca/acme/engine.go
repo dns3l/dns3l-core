@@ -21,7 +21,6 @@ import (
 	"github.com/dns3l/dns3l-core/util"
 	"github.com/go-acme/lego/v4/certificate"
 	"github.com/go-acme/lego/v4/challenge/dns01"
-	legodns01 "github.com/go-acme/lego/v4/challenge/dns01"
 	"github.com/sirupsen/logrus"
 )
 
@@ -410,7 +409,7 @@ func (p *DNSProviderWrapper) Present(domain, token, keyAuth string) error {
 		return err
 	}
 
-	fqdn, challenge := legodns01.GetRecord(domain, keyAuth)
+	fqdn, challenge := dns01.GetRecord(domain, keyAuth)
 	log.Debugf("Presenting challenge '%s', for domain '%s', fqdn '%s'...", challenge, domain, fqdn)
 	err = dnsprovider.SetRecordAcmeChallenge(domain, challenge)
 	if err != nil {

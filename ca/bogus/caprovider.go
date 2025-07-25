@@ -172,7 +172,7 @@ func (p *CAProvider) RenewCertificate(cinfo *types.CertificateRenewInfo) error {
 		return fmt.Errorf("key %s does not exist, cannot renew", cinfo.CertKey)
 	}
 
-	var ttl time.Duration = 90 * 24 * time.Hour
+	var ttl = 90 * 24 * time.Hour
 	if cinfo.TTLSelected > 0 {
 		ttl = cinfo.TTLSelected
 	}

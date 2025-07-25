@@ -213,7 +213,7 @@ func (h *CAFunctionHandler) getResourceNoUpd(keyID, caID, objectType string) (*c
 	if err != nil {
 		return nil, err
 	}
-	defer sess.Close()
+	defer util.LogDefer(log, sess.Close())
 
 	domains, err := sess.GetDomains(keyID, caID)
 	if err != nil {
@@ -308,7 +308,7 @@ func (h *CAFunctionHandler) GetCertificateInfos(caID string, keyID string,
 	if err != nil {
 		return nil, err
 	}
-	defer sess.Close()
+	defer util.LogDefer(log, sess.Close())
 
 	return sess.ListCACerts(keyID, caID, authzedDomains, "", pginfo) //TODO extend api with user query
 
@@ -320,7 +320,7 @@ func (h *CAFunctionHandler) GetCertificateInfo(caID string, keyID string) (*type
 	if err != nil {
 		return nil, err
 	}
-	defer sess.Close()
+	defer util.LogDefer(log, sess.Close())
 
 	return sess.GetCACertByID(keyID, caID)
 

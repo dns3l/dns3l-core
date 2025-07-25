@@ -312,7 +312,7 @@ func (h *OIDCHandler) groupsToDomain(group string) (string, bool) {
 
 	if h.GroupsDomainDelimiter != "" && h.GroupsDomainDelimiter != "." {
 
-		group = strings.Replace(group, h.GroupsDomainDelimiter, ".", -1) //corner cases where we need an underscore are removed
+		group = strings.ReplaceAll(group, h.GroupsDomainDelimiter, ".") //corner cases where we need an underscore are removed
 
 	}
 	return group, true

@@ -116,7 +116,8 @@ func (hdlr *RestV1Handler) HandleCAAnonCert(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	if r.Method == http.MethodGet {
+	switch r.Method {
+	case http.MethodGet:
 		//Get info of all CA's certs
 		certInfos, err := hdlr.Service.GetCertificateInfos(caID, "", authz, nil)
 		//TODO pagination
@@ -129,7 +130,7 @@ func (hdlr *RestV1Handler) HandleCAAnonCert(w http.ResponseWriter, r *http.Reque
 		util.LogDefer(log, json.NewEncoder(w).Encode(certInfos))
 		success(w, r)
 		return
-	} else if r.Method == http.MethodPost {
+	case http.MethodPost:
 		//Claim Cert
 		cinfo := &CertClaimInfo{}
 		err := json.NewDecoder(r.Body).Decode(&cinfo)
@@ -152,7 +153,7 @@ func (hdlr *RestV1Handler) HandleCAAnonCert(w http.ResponseWriter, r *http.Reque
 		w.WriteHeader(200)
 		success(w, r)
 		return
-	} else {
+	default:
 		httpError(w, r, 400, "Wrong method")
 		return
 	}
@@ -179,7 +180,8 @@ func (hdlr *RestV1Handler) HandleCANamedCert(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	if r.Method == http.MethodDelete {
+	switch r.Method {
+	case http.MethodDelete:
 		//Delete cert
 
 		err := hdlr.Service.DeleteCertificate(caID, crtID, authz)
@@ -190,7 +192,7 @@ func (hdlr *RestV1Handler) HandleCANamedCert(w http.ResponseWriter, r *http.Requ
 		w.WriteHeader(200)
 		success(w, r)
 		return
-	} else if r.Method == http.MethodGet {
+	case http.MethodGet:
 		//Get info of specific cert
 		certInfo, err := hdlr.Service.GetCertificateInfo(caID, crtID, authz)
 		if err != nil {
@@ -201,7 +203,7 @@ func (hdlr *RestV1Handler) HandleCANamedCert(w http.ResponseWriter, r *http.Requ
 		util.LogDefer(log, json.NewEncoder(w).Encode(certInfo))
 		success(w, r)
 		return
-	} else {
+	default:
 		httpError(w, r, 400, "Wrong method")
 		return
 	}
@@ -342,7 +344,8 @@ func (hdlr *RestV1Handler) HandleNamedCert(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	if r.Method == http.MethodGet {
+	switch r.Method {
+	case http.MethodGet:
 		//Get info of specific cert
 		certInfos, err := hdlr.Service.GetCertificateInfos("", crtID, authz, nil)
 		//TODO pagination
@@ -354,7 +357,7 @@ func (hdlr *RestV1Handler) HandleNamedCert(w http.ResponseWriter, r *http.Reques
 		util.LogDefer(log, json.NewEncoder(w).Encode(certInfos))
 		success(w, r)
 		return
-	} else if r.Method == http.MethodDelete {
+	case http.MethodDelete:
 		//Delete info of specific cert
 		err := hdlr.Service.DeleteCertificatesAllCA(crtID, authz)
 		if err != nil {
@@ -364,7 +367,7 @@ func (hdlr *RestV1Handler) HandleNamedCert(w http.ResponseWriter, r *http.Reques
 		w.WriteHeader(200)
 		success(w, r)
 		return
-	} else {
+	default:
 		httpError(w, r, 400, "Wrong method")
 		return
 	}
