@@ -52,5 +52,3 @@ require (
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace github.com/opentelekomcloud/gophertelekomcloud v0.9.4 => github.com/lnobach/gophertelekomcloud v0.0.0-20250723175259-5e1dd41e0d01

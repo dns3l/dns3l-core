@@ -473,7 +473,7 @@ func (s *CAStateManagerSQLSession) ListToRenew(atTime time.Time,
 func (s *CAStateManagerSQLSession) listTimeExpired(atTime time.Time, limit uint,
 	field string) ([]types.CertificateRenewInfo, error) {
 	q := squirrel.Select("key_name", "ca_id", "valid_end_time", "next_renewal_time", "ttl_seconds").From(
-		s.prov.Prov.DBName("keycerts")).Where(squirrel.Lt{field: atTime}).OrderBy(field)
+		s.prov.Prov.DBName("keycerts")).Where(squirrel.Lt{field: atTime}).OrderBy("valid_end_time")
 
 	rows, err := q.RunWith(s.db).Query()
 	if err != nil {
