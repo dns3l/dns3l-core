@@ -5,11 +5,6 @@ set -e
 
 umask 0022
 
-# return true if specified directory is empty
-function directory_empty() {
-  [ -n "$(find "${1}"/ -prune -empty)" ]
-}
-
 function random_token() {
   tr -cd '[:alnum:]' </dev/urandom | fold -w32 | head -n1
 }
