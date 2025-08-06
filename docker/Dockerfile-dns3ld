@@ -9,8 +9,8 @@ RUN make service
 
 FROM alpine:3.22
 
-LABEL org.opencontainers.image.title="dns3l smallstep RA"
-LABEL org.opencontainers.image.description="A smallstep ACME RA for DNS3L"
+LABEL org.opencontainers.image.title="dns3ld"
+LABEL org.opencontainers.image.description="DNS3L daemon with API for core functionality"
 LABEL org.opencontainers.image.version=0.0.0
 
 ENV VERSION=0.0.0
@@ -41,41 +41,26 @@ ENV DNS3LPATH=/home/dns3ld
 RUN apk --update upgrade && \
     apk add --no-cache \
         ca-certificates curl less bash busybox-extras \
-        jq tzdata coreutils openssl sudo \
+        jq tzdata coreutils openssl \
         mariadb-client libcap \
-        certbot sudo && \
+        certbot && \
     addgroup -g ${DNS3LGID} dns3ld && \
     adduser -D -u ${DNS3LUID} -G dns3ld dns3ld && \
     chmod g-s ${DNS3LPATH} && \
     chown dns3ld:dns3ld ${DNS3LPATH} && \
-    echo "dns3ld ALL = NOPASSWD: ALL" >/etc/sudoers.d/dns3ld && \
     rm -rf /var/cache/apk/*
-
-# Install OTC DNS certbot hook
-#
-RUN curl -fsSL https://raw.githubusercontent.com/iaean/otc2h/main/otc-certbot-hook.sh > ${DNS3LPATH}/otc-certbot-hook.sh && \
-    chmod a+x ${DNS3LPATH}/otc-certbot-hook.sh && \
-    chown -R dns3ld:dns3ld ${DNS3LPATH}/otc-certbot-hook.sh
-
-# Install Step
-#
-ENV STEP_VERSION=0.21.0
-RUN curl -fsSL https://github.com/smallstep/cli/releases/download/v${STEP_VERSION}/step_${_os}_${STEP_VERSION}_${_arch}${_variant}.tar.gz |\
-      tar -xO -zf- step_${STEP_VERSION}/bin/step > /usr/bin/step && \
-    chmod 0755 /usr/bin/step
 
 # Install dockerize
 #
-ENV DCKRZ_VERSION="0.16.3"
-RUN _arch=${_arch/amd64/x86_64} && curl -fsSL https://github.com/powerman/dockerize/releases/download/v$DCKRZ_VERSION/dockerize-${_os}-${_arch}${_variant} > /dckrz && \
+ENV DCKRZ_VERSION="0.23.1"
+RUN curl -fsSL https://github.com/powerman/dockerize/releases/download/v$DCKRZ_VERSION/dockerize-v${DCKRZ_VERSION}-${_os}-${_arch}${_variant} > /dckrz && \
     chmod a+x /dckrz
 
 COPY --from=build /go/build/dns3ld /app/dns3ld
 COPY docker/docker-entrypoint.sh /entrypoint.sh
-COPY --chown=dns3ld:dns3ld docker/config.docker.yaml $DNS3LPATH/config.yaml.tmpl
+COPY docker/run-dns3ld.sh /run-dns3ld.sh
 COPY --chown=dns3ld:dns3ld docker/certbot.conf $DNS3LPATH/certbot.ini
 
-USER dns3ld
 WORKDIR $DNS3LPATH
 
 EXPOSE 8880
