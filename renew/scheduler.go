@@ -1,16 +1,20 @@
 package renew
 
 import (
+	"errors"
+	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
-	"github.com/go-co-op/gocron"
+	"github.com/go-co-op/gocron/v2"
 )
 
 type Scheduler[T any, PT interface {
 	String() string
 	*T
 }] struct {
-	sched        *gocron.Scheduler
+	sched        gocron.Scheduler
 	JobStartTime string
 	MaxDuration  time.Duration
 	GetJobsFunc  func() ([]T, error)
@@ -19,17 +23,50 @@ type Scheduler[T any, PT interface {
 
 func (s *Scheduler[T, PT]) StartAsync() error {
 
-	s.sched = gocron.NewScheduler(time.UTC)
+	var err error
+	hours, minutes, err := ParseTimeAtDay(s.JobStartTime)
+	if err != nil {
+		return fmt.Errorf("error parsing time at day: %w", err)
+	}
 
-	_, err := s.sched.Every(1).Day().At(s.JobStartTime).Do(s.scheduleRenewJobs)
+	s.sched, err = gocron.NewScheduler(gocron.WithLocation(time.UTC))
+	if err != nil {
+		return fmt.Errorf("error creating new scheduler: %w", err)
+	}
+
+	_, err = s.sched.NewJob(
+		gocron.DailyJob(1,
+			gocron.NewAtTimes(gocron.NewAtTime(hours, minutes, 0)),
+		),
+		gocron.NewTask(s.scheduleRenewJobs),
+	)
 	if err != nil {
 		return err
 	}
 
-	s.sched.StartAsync()
+	s.sched.Start()
 
 	return nil
 
+}
+
+func ParseTimeAtDay(timeStr string) (uint, uint, error) {
+	parts := strings.Split(timeStr, ":")
+	if len(parts) != 2 {
+		return 0, 0, errors.New("invalid time format, expected hh:mm")
+	}
+
+	hours, err := strconv.Atoi(parts[0])
+	if err != nil || hours < 0 || hours > 23 {
+		return 0, 0, errors.New("invalid hour value")
+	}
+
+	minutes, err := strconv.Atoi(parts[1])
+	if err != nil || minutes < 0 || minutes > 59 {
+		return 0, 0, errors.New("invalid minute value")
+	}
+
+	return uint(hours), uint(minutes), nil
 }
 
 func (s *Scheduler[T, PT]) scheduleRenewJobs() {
