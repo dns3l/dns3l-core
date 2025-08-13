@@ -38,16 +38,24 @@ func (p *DNSProvider) SetRecordAcmeChallenge(domainName string, challenge string
 	// 	return err
 	// }
 
-	_, err = c.CreateObject(ibclient.NewRecordTXT(ibclient.RecordTXT{
-		View: p.C.DNSView,
-		Name: util.GetDomainNoFQDNDot(dName),
-		Text: challenge,
-		Ttl:  uint(ttl),
-	}))
+	dNameDot := util.GetDomainNoFQDNDot(dName)
+	_, err = c.CreateObject(
+		ibclient.NewRecordTXT(
+			p.C.DNSView,
+			"",
+			dNameDot,
+			challenge,
+			ttl,
+			true,
+			"Created by dns3l",
+			make(ibclient.EA)),
+	)
 
 	if err != nil {
 		return err
 	}
+
+	log.WithFields(logrus.Fields{"domainName": domainName, "challenge": challenge}).Debug("ACME Challenge Record successfully created.")
 
 	return nil
 
@@ -79,6 +87,8 @@ func (p *DNSProvider) SetRecordA(domainName string, ttl uint32, addr net.IP) err
 		return err
 	}
 
+	log.WithFields(logrus.Fields{"domainName": domainName, "addr": addr}).Debug("A Record successfully created.")
+
 	return nil
 
 }
@@ -107,7 +117,7 @@ func (p *DNSProvider) DeleteRecordAcmeChallenge(domainName string) error {
 		"name": util.GetDomainNoFQDNDot((dName)),
 	}
 
-	recordTXT := ibclient.NewRecordTXT(ibclient.RecordTXT{})
+	recordTXT := ibclient.NewEmptyRecordTXT()
 	var res []ibclient.RecordTXT
 
 	queryParams := ibclient.NewQueryParams(false, sf)
@@ -122,6 +132,8 @@ func (p *DNSProvider) DeleteRecordAcmeChallenge(domainName string) error {
 	}
 
 	_, err = c.DeleteObject(res[0].Ref)
+
+	log.WithFields(logrus.Fields{"domainName": domainName}).Debug("ACME Challenge Record successfully deleted.")
 
 	return err
 }
@@ -161,6 +173,8 @@ func (p *DNSProvider) DeleteRecordA(domainName string) error {
 	}
 
 	_, err = c.DeleteObject(res[0].Ref)
+
+	log.WithFields(logrus.Fields{"domainName": domainName}).Debug("A Record successfully deleted.")
 
 	return err
 

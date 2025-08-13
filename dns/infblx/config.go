@@ -6,7 +6,7 @@ type Config struct {
 	Name      string `yaml:"name" validate:"required"`
 	Host      string `yaml:"host" validate:"required,fqdn"`
 	Port      string `yaml:"port" validate:"required,gt=0,lt=65536"`
-	DNSView   string `ỳaml:"dnsview" validate:"required,alphanumUnderscoreDashDot"`
+	DNSView   string `yaml:"dnsview" validate:"required,alphanumUnderscoreDashDot"`
 	Version   string `yaml:"version" validate:"required,semver"`
 	SSLVerify string `yaml:"sslverify" validate:"alphanumUnderscoreDashDot"`
 	Auth      struct {

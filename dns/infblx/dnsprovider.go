@@ -25,9 +25,12 @@ func (p *DNSProvider) GetInfo() *types.DNSProviderInfo {
 func (p *DNSProvider) getIBConnector() (*ibclient.Connector, error) {
 
 	hostConfig := ibclient.HostConfig{
-		Host:     p.C.Host,
-		Version:  p.C.Version,
-		Port:     p.C.Port,
+		Host:    p.C.Host,
+		Version: p.C.Version,
+		Port:    p.C.Port,
+	}
+
+	authConfig := ibclient.AuthConfig{
 		Username: p.C.Auth.User,
 		Password: p.C.Auth.Pass,
 	}
@@ -39,7 +42,7 @@ func (p *DNSProvider) getIBConnector() (*ibclient.Connector, error) {
 	transportConfig := ibclient.NewTransportConfig(p.C.SSLVerify, 20, 10)
 	requestBuilder := &ibclient.WapiRequestBuilder{}
 	requestor := &ibclient.WapiHttpRequestor{}
-	return ibclient.NewConnector(hostConfig, transportConfig, requestBuilder, requestor)
+	return ibclient.NewConnector(hostConfig, authConfig, transportConfig, requestBuilder, requestor)
 
 }
 
