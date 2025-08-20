@@ -17,7 +17,6 @@ type CAStateManagerSession interface {
 	ListCACerts(keyName string, caid string, authzedDomains []string, queryFilter string,
 		pginfo *util.PaginationInfo) ([]CACertInfo, error)
 
-	//returns privKey, expiryTime, error
 	GetCACertByID(keyID string, caID string) (*CACertInfo, error)
 
 	DelCACertByID(keyID string, caID string) error

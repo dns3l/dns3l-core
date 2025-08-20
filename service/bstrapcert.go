@@ -35,7 +35,7 @@ func DoSafeBootstrapCerts(s *Service) error {
 		cinfo, err := s.Config.CA.Functions.GetCertificateInfo(cert.CA, cert.Name)
 
 		nferr := &common.NotFoundError{}
-		if err == nil {
+		if err == nil && cinfo != nil {
 			log.WithFields(logrus.Fields{"certName": cert.Name, "claimTime": cinfo.ClaimTime}).Debug(
 				"Bootstrap cert already present, skipping...")
 			continue
