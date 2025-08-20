@@ -7,6 +7,7 @@ import (
 	"github.com/dns3l/dns3l-core/ca/types"
 	"github.com/dns3l/dns3l-core/common"
 	authtypes "github.com/dns3l/dns3l-core/service/auth/types"
+	"github.com/dns3l/dns3l-core/util"
 	"github.com/sirupsen/logrus"
 )
 
@@ -30,20 +31,27 @@ func DoSafeBootstrapCerts(s *Service) error {
 	}
 
 	for _, cert := range c.Certs {
-		domains := append([]string{cert.Name}, cert.OtherDomains...)
 
-		cinfo, err := s.Config.CA.Functions.GetCertificateInfo(cert.CA, cert.Name)
+		name := util.GetDomainFQDNDot(cert.Name)
+		altnames := make([]string, len(cert.OtherDomains))
+		for i := range cert.OtherDomains {
+			altnames[i] = util.GetDomainFQDNDot(cert.OtherDomains[i])
+		}
+
+		domains := append([]string{name}, cert.OtherDomains...)
+
+		cinfo, err := s.Config.CA.Functions.GetCertificateInfo(cert.CA, name)
 
 		nferr := &common.NotFoundError{}
 		if err == nil && cinfo != nil {
-			log.WithFields(logrus.Fields{"certName": cert.Name, "claimTime": cinfo.ClaimTime}).Debug(
+			log.WithFields(logrus.Fields{"certName": name, "claimTime": cinfo.ClaimTime}).Debug(
 				"Bootstrap cert already present, skipping...")
 			continue
 		} else if !errors.As(err, &nferr) {
 			if cert.Force {
-				return fmt.Errorf("could not check if bootstrap cert is already present (cert %s): %w", cert.Name, err)
+				return fmt.Errorf("could not check if bootstrap cert is already present (cert %s): %w", name, err)
 			} else {
-				log.WithField("certName", cert.Name).WithError(err).Errorf("Could not check if bootstrap cert is already present.")
+				log.WithField("certName", name).WithError(err).Errorf("Could not check if bootstrap cert is already present.")
 				continue
 			}
 		}

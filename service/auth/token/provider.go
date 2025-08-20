@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/dns3l/dns3l-core/service/auth/types"
+	"github.com/dns3l/dns3l-core/util"
 )
 
 const (
@@ -47,13 +48,19 @@ func (c *TokenAuthProvider) AuthnGetAuthzInfo(r *http.Request) (types.Authorizat
 		}
 		if tokencfg.Sha256 == tokenHashed ||
 			tokencfg.Sha256 == "" && tokencfg.Plain == token {
+
+			domainsAllowed := make([]string, len(tokencfg.DomainsAllowed))
+			for i := range tokencfg.DomainsAllowed {
+				domainsAllowed[i] = util.GetDomainFQDNDot(tokencfg.DomainsAllowed[i])
+			}
+
 			authzinfo := &types.DefaultAuthorizationInfo{
 				UserInfo: &types.UserInfo{
 					Name: tokencfg.Name,
 				},
 				WriteAllowed:   tokencfg.Write,
 				ReadAllowed:    true,
-				DomainsAllowed: tokencfg.DomainsAllowed,
+				DomainsAllowed: domainsAllowed,
 			}
 			log.WithField("authzinfo", authzinfo.String()).Debug("Token request authorization determined")
 			return authzinfo, nil
