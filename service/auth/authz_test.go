@@ -10,7 +10,7 @@ import (
 func TestAuthRW(t *testing.T) {
 
 	authzinfo1 := &types.DefaultAuthorizationInfo{
-		UserInfo: &types.UserInfo{"doe", "john@doe.email"},
+		UserInfo: &types.UserInfo{Name: "doe", Email: "john@doe.email"},
 		DomainsAllowed: []string{
 			"test.doe.email.",
 			"test.doe.com.",
@@ -39,7 +39,7 @@ func TestAuthRW(t *testing.T) {
 func TestAuthR(t *testing.T) {
 
 	authzinfo1 := &types.DefaultAuthorizationInfo{
-		UserInfo: &types.UserInfo{"Kilgore Trout", "kilgore@trout.email"},
+		UserInfo: &types.UserInfo{Name: "Kilgore Trout", Email: "kilgore@trout.email"},
 		DomainsAllowed: []string{
 			"test.doe.email.",
 			"test.doe.com.",
@@ -65,7 +65,7 @@ func TestAuthR(t *testing.T) {
 func TestAuthNothing(t *testing.T) {
 
 	authzinfo1 := &types.DefaultAuthorizationInfo{
-		UserInfo: &types.UserInfo{"ktrout", "kilgore@trout.email"},
+		UserInfo: &types.UserInfo{Name: "ktrout", Email: "kilgore@trout.email"},
 		DomainsAllowed: []string{
 			"test.doe.email.",
 			"test.doe.com.",
@@ -89,7 +89,7 @@ func TestAuthNothing(t *testing.T) {
 func TestAuthPub(t *testing.T) {
 
 	authzinfo1 := &types.DefaultAuthorizationInfo{
-		UserInfo: &types.UserInfo{"ktrout", "kilgore@trout.email"},
+		UserInfo: &types.UserInfo{Name: "ktrout", Email: "kilgore@trout.email"},
 		DomainsAllowed: []string{
 			"test.doe.email.",
 			"test.doe.com.",
@@ -115,7 +115,7 @@ func TestAuthPub(t *testing.T) {
 func TestAuthDisabled(t *testing.T) {
 
 	authzinfo1 := &types.DefaultAuthorizationInfo{
-		UserInfo: &types.UserInfo{"ktrout", "kilgore@trout.email"},
+		UserInfo: &types.UserInfo{Name: "ktrout", Email: "kilgore@trout.email"},
 		DomainsAllowed: []string{
 			"test.doe.email.",
 			"test.doe.com.",

@@ -155,7 +155,7 @@ func (h *OIDCHandler) GetAnonymousInfo() *types.DefaultAuthorizationInfo {
 		AuthorizationDisabled: false,
 		ReadAllowed:           false,
 		WriteAllowed:          false,
-		UserInfo:              &types.UserInfo{"anonymous", h.AuthnDisabledEmail},
+		UserInfo:              &types.UserInfo{Name: "anonymous", Email: h.AuthnDisabledEmail},
 		ReadAnyPublicAllowed:  false,
 	}
 
