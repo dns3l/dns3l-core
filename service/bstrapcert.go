@@ -56,20 +56,20 @@ func DoSafeBootstrapCerts(s *Service) error {
 			}
 		}
 
-		log.WithField("certName", cert.Name).Info("Claiming bootstrap certificate.")
+		log.WithField("certName", name).Info("Claiming bootstrap certificate.")
 
-		namerz, err := s.Config.RootZones.GetLowestRZForDomain(cert.Name)
+		namerz, err := s.Config.RootZones.GetLowestRZForDomain(name)
 		if err != nil {
 			if cert.Force {
-				return fmt.Errorf("could not get root zone for domain (cert %s): %w", cert.Name, err)
+				return fmt.Errorf("could not get root zone for domain (cert %s): %w", name, err)
 			} else {
-				log.WithField("certName", cert.Name).WithError(err).Errorf("Could not get root zone for domain.")
+				log.WithField("certName", name).WithError(err).Errorf("Could not get root zone for domain.")
 				continue
 			}
 		}
 
 		claim, err := s.Config.CA.Functions.PrepareClaimCertificate(cert.CA, &types.CertificateClaimInfo{
-			Name:    cert.Name,
+			Name:    name,
 			NameRZ:  namerz.Root,
 			Domains: domains,
 			IssuedBy: &authtypes.UserInfo{
@@ -80,9 +80,9 @@ func DoSafeBootstrapCerts(s *Service) error {
 		})
 		if err != nil {
 			if cert.Force {
-				return fmt.Errorf("could not prepare claiming certificate (cert %s): %w", cert.Name, err)
+				return fmt.Errorf("could not prepare claiming certificate (cert %s): %w", name, err)
 			} else {
-				log.WithField("certName", cert.Name).WithError(err).Errorf("Could not prepare claiming certificate.")
+				log.WithField("certName", name).WithError(err).Errorf("Could not prepare claiming certificate.")
 				continue
 			}
 		}
@@ -90,9 +90,9 @@ func DoSafeBootstrapCerts(s *Service) error {
 		err = claim()
 		if err != nil {
 			if cert.Force {
-				return fmt.Errorf("could not claim certificate (cert %s): %w", cert.Name, err)
+				return fmt.Errorf("could not claim certificate (cert %s): %w", name, err)
 			} else {
-				log.WithField("certName", cert.Name).WithError(err).Errorf("Could not claim certificate.")
+				log.WithField("certName", name).WithError(err).Errorf("Could not claim certificate.")
 			}
 		}
 	}
