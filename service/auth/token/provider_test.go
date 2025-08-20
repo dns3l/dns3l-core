@@ -63,14 +63,14 @@ func TestTokenAuthProvider(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, authz)
 	assert.Equal(t, "Rick", authz.GetUserInfo().Name)
-	assert.NoError(t, authz.ChkAuthWriteDomains([]string{"bar.rick.de"}))
+	assert.NoError(t, authz.ChkAuthWriteDomains([]string{"bar.rick.de."}))
 
 	authz, err = prov.AuthnGetAuthzInfo(makereq(jerrytoken))
 	assert.NoError(t, err)
 	assert.NotNil(t, authz)
 	assert.Equal(t, "Jerry", authz.GetUserInfo().Name)
-	assert.NoError(t, authz.ChkAuthReadDomains([]string{"bar.rick.de"}))
-	assert.Error(t, authz.ChkAuthWriteDomains([]string{"bar.rick.de"}))
+	assert.NoError(t, authz.ChkAuthReadDomains([]string{"bar.rick.de."}))
+	assert.Error(t, authz.ChkAuthWriteDomains([]string{"bar.rick.de."}))
 
 	authz, err = prov.AuthnGetAuthzInfo(makereq(wrongtoken))
 	assert.NoError(t, err)
