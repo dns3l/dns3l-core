@@ -47,7 +47,7 @@ func DoSafeBootstrapCerts(s *Service) error {
 			log.WithFields(logrus.Fields{"certName": name, "claimTime": cinfo.ClaimTime}).Debug(
 				"Bootstrap cert already present, skipping...")
 			continue
-		} else if !errors.As(err, &nferr) {
+		} else if err != nil && !errors.As(err, &nferr) {
 			if cert.Force {
 				return fmt.Errorf("could not check if bootstrap cert is already present (cert %s): %w", name, err)
 			} else {
