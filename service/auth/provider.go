@@ -24,14 +24,14 @@ func (c *AuthConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	// has been put at the top level of the "auth" element in the past - to
 	// maintain config backwards compatibility
 	var t struct {
-		tokens token.TokenAuthConfig `yaml:"tokens"`
+		Tokens token.TokenAuthConfig `yaml:"tokens"`
 	}
 	err := unmarshal(&t)
 	if err != nil {
 		return err
 	}
 	c.Token = token.TokenAuthProvider{
-		Config: t.tokens,
+		Config: t.Tokens,
 	}
 
 	// Since interfaces cannot be unpacked, we need to instantiate the one

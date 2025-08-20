@@ -179,7 +179,7 @@ bootstrap:
 # Auth config (currently token-based and Open ID Connect is supported)
 auth:
 
-  token:
+  tokens:
     static:
         # Name is used e.g. for traceability in logging.
         # It must be at least 3 characters long

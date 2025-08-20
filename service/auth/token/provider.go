@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"net/http"
 	"regexp"
+	"strings"
 
 	"github.com/dns3l/dns3l-core/service/auth/types"
 )
@@ -24,7 +25,7 @@ type TokenAuthProvider struct {
 
 func (c *TokenAuthProvider) AuthnGetAuthzInfo(r *http.Request) (types.AuthorizationInfo, error) {
 
-	token := r.Header.Get(TokenHeaderKey)
+	token := strings.TrimSpace(r.Header.Get(TokenHeaderKey))
 
 	if token == "" {
 		// this is not token-based auth

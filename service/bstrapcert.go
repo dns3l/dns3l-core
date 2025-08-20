@@ -11,7 +11,7 @@ import (
 )
 
 type BStrapConfig struct {
-	certs []BStrapCertInfo `yaml:"certs"`
+	Certs []BStrapCertInfo `yaml:"certs"`
 }
 
 type BStrapCertInfo struct {
@@ -24,12 +24,12 @@ type BStrapCertInfo struct {
 func DoSafeBootstrapCerts(s *Service) error {
 
 	c := s.Config.Bootstrap
-	if c == nil || len(c.certs) == 0 {
+	if c == nil || len(c.Certs) == 0 {
 		log.Debug("no bootstrap certs configured, continuing...")
 		return nil
 	}
 
-	for _, cert := range c.certs {
+	for _, cert := range c.Certs {
 		domains := append([]string{cert.Name}, cert.OtherDomains...)
 
 		cinfo, err := s.Config.CA.Functions.GetCertificateInfo(cert.CA, cert.Name)
