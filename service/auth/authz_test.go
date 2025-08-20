@@ -3,13 +3,14 @@ package auth
 import (
 	"testing"
 
+	"github.com/dns3l/dns3l-core/service/auth/types"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestAuthRW(t *testing.T) {
 
-	authzinfo1 := &DefaultAuthorizationInfo{
-		UserInfo: &UserInfo{"doe", "john@doe.email"},
+	authzinfo1 := &types.DefaultAuthorizationInfo{
+		UserInfo: &types.UserInfo{"doe", "john@doe.email"},
 		DomainsAllowed: []string{
 			"test.doe.email.",
 			"test.doe.com.",
@@ -37,8 +38,8 @@ func TestAuthRW(t *testing.T) {
 
 func TestAuthR(t *testing.T) {
 
-	authzinfo1 := &DefaultAuthorizationInfo{
-		UserInfo: &UserInfo{"Kilgore Trout", "kilgore@trout.email"},
+	authzinfo1 := &types.DefaultAuthorizationInfo{
+		UserInfo: &types.UserInfo{"Kilgore Trout", "kilgore@trout.email"},
 		DomainsAllowed: []string{
 			"test.doe.email.",
 			"test.doe.com.",
@@ -63,8 +64,8 @@ func TestAuthR(t *testing.T) {
 
 func TestAuthNothing(t *testing.T) {
 
-	authzinfo1 := &DefaultAuthorizationInfo{
-		UserInfo: &UserInfo{"ktrout", "kilgore@trout.email"},
+	authzinfo1 := &types.DefaultAuthorizationInfo{
+		UserInfo: &types.UserInfo{"ktrout", "kilgore@trout.email"},
 		DomainsAllowed: []string{
 			"test.doe.email.",
 			"test.doe.com.",
@@ -87,8 +88,8 @@ func TestAuthNothing(t *testing.T) {
 
 func TestAuthPub(t *testing.T) {
 
-	authzinfo1 := &DefaultAuthorizationInfo{
-		UserInfo: &UserInfo{"ktrout", "kilgore@trout.email"},
+	authzinfo1 := &types.DefaultAuthorizationInfo{
+		UserInfo: &types.UserInfo{"ktrout", "kilgore@trout.email"},
 		DomainsAllowed: []string{
 			"test.doe.email.",
 			"test.doe.com.",
@@ -113,8 +114,8 @@ func TestAuthPub(t *testing.T) {
 
 func TestAuthDisabled(t *testing.T) {
 
-	authzinfo1 := &DefaultAuthorizationInfo{
-		UserInfo: &UserInfo{"ktrout", "kilgore@trout.email"},
+	authzinfo1 := &types.DefaultAuthorizationInfo{
+		UserInfo: &types.UserInfo{"ktrout", "kilgore@trout.email"},
 		DomainsAllowed: []string{
 			"test.doe.email.",
 			"test.doe.com.",

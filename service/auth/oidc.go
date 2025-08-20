@@ -12,6 +12,7 @@ import (
 
 	"github.com/coreos/go-oidc"
 	"github.com/dns3l/dns3l-core/common"
+	"github.com/dns3l/dns3l-core/service/auth/types"
 	"github.com/dns3l/dns3l-core/util"
 	myvalidation "github.com/dns3l/dns3l-core/util/validation"
 	"github.com/go-playground/validator/v10"
@@ -147,32 +148,32 @@ func (h *OIDCHandler) selectIssuer(token string) (*OIDCBinding, string, error) {
 
 }
 
-func (h *OIDCHandler) GetAnonymousInfo() *DefaultAuthorizationInfo {
+func (h *OIDCHandler) GetAnonymousInfo() *types.DefaultAuthorizationInfo {
 
-	return &DefaultAuthorizationInfo{
+	return &types.DefaultAuthorizationInfo{
 		DomainsAllowed:        []string{},
 		AuthorizationDisabled: false,
 		ReadAllowed:           false,
 		WriteAllowed:          false,
-		UserInfo:              &UserInfo{"anonymous", h.AuthnDisabledEmail},
+		UserInfo:              &types.UserInfo{"anonymous", h.AuthnDisabledEmail},
 		ReadAnyPublicAllowed:  false,
 	}
 
 }
 
-func (h *OIDCHandler) AuthnGetAuthzInfo(r *http.Request) (AuthorizationInfo, error) {
+func (h *OIDCHandler) AuthnGetAuthzInfo(r *http.Request) (types.AuthorizationInfo, error) {
 
 	rinfo, err := h.authnGetAuthzInfoRaw(r)
 
 	if err == nil {
-		log.WithField("authzinfo", rinfo.String()).Debug("Request authorization determined")
+		log.WithField("authzinfo", rinfo.String()).Debug("OIDC request authorization determined")
 	}
 
 	return rinfo, err
 
 }
 
-func (h *OIDCHandler) authnGetAuthzInfoRaw(r *http.Request) (AuthorizationInfo, error) {
+func (h *OIDCHandler) authnGetAuthzInfoRaw(r *http.Request) (types.AuthorizationInfo, error) {
 
 	if h.AuthnDisabled {
 		disinfo := h.GetAnonymousInfo()
@@ -236,7 +237,7 @@ func (h *OIDCHandler) authnGetAuthzInfoRaw(r *http.Request) (AuthorizationInfo, 
 		return nil, err
 	}
 
-	userinfo := &UserInfo{
+	userinfo := &types.UserInfo{
 		Name:  cinfo.Name,
 		Email: cinfo.Email,
 	}
@@ -258,7 +259,7 @@ func (h *OIDCHandler) authnGetAuthzInfoRaw(r *http.Request) (AuthorizationInfo, 
 		}
 	}
 
-	authzinfo := &DefaultAuthorizationInfo{
+	authzinfo := &types.DefaultAuthorizationInfo{
 		DomainsAllowed:        make([]string, 0, 100),
 		AuthorizationDisabled: h.AuthzDisabled,
 		ReadAllowed:           false,

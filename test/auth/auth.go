@@ -6,6 +6,7 @@ import (
 
 	"github.com/dns3l/dns3l-core/common"
 	"github.com/dns3l/dns3l-core/service/auth"
+	"github.com/dns3l/dns3l-core/service/auth/types"
 )
 
 type AuthStub struct {
@@ -28,7 +29,7 @@ func (a *AuthStub) Init() error {
 	return nil
 }
 
-func (a *AuthStub) AuthnGetAuthzInfo(r *http.Request) (auth.AuthorizationInfo, error) {
+func (a *AuthStub) AuthnGetAuthzInfo(r *http.Request) (types.AuthorizationInfo, error) {
 
 	if !a.inited {
 		return nil, errors.New("auth stub reports auth has not been properly inited")
@@ -41,8 +42,8 @@ func (a *AuthStub) AuthnGetAuthzInfo(r *http.Request) (auth.AuthorizationInfo, e
 		return nil, &common.UnauthzedError{Msg: "test user not set or not existing"}
 	}
 
-	authzinfo := &auth.DefaultAuthorizationInfo{
-		UserInfo:             &auth.UserInfo{Name: v.Name, Email: v.Email},
+	authzinfo := &types.DefaultAuthorizationInfo{
+		UserInfo:             &types.UserInfo{Name: v.Name, Email: v.Email},
 		DomainsAllowed:       v.DomainsAllowed,
 		WriteAllowed:         v.WriteAllowed,
 		ReadAllowed:          v.ReadAllowed,

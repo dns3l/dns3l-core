@@ -13,7 +13,7 @@ import (
 	dns "github.com/dns3l/dns3l-core/dns"
 	dnscommon "github.com/dns3l/dns3l-core/dns/common"
 	dnstypes "github.com/dns3l/dns3l-core/dns/types"
-	"github.com/dns3l/dns3l-core/service/auth"
+	authtypes "github.com/dns3l/dns3l-core/service/auth/types"
 	"github.com/dns3l/dns3l-core/state"
 	"github.com/dns3l/dns3l-core/util"
 )
@@ -102,7 +102,7 @@ func TestWithLEStaging() {
 	}
 
 	dnsProvider := "otc"
-	issuedBy := &auth.UserInfo{Name: "testuser1", Email: ""}
+	issuedBy := &authtypes.UserInfo{Name: "testuser1", Email: ""}
 	acmeuser := "testacmeuser1"
 
 	domainName1, _, err := dnscommon.MakeNewDomainName4Test(c.DNSTest.TestableZones[dnsProvider].Zones)

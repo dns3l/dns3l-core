@@ -5,7 +5,7 @@ import (
 	"time"
 
 	dnstypes "github.com/dns3l/dns3l-core/dns/types"
-	"github.com/dns3l/dns3l-core/service/auth"
+	authtypes "github.com/dns3l/dns3l-core/service/auth/types"
 	"github.com/dns3l/dns3l-core/state"
 )
 
@@ -21,7 +21,7 @@ type CertificateClaimInfo struct {
 	Name        string
 	NameRZ      string
 	Domains     []string
-	IssuedBy    *auth.UserInfo
+	IssuedBy    *authtypes.UserInfo
 	TTLSelected time.Duration
 }
 

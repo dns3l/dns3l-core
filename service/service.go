@@ -9,9 +9,10 @@ import (
 )
 
 type Service struct {
-	Config  *Config
-	Socket  string
-	NoRenew bool
+	Config          *Config
+	Socket          string
+	NoRenew         bool
+	NoBootstrapCert bool
 
 	server  *http.Server
 	router  *mux.Router
@@ -94,14 +95,21 @@ func (s *Service) prepare() error {
 
 	r := mux.NewRouter().StrictSlash(true)
 
-	err = s.Config.Auth.Provider.Init()
+	err = s.Config.Auth.Init()
 	if err != nil {
 		return err
 	}
 
+	if !s.NoBootstrapCert {
+		err = DoSafeBootstrapCerts(s)
+		if err != nil {
+			return err
+		}
+	}
+
 	v1hdlr := &apiv1.RestV1Handler{
 		Service: s.GetV1(),
-		Auth:    s.Config.Auth.Provider,
+		Auth:    &s.Config.Auth,
 	}
 	v1hdlr.RegisterHandle(r.PathPrefix("/api/v1").Subrouter())
 	v1hdlr.RegisterHandle(r.PathPrefix("/api").Subrouter())

@@ -3,7 +3,7 @@ package types
 import (
 	"time"
 
-	"github.com/dns3l/dns3l-core/service/auth"
+	authtypes "github.com/dns3l/dns3l-core/service/auth/types"
 	"github.com/dns3l/dns3l-core/util"
 )
 
@@ -41,13 +41,13 @@ type CAStateManagerSession interface {
 
 	GetDomains(keyName, caid string) ([]string, error)
 
-	UserHasCerts(user *auth.UserInfo, caid string) (bool, error)
+	UserHasCerts(user *authtypes.UserInfo, caid string) (bool, error)
 }
 
 type CACertInfo struct {
 	Name            string
 	PrivKey         string
-	IssuedBy        *auth.UserInfo
+	IssuedBy        *authtypes.UserInfo
 	ClaimTime       time.Time
 	RenewedTime     time.Time
 	NextRenewalTime time.Time

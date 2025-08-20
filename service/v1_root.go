@@ -3,7 +3,7 @@ package service
 import (
 	"github.com/dns3l/dns3l-core/context"
 	"github.com/dns3l/dns3l-core/service/apiv1"
-	"github.com/dns3l/dns3l-core/service/auth"
+	authtypes "github.com/dns3l/dns3l-core/service/auth/types"
 )
 
 type V1 struct {
@@ -20,7 +20,7 @@ func (s *V1) GetServerInfo() *apiv1.ServerInfo {
 			URL:   s.Service.Config.URL,
 			EMail: s.Service.Config.AdminEMail,
 		},
-		Auth: s.Service.Config.Auth.Provider.GetServerInfoAuth(),
+		Auth: s.Service.Config.Auth.GetServerInfoAuth(),
 	}
 }
 
@@ -41,7 +41,7 @@ func (s *V1) GetServerInfo() *apiv1.ServerInfo {
   /crt/{crtName}:
 */
 
-func (s *V1) logAction(authz auth.AuthorizationInfo, action string) {
+func (s *V1) logAction(authz authtypes.AuthorizationInfo, action string) {
 
 	u := "anonymous"
 	if authz != nil {

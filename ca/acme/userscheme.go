@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/dns3l/dns3l-core/ca/types"
-	"github.com/dns3l/dns3l-core/service/auth"
+	authtypes "github.com/dns3l/dns3l-core/service/auth/types"
 	"github.com/dns3l/dns3l-core/util"
 )
 
@@ -30,32 +30,32 @@ func GetACMEUserScheme(schemename string) (ACMEUserScheme, error) {
 type ACMEUserScheme interface {
 
 	// Returns the expected ACME user
-	GetUserFor(keyname string, userinfo *auth.UserInfo) string
+	GetUserFor(keyname string, userinfo *authtypes.UserInfo) string
 
 	// For cleaning up after key removal, returns empty string
 	// if no ACME user shall be removed
-	GetUserToDelete(keyname string, userinfo *auth.UserInfo,
+	GetUserToDelete(keyname string, userinfo *authtypes.UserInfo,
 		c types.ProviderConfigurationContext) (string, error)
 }
 
 type ACMEUserPerKey struct{}
 
-func (s ACMEUserPerKey) GetUserFor(keyname string, userinfo *auth.UserInfo) string {
+func (s ACMEUserPerKey) GetUserFor(keyname string, userinfo *authtypes.UserInfo) string {
 	return "acme-" + keyname
 }
 
-func (s ACMEUserPerKey) GetUserToDelete(keyname string, userinfo *auth.UserInfo,
+func (s ACMEUserPerKey) GetUserToDelete(keyname string, userinfo *authtypes.UserInfo,
 	c types.ProviderConfigurationContext) (string, error) {
 	return "acme-" + keyname, nil
 }
 
 type ACMEUserPerUser struct{}
 
-func (s ACMEUserPerUser) GetUserFor(keyname string, userinfo *auth.UserInfo) string {
+func (s ACMEUserPerUser) GetUserFor(keyname string, userinfo *authtypes.UserInfo) string {
 	return "user-" + userinfo.GetPreferredName()
 }
 
-func (s ACMEUserPerUser) GetUserToDelete(keyname string, userinfo *auth.UserInfo,
+func (s ACMEUserPerUser) GetUserToDelete(keyname string, userinfo *authtypes.UserInfo,
 	c types.ProviderConfigurationContext) (string, error) {
 
 	//Unfortunately, we need to make a DB operation here to determine if the user still has certs
@@ -84,11 +84,11 @@ func (s ACMEUserPerUser) GetUserToDelete(keyname string, userinfo *auth.UserInfo
 
 type ACMEUserOne struct{}
 
-func (s ACMEUserOne) GetUserFor(keyname string, userinfo *auth.UserInfo) string {
+func (s ACMEUserOne) GetUserFor(keyname string, userinfo *authtypes.UserInfo) string {
 	return "dns3l-one"
 }
 
-func (s ACMEUserOne) GetUserToDelete(keyname string, userinfo *auth.UserInfo,
+func (s ACMEUserOne) GetUserToDelete(keyname string, userinfo *authtypes.UserInfo,
 	c types.ProviderConfigurationContext) (string, error) {
 	//never delete the "singleton" user
 	return "", nil
