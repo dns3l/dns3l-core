@@ -1,5 +1,5 @@
 # The URL is presented over the config API
-url: https://foobar.example.com
+url: https://dns3l.foobar.example.com
 adminemail:
   # These addresses are presented over the config API
   - admin1@example.com
@@ -161,8 +161,54 @@ db:
   # This prefix is added to every table created/used
   dbprefix: dns3l
 
-# Auth config (currently only Open ID Connect is supported)
+bootstrap:
+  certs:
+    - ca: le
+      # The name of the dns3l cert and the first domain
+      name: dns3l.foobar.example.com
+      # List other domains here (can be a wildcard)
+      otherdomains:
+        - dns3l.alt.example.com
+      # If force is set to true, dns3ld will terminate if
+      # claim was not successful. If set to false, it will
+      # try to claim the cert on start but start up normally
+      # if it failed.
+      force: true
+
+
+# Auth config (currently token-based and Open ID Connect is supported)
 auth:
+  # Token-based auth allows setting a secret token in the request header
+  # "X-DNS3L-Access-Token" to access the API instead of doing OIDC auth.
+  # Currently there is no API token self-service implemented but tokens
+  # can be used by statically configuring them here.
+  # Using tokens, while there is no self service, is not recommended for
+  # all-day usage, only for administrative tasks like bootstrapping the
+  # dns3l stack or low-churn M2M auth.
+  # If a token is not given or invalid, dns3ld falls back to OIDC auth.
+  tokens:
+    static:
+        # Name is used e.g. for traceability in logging.
+        # It must be at least 3 characters long
+      - name: bootstrap_token_ingress
+        # Token must be secure-random 32 bytes, base64-encoded.
+        # Generate it e.g. with openssl rand -base64 32.
+        # Keep it secret.
+        plain: <base64-token>
+        domainsallowed:
+          - foo.example.org
+          - bar.example.com.
+      - name: some_admin_token
+        # Token can also be stored here in a sha256-hashed form
+        # (base64, not hex).
+        # Generate the token to be used e.g. with openssl rand -base64 32
+        # Keep the unhashed token secret.
+        # To hash it, use echo -n "<token>" | openssl sha256 -binary | base64 -
+        sha256:  <base64-sha256-token>
+        domainsallowed:
+          - foo.example.org
+        # Write must be explicitly allowed if necessary.
+        write: true
 
   # You can define multiple OIDC token issuers.
   # dns3ld will spawn an individual OIDC client instance per issuer.

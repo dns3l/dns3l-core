@@ -22,6 +22,7 @@ type Config struct {
 	Auth       auth.AuthConfig             `yaml:"auth" validate:"required"` //OIDC hard-coded (only here)
 	URL        string                      `yaml:"url" validate:"required,url"`
 	AdminEMail []string                    `yaml:"adminemail" validate:"required,dive,email"`
+	Bootstrap  *BStrapConfig               `yaml:"bootstrap"`
 	Renew      *RenewConfig                `yaml:"renew"`
 
 	//RootZoneAllowedCA map[string] //maybe we need this later...

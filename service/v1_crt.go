@@ -10,12 +10,13 @@ import (
 	"github.com/dns3l/dns3l-core/ca/types"
 	"github.com/dns3l/dns3l-core/common"
 	"github.com/dns3l/dns3l-core/service/apiv1"
-	"github.com/dns3l/dns3l-core/service/auth"
 	"github.com/dns3l/dns3l-core/util"
 	"github.com/sirupsen/logrus"
+
+	authtypes "github.com/dns3l/dns3l-core/service/auth/types"
 )
 
-func (s *V1) ClaimCertificate(caID string, cinfo *apiv1.CertClaimInfo, authz auth.AuthorizationInfo) error {
+func (s *V1) ClaimCertificate(caID string, cinfo *apiv1.CertClaimInfo, authz authtypes.AuthorizationInfo) error {
 	fu := s.Service.Config.CA.Functions
 
 	s.logAction(authz, fmt.Sprintf("ClaimCertificate %s", caID))
@@ -130,7 +131,7 @@ func (s *V1) ClaimCertificate(caID string, cinfo *apiv1.CertClaimInfo, authz aut
 
 }
 
-func (s *V1) DeleteCertificate(caID, crtID string, authz auth.AuthorizationInfo) error {
+func (s *V1) DeleteCertificate(caID, crtID string, authz authtypes.AuthorizationInfo) error {
 
 	s.logAction(authz, fmt.Sprintf("DeleteCertificate %s %s", caID, crtID))
 
@@ -148,7 +149,7 @@ func (s *V1) DeleteCertificate(caID, crtID string, authz auth.AuthorizationInfo)
 
 }
 
-func (s *V1) GetCertificateResource(caID, crtID, obj string, authz auth.AuthorizationInfo) (string, string, error) {
+func (s *V1) GetCertificateResource(caID, crtID, obj string, authz authtypes.AuthorizationInfo) (string, string, error) {
 
 	s.logAction(authz, fmt.Sprintf("GetCertificateResource %s %s %s", caID, crtID, obj))
 
@@ -175,7 +176,7 @@ func (s *V1) GetCertificateResource(caID, crtID, obj string, authz auth.Authoriz
 
 }
 
-func (s *V1) GetAllCertResources(caID, crtID string, authz auth.AuthorizationInfo) (*apiv1.CertResources, error) {
+func (s *V1) GetAllCertResources(caID, crtID string, authz authtypes.AuthorizationInfo) (*apiv1.CertResources, error) {
 
 	s.logAction(authz, fmt.Sprintf("GetAllCertResources %s %s", caID, crtID))
 
@@ -212,7 +213,7 @@ func (s *V1) GetAllCertResources(caID, crtID string, authz auth.AuthorizationInf
 
 // if caID and/or crtID is "", infos will not be filtered on that value.
 // Cannot filter for both
-func (s *V1) GetCertificateInfos(caID string, crtID string, authz auth.AuthorizationInfo, pginfo *util.PaginationInfo) ([]apiv1.CertInfo, error) {
+func (s *V1) GetCertificateInfos(caID string, crtID string, authz authtypes.AuthorizationInfo, pginfo *util.PaginationInfo) ([]apiv1.CertInfo, error) {
 
 	s.logAction(authz, fmt.Sprintf("GetCertificateInfos %s %s", caID, crtID))
 
@@ -253,7 +254,7 @@ func (s *V1) GetCertificateInfos(caID string, crtID string, authz auth.Authoriza
 
 }
 
-func (s *V1) GetCertificateInfo(caID string, crtID string, authz auth.AuthorizationInfo) (*apiv1.CertInfo, error) {
+func (s *V1) GetCertificateInfo(caID string, crtID string, authz authtypes.AuthorizationInfo) (*apiv1.CertInfo, error) {
 
 	s.logAction(authz, fmt.Sprintf("GetCertificateInfo %s %s", caID, crtID))
 
@@ -286,7 +287,7 @@ func (s *V1) GetCertificateInfo(caID string, crtID string, authz auth.Authorizat
 
 }
 
-func (s *V1) DeleteCertificatesAllCA(crtID string, authz auth.AuthorizationInfo) error {
+func (s *V1) DeleteCertificatesAllCA(crtID string, authz authtypes.AuthorizationInfo) error {
 
 	s.logAction(authz, fmt.Sprintf("DeleteCertificatesAllCA %s", crtID))
 

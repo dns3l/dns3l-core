@@ -9,7 +9,7 @@ import (
 	"github.com/Masterminds/squirrel"
 	"github.com/dns3l/dns3l-core/ca/types"
 	"github.com/dns3l/dns3l-core/common"
-	"github.com/dns3l/dns3l-core/service/auth"
+	authtypes "github.com/dns3l/dns3l-core/service/auth/types"
 	"github.com/dns3l/dns3l-core/state"
 	"github.com/dns3l/dns3l-core/util"
 )
@@ -62,7 +62,7 @@ func (s *CAStateManagerSQLSession) GetCACertByID(keyname string, caid string) (*
 	defer util.LogDefer(log, rows.Close)
 
 	info := &types.CACertInfo{}
-	info.IssuedBy = &auth.UserInfo{}
+	info.IssuedBy = &authtypes.UserInfo{}
 	if !rows.Next() {
 		return nil, nil
 	}
@@ -205,7 +205,7 @@ func (s *CAStateManagerSQLSession) ListCACerts(keyName string, caid string, auth
 
 func (s *CAStateManagerSQLSession) rowToCACertInfo(rows *sql.Rows, info *types.CACertInfo) error {
 	var domainsRevStr string
-	info.IssuedBy = &auth.UserInfo{}
+	info.IssuedBy = &authtypes.UserInfo{}
 	var ttlsec int
 	err := rows.Scan(&info.Name, &info.PrivKey, &info.ACMEUser, &info.IssuedBy.Name, &info.IssuedBy.Email,
 		&info.ClaimTime, &info.RenewedTime, &info.ValidStartTime, &info.ValidEndTime, &info.CertPEM, &ttlsec,
@@ -501,7 +501,7 @@ func (s *CAStateManagerSQLSession) listTimeExpired(atTime time.Time, limit uint,
 	return res, nil
 }
 
-func (s *CAStateManagerSQLSession) UserHasCerts(user *auth.UserInfo, caid string) (bool, error) {
+func (s *CAStateManagerSQLSession) UserHasCerts(user *authtypes.UserInfo, caid string) (bool, error) {
 
 	row := s.db.QueryRow(`SELECT COUNT(*) FROM `+s.prov.Prov.DBName("keycerts")+
 		` WHERE issued_by=? AND issued_by_email=? AND ca_id=? LIMIT 1;`, user.Name, user.Email, caid)

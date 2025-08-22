@@ -17,7 +17,7 @@ import (
 	"github.com/dns3l/dns3l-core/ca/types"
 	cmn "github.com/dns3l/dns3l-core/common"
 	dnscommon "github.com/dns3l/dns3l-core/dns/common"
-	"github.com/dns3l/dns3l-core/service/auth"
+	authtypes "github.com/dns3l/dns3l-core/service/auth/types"
 	"github.com/dns3l/dns3l-core/util"
 	"github.com/go-acme/lego/v4/certificate"
 	"github.com/go-acme/lego/v4/challenge/dns01"
@@ -42,7 +42,7 @@ type Engine struct {
 // It will look up the current state of the user and the key/certificate and ensures that the user and
 // the requested key/cert is present.
 func (e *Engine) TriggerUpdate(acmeuser string, keyname string, domains []string,
-	issuedBy *auth.UserInfo, ttl time.Duration, mustNotExist bool) error {
+	issuedBy *authtypes.UserInfo, ttl time.Duration, mustNotExist bool) error {
 
 	keyMustExist := acmeuser == "" || issuedBy == nil || len(domains) <= 0
 

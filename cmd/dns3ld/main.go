@@ -47,7 +47,11 @@ var rootCmd = &cobra.Command{
 		if err != nil {
 			panic(err)
 		}
-		svc := service.Service{Config: &conf, Socket: socket, NoRenew: !renew}
+		bootstrapcert, err := cmd.PersistentFlags().GetBool("bootstrapcert")
+		if err != nil {
+			panic(err)
+		}
+		svc := service.Service{Config: &conf, Socket: socket, NoRenew: !renew, NoBootstrapCert: !bootstrapcert}
 		err = svc.Run()
 		if err != nil {
 			panic(err)
@@ -98,7 +102,9 @@ func Execute() error {
 	rootCmd.PersistentFlags().BoolP("renew", "r", true,
 		`Whether automatic cert renewal jobs should run. Useful if multiple instances run on the
 		same DB and you want to disable renewal for the replicas, which is not yet thread-safe.`)
-
+	rootCmd.PersistentFlags().BoolP("bootstrapcert", "b", true,
+		`Whether initial bootstrapping of certs should run on this instance. Useful if multiple
+		instances run on the same DB and you want to disable bootstrapping for the replicas.`)
 	dbCreateCmd.PersistentFlags().BoolP("tablesonly", "t", false,
 		`Do not try to attempt creating the DB, only create the tables`)
 
