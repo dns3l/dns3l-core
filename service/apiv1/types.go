@@ -78,12 +78,14 @@ type CertInfo struct {
 		Name  string `json:"name"`
 		EMail string `json:"email"`
 	} `json:"claimedBy"`
-	ClaimedOn  string `json:"claimedOn"`
-	ValidTo    string `json:"validTo"`
-	Valid      bool   `json:"valid"`
-	RenewCount uint   `json:"renewCount"`
-	Wildcard   bool   `json:"wildcard"`
-	SubjectCN  string `json:"subjectCN"`
-	IssuerCN   string `json:"issuerCN"`
-	Serial     string `json:"serial"`
+	ClaimedOn   string `json:"claimedOn"`
+	ValidTo     string `json:"validTo"`
+	Valid       bool   `json:"valid"`
+	LastAccess  string `json:"lastAccess"`
+	RenewCount  uint   `json:"renewCount"`
+	AccessCount uint   `json:"accessCount"`
+	Wildcard    bool   `json:"wildcard"`
+	SubjectCN   string `json:"subjectCN"`
+	IssuerCN    string `json:"issuerCN"`
+	Serial      string `json:"serial"`
 }

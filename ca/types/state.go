@@ -52,9 +52,11 @@ type CACertInfo struct {
 	NextRenewalTime time.Time
 	ValidStartTime  time.Time
 	ValidEndTime    time.Time
+	LastAccessTime  time.Time
 	Domains         []string
 	ACMEUser        string
 	CertPEM         string
 	RenewCount      uint
+	AccessCount     uint
 	TTLSelected     time.Duration
 }

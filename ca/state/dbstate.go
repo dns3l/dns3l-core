@@ -44,8 +44,11 @@ var caCertsQueryColumns = []string{
 	"issued_by_email",
 	"claim_time",
 	"renewed_time",
+	"next_renewal_time",
 	"valid_start_time",
 	"valid_end_time",
+	"last_access_time",
+	"access_count",
 	"cert",
 	"ttl_seconds",
 }
@@ -68,7 +71,8 @@ func (s *CAStateManagerSQLSession) GetCACertByID(keyname string, caid string) (*
 	}
 	var ttlsec int
 	err = rows.Scan(&info.Name, &info.PrivKey, &info.ACMEUser, &info.IssuedBy.Name, &info.IssuedBy.Email,
-		&info.ClaimTime, &info.RenewedTime, &info.ValidStartTime, &info.ValidEndTime, &info.CertPEM, &ttlsec)
+		&info.ClaimTime, &info.RenewedTime, &info.NextRenewalTime, &info.ValidStartTime, &info.ValidEndTime,
+		&info.LastAccessTime, &info.AccessCount, &info.CertPEM, &ttlsec)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	} else if err != nil {
@@ -208,7 +212,8 @@ func (s *CAStateManagerSQLSession) rowToCACertInfo(rows *sql.Rows, info *types.C
 	info.IssuedBy = &authtypes.UserInfo{}
 	var ttlsec int
 	err := rows.Scan(&info.Name, &info.PrivKey, &info.ACMEUser, &info.IssuedBy.Name, &info.IssuedBy.Email,
-		&info.ClaimTime, &info.RenewedTime, &info.ValidStartTime, &info.ValidEndTime, &info.CertPEM, &ttlsec,
+		&info.ClaimTime, &info.RenewedTime, &info.NextRenewalTime, &info.ValidStartTime, &info.ValidEndTime,
+		&info.LastAccessTime, &info.AccessCount, &info.CertPEM, &ttlsec,
 		&domainsRevStr)
 	info.TTLSelected = time.Duration(ttlsec) * time.Second
 	if err != nil {
@@ -385,6 +390,11 @@ func (s *CAStateManagerSQLSession) GetResources(keyName, caid string, resourceNa
 	if err == sql.ErrNoRows {
 		return nil, &common.NotFoundError{RequestedResource: keyName}
 	}
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = s.db.Exec(`CALL read_increment(?, ?);`, keyName, caid)
 	if err != nil {
 		return nil, err
 	}
