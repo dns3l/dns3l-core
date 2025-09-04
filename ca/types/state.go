@@ -3,6 +3,7 @@ package types
 import (
 	"time"
 
+	"github.com/dns3l/dns3l-core/renew"
 	authtypes "github.com/dns3l/dns3l-core/service/auth/types"
 	"github.com/dns3l/dns3l-core/util"
 )
@@ -41,6 +42,10 @@ type CAStateManagerSession interface {
 	GetDomains(keyName, caid string) ([]string, error)
 
 	UserHasCerts(user *authtypes.UserInfo, caid string) (bool, error)
+
+	GetLastRenewSummary() (*renew.ServerInfoRenewal, error)
+
+	PutLastRenewSummary(*renew.ServerInfoRenewal) error
 }
 
 type CACertInfo struct {

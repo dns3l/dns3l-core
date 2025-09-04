@@ -35,8 +35,8 @@ type ProviderConfigurationContextImpl struct {
 	pinfo    *ProviderInfo
 }
 
-//Can spawn a new instance of a DNS provider.
-//Provider-specific config is unmarshaled into the builder's implementing struct.
+// Can spawn a new instance of a DNS provider.
+// Provider-specific config is unmarshaled into the builder's implementing struct.
 type CAProviderBuilder interface {
 	NewInstance() (types.CAProvider, error)
 }
@@ -55,6 +55,11 @@ func (c *Config) Init(ctx types.CAConfigurationContext) error {
 	c.Functions = &CAFunctionHandler{
 		Config: c,
 		State:  sm,
+	}
+
+	err = c.Functions.Init()
+	if err != nil {
+		return err
 	}
 
 	for k, v := range c.Providers {

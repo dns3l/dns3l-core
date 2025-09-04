@@ -1,11 +1,15 @@
 package apiv1
 
-import "github.com/dns3l/dns3l-core/service/auth"
+import (
+	"github.com/dns3l/dns3l-core/renew"
+	"github.com/dns3l/dns3l-core/service/auth"
+)
 
 type ServerInfo struct {
-	Version *ServerInfoVersion  `json:"version"`
-	Contact *ServerInfoContact  `json:"contact"`
-	Auth    auth.ServerInfoAuth `json:"auth"` //populated by auth plugin
+	Version *ServerInfoVersion       `json:"version"`
+	Contact *ServerInfoContact       `json:"contact"`
+	Auth    auth.ServerInfoAuth      `json:"auth"` //populated by auth plugin
+	Renewal *renew.ServerInfoRenewal `json:"renewal"`
 }
 
 type ServerInfoVersion struct {
@@ -17,7 +21,6 @@ type ServerInfoContact struct {
 	URL   string   `json:"url"`
 	EMail []string `json:"email"`
 }
-
 type DNSHandlerInfo struct {
 	ID          string   `json:"id"`
 	Name        string   `json:"name"`
@@ -82,6 +85,7 @@ type CertInfo struct {
 	ValidTo     string `json:"validTo"`
 	Valid       bool   `json:"valid"`
 	LastAccess  string `json:"lastAccess"`
+	NextRenewal string `json:"nextRenewal"`
 	RenewCount  uint   `json:"renewCount"`
 	AccessCount uint   `json:"accessCount"`
 	Wildcard    bool   `json:"wildcard"`

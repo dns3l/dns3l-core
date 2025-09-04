@@ -61,6 +61,17 @@ func (r *Renewer) Init() error {
 			return r.Service.Config.CA.Functions.RenewCertificate(job)
 
 		},
+		ReportFunc: func(_, end time.Time, success, fail uint) {
+			err := r.Service.Config.CA.Functions.PutLastRenewSummary(
+				&renew.ServerInfoRenewal{
+					LastRun:    end,
+					Successful: success,
+					Failed:     fail,
+				})
+			if err != nil {
+				log.WithError(err).Error("Error occurred putting last renew summary to store.")
+			}
+		},
 	}
 
 	return nil

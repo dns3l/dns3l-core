@@ -7,14 +7,27 @@ import (
 	"github.com/dns3l/dns3l-core/ca/common"
 	"github.com/dns3l/dns3l-core/ca/types"
 	cmn "github.com/dns3l/dns3l-core/common"
+	"github.com/dns3l/dns3l-core/renew"
 	"github.com/dns3l/dns3l-core/util"
 	"github.com/sirupsen/logrus"
 )
 
+const (
+	RenewalCacheTimeout = 10 * time.Second
+)
+
 // Provides API-close functions with
 type CAFunctionHandler struct {
-	Config *Config
-	State  types.CAStateManager
+	Config      *Config
+	State       types.CAStateManager
+	renewalInfo *util.SingleValCache[*renew.ServerInfoRenewal]
+}
+
+func (h *CAFunctionHandler) Init() error {
+	h.renewalInfo = &util.SingleValCache[*renew.ServerInfoRenewal]{
+		Timeout: RenewalCacheTimeout,
+	}
+	return nil
 }
 
 // Returns a function that will eventually claim certificate. Does pre-checks before that.
@@ -393,5 +406,25 @@ func (h *CAFunctionHandler) GetTotalIssued(caID string) (uint, error) {
 		}
 
 		return sess.GetNumberOfCerts(caID, false, time.Time{})
+	})
+}
+
+func (h *CAFunctionHandler) PutLastRenewSummary(renewal *renew.ServerInfoRenewal) error {
+	sess, err := h.State.NewSession()
+	if err != nil {
+		return err
+	}
+	h.renewalInfo.Invalidate()
+	return sess.PutLastRenewSummary(renewal)
+}
+
+func (h *CAFunctionHandler) GetLastRenewSummary() (*renew.ServerInfoRenewal, error) {
+	return h.renewalInfo.GetCached(func() (*renew.ServerInfoRenewal, error) {
+		sess, err := h.State.NewSession()
+		if err != nil {
+			return nil, err
+		}
+
+		return sess.GetLastRenewSummary()
 	})
 }

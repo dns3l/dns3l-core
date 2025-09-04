@@ -319,6 +319,7 @@ func apiCertInfoFromCACertInfo(source *types.CACertInfo, target *apiv1.CertInfo)
 	target.Name = source.Name
 	target.ClaimedOn = source.ClaimTime.Format(time.RFC3339)
 	target.ValidTo = source.ValidEndTime.Format(time.RFC3339)
+	target.NextRenewal = source.NextRenewalTime.Format(time.RFC3339)
 	if source.LastAccessTime.IsZero() {
 		target.LastAccess = ""
 	} else {

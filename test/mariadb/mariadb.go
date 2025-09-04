@@ -151,7 +151,7 @@ func (c *MariaDBController) Stop() error {
 }
 
 func (c *MariaDBController) DatabaseExists() bool {
-	_, err := os.Stat(filepath.Join(util.GetExecDir(), "db", "ibdata1"))
+	_, err := os.Stat(filepath.Join(getDBDataBasedir(), "db", "ibdata1"))
 	return err == nil
 }
 

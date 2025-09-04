@@ -2,6 +2,7 @@ package state
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -9,6 +10,7 @@ import (
 	"github.com/Masterminds/squirrel"
 	"github.com/dns3l/dns3l-core/ca/types"
 	"github.com/dns3l/dns3l-core/common"
+	"github.com/dns3l/dns3l-core/renew"
 	authtypes "github.com/dns3l/dns3l-core/service/auth/types"
 	"github.com/dns3l/dns3l-core/state"
 	"github.com/dns3l/dns3l-core/util"
@@ -394,7 +396,7 @@ func (s *CAStateManagerSQLSession) GetResources(keyName, caid string, resourceNa
 		return nil, err
 	}
 
-	_, err = s.db.Exec(`CALL read_increment(?, ?);`, keyName, caid)
+	_, err = s.db.Exec(`CALL `+s.prov.Prov.DBName("read_increment")+`(?, ?);`, keyName, caid)
 	if err != nil {
 		return nil, err
 	}
@@ -526,5 +528,38 @@ func (s *CAStateManagerSQLSession) UserHasCerts(user *authtypes.UserInfo, caid s
 	}
 
 	return false, nil
+
+}
+
+// PutLastRenewSummary implements types.CAStateManagerSession.
+func (s *CAStateManagerSQLSession) PutLastRenewSummary(info *renew.ServerInfoRenewal) error {
+	infoBytes, err := json.Marshal(info)
+	if err != nil {
+		return fmt.Errorf("error while marshaling renew info: %w", err)
+	}
+	_, err = s.db.Exec("CALL "+s.prov.Prov.DBName("set_renew_info")+"(?);", string(infoBytes))
+	return err
+}
+
+// GetLastRenewSummary implements types.CAStateManagerSession.
+func (s *CAStateManagerSQLSession) GetLastRenewSummary() (*renew.ServerInfoRenewal, error) {
+
+	var resultBytes string
+	row := s.db.QueryRow(`SELECT renew_info FROM ` + s.prov.Prov.DBName("renew_info") + `;`)
+	err := row.Scan(&resultBytes)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	result := &renew.ServerInfoRenewal{}
+	err = json.Unmarshal([]byte(resultBytes), result)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
 
 }

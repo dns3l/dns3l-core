@@ -89,15 +89,42 @@ func createWithMySQL(db *sql.DB, dbProv SQLDBProvider, createdb bool) error {
 		return err
 	}
 
-	_, err = db.Exec(`DROP PROCEDURE IF EXISTS read_increment;`)
+	_, err = db.Exec(`DROP PROCEDURE IF EXISTS ` + dbProv.DBName("read_increment") + `;`)
 	if err != nil {
 		return err
 	}
 
-	_, err = db.Exec(`CREATE PROCEDURE read_increment (IN my_key_name CHAR(255), IN my_ca_id CHAR(63))
+	_, err = db.Exec(`CREATE PROCEDURE ` + dbProv.DBName("read_increment") + ` (IN my_key_name CHAR(255), IN my_ca_id CHAR(63))
 	BEGIN
 	  UPDATE ` + dbProv.DBName("keycerts") + ` SET last_access_time = utc_timestamp(), access_count = access_count + 1
 	  WHERE key_name = my_key_name AND ca_id = my_ca_id;
+	END;`)
+	if err != nil {
+		return err
+	}
+
+	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS ` + dbProv.DBName("renew_info") + ` (
+	renew_info TEXT
+	);`)
+	if err != nil {
+		return err
+	}
+
+	_, err = db.Exec(`DROP PROCEDURE IF EXISTS ` + dbProv.DBName("set_renew_info") + ` ;`)
+	if err != nil {
+		return err
+	}
+
+	_, err = db.Exec(`CREATE PROCEDURE ` + dbProv.DBName("set_renew_info") + ` (IN myrenew_info TEXT)
+	BEGIN
+	  DECLARE EXIT HANDLER FOR SQLEXCEPTION, NOT FOUND
+	  BEGIN
+	    ROLLBACK;
+	  END;
+	  START TRANSACTION;
+	    TRUNCATE TABLE ` + dbProv.DBName("renew_info") + `;
+        INSERT INTO ` + dbProv.DBName("renew_info") + ` VALUES (myrenew_info);
+	  COMMIT;
 	END;`)
 	if err != nil {
 		return err
