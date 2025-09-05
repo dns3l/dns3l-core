@@ -179,7 +179,7 @@ bootstrap:
 # Auth config (currently token-based and Open ID Connect is supported)
 auth:
   # Token-based auth allows setting a secret token in the request header
-  # "X-DNS3L-Access-Token" to access the API instead of doing OIDC auth.
+  # "X-DNS3L-API-Key" to access the API instead of doing OIDC auth.
   # Currently there is no API token self-service implemented but tokens
   # can be used by statically configuring them here.
   # Using tokens, while there is no self service, is not recommended for
