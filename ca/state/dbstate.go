@@ -362,9 +362,9 @@ func (s *CAStateManagerSQLSession) GetDomains(keyName, caid string) ([]string, e
 	return domains, nil
 }
 
-func (s *CAStateManagerSQLSession) GetResource(keyName, caid, resourceName string) (string, error) {
+func (s *CAStateManagerSQLSession) GetResource(keyName, caid string, increaseCtr bool, resourceName string) (string, error) {
 
-	returns, err := s.GetResources(keyName, caid, resourceName)
+	returns, err := s.GetResources(keyName, caid, increaseCtr, resourceName)
 	if err != nil {
 		return "", err
 	}
@@ -374,7 +374,7 @@ func (s *CAStateManagerSQLSession) GetResource(keyName, caid, resourceName strin
 	return returns[0], nil
 }
 
-func (s *CAStateManagerSQLSession) GetResources(keyName, caid string, resourceNames ...string) ([]string, error) {
+func (s *CAStateManagerSQLSession) GetResources(keyName, caid string, increaseCtr bool, resourceNames ...string) ([]string, error) {
 
 	returns := make([]string, len(resourceNames))
 	returnsPtr := make([]interface{}, len(resourceNames))
@@ -396,9 +396,13 @@ func (s *CAStateManagerSQLSession) GetResources(keyName, caid string, resourceNa
 		return nil, err
 	}
 
-	_, err = s.db.Exec(`CALL `+s.prov.Prov.DBName("read_increment")+`(?, ?);`, keyName, caid)
-	if err != nil {
-		return nil, err
+	if increaseCtr {
+
+		_, err = s.db.Exec(`CALL `+s.prov.Prov.DBName("read_increment")+`(?, ?);`, keyName, caid)
+		if err != nil {
+			return nil, err
+		}
+
 	}
 
 	return returns, nil

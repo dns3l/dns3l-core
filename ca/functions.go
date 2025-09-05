@@ -193,7 +193,7 @@ func (h *CAFunctionHandler) getResourcesNoUpd(keyID, caID string) (*types.Certif
 		return nil, err
 	}
 
-	res, err := sess.GetResources(keyID, caID, "priv_key", "cert", "issuer_cert")
+	res, err := sess.GetResources(keyID, caID, true, "priv_key", "cert", "issuer_cert")
 
 	if err != nil {
 		return nil, err
@@ -236,7 +236,7 @@ func (h *CAFunctionHandler) getResourceNoUpd(keyID, caID, objectType string) (*c
 	switch objectType {
 	case "key":
 		//"resourceName" of sess.GetResource must never be user input > not validated!
-		res, err := sess.GetResource(keyID, caID, "priv_key")
+		res, err := sess.GetResource(keyID, caID, true, "priv_key")
 		if err != nil {
 			return nil, err
 		}
@@ -247,7 +247,7 @@ func (h *CAFunctionHandler) getResourceNoUpd(keyID, caID, objectType string) (*c
 			CanBePublic: false,
 		}, nil
 	case "crt":
-		res, err := sess.GetResource(keyID, caID, "cert")
+		res, err := sess.GetResource(keyID, caID, true, "cert")
 		if err != nil {
 			return nil, err
 		}
@@ -258,7 +258,7 @@ func (h *CAFunctionHandler) getResourceNoUpd(keyID, caID, objectType string) (*c
 			CanBePublic: true,
 		}, nil
 	case "rootchain": //chain with root cert
-		res, err := sess.GetResource(keyID, caID, "issuer_cert")
+		res, err := sess.GetResource(keyID, caID, false, "issuer_cert")
 		if err != nil {
 			return nil, err
 		}
@@ -269,7 +269,7 @@ func (h *CAFunctionHandler) getResourceNoUpd(keyID, caID, objectType string) (*c
 			CanBePublic: true,
 		}, nil
 	case "root":
-		res, err := sess.GetResource(keyID, caID, "issuer_cert")
+		res, err := sess.GetResource(keyID, caID, false, "issuer_cert")
 		if err != nil {
 			return nil, err
 		}
@@ -284,7 +284,7 @@ func (h *CAFunctionHandler) getResourceNoUpd(keyID, caID, objectType string) (*c
 			CanBePublic: true,
 		}, nil
 	case "chain": //chain without root
-		res, err := sess.GetResource(keyID, caID, "issuer_cert")
+		res, err := sess.GetResource(keyID, caID, false, "issuer_cert")
 		if err != nil {
 			return nil, err
 		}
@@ -299,7 +299,7 @@ func (h *CAFunctionHandler) getResourceNoUpd(keyID, caID, objectType string) (*c
 			CanBePublic: true,
 		}, nil
 	case "fullchain":
-		res, err := sess.GetResources(keyID, caID, "cert", "issuer_cert")
+		res, err := sess.GetResources(keyID, caID, true, "cert", "issuer_cert")
 		if err != nil {
 			return nil, err
 		}

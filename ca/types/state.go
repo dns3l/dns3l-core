@@ -27,9 +27,9 @@ type CAStateManagerSession interface {
 	UpdateCACertData(keyname string, caid string, renewedTime, nextRenewalTime,
 		validStartTime, validEndTime time.Time, certStr, issuerCertStr string) error
 
-	GetResource(keyID string, caid string, resourceName string) (string, error)
+	GetResource(keyID string, caid string, increaseCtr bool, resourceName string) (string, error)
 
-	GetResources(keyID string, caid string, resourceNames ...string) ([]string, error)
+	GetResources(keyID string, caid string, increaseCtr bool, resourceNames ...string) ([]string, error)
 
 	GetNumberOfCerts(caID string, validonly bool, currentTime time.Time) (uint, error)
 
