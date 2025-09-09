@@ -3,7 +3,9 @@ package runs
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
+	"github.com/dns3l/dns3l-core/renew"
 	"github.com/dns3l/dns3l-core/service"
 	"github.com/dns3l/dns3l-core/state"
 	"github.com/dns3l/dns3l-core/test/apiv1"
@@ -268,6 +270,18 @@ func (t *TestRunner) RunDBFull() {
 			apiv1.DeleteKeyById(srv, t.CAID, "bob", "footest.bar.sub2."+t.Domain))
 
 		testStateClean(srv.Config.DB)
+
+		err := srv.Config.CA.Functions.PutLastRenewSummary(
+			&renew.ServerInfoRenewal{LastRun: time.Now(), Successful: 3, Failed: 4})
+		if err != nil {
+			panic(err)
+		}
+
+		renewalsum, err := srv.Config.CA.Functions.GetLastRenewSummary()
+		if err != nil {
+			panic(err)
+		}
+		fmt.Println(renewalsum)
 
 		log.Info("All tests succeeded.")
 

@@ -3,11 +3,13 @@ package renew
 import (
 	"errors"
 	"fmt"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/go-co-op/gocron/v2"
+	"github.com/sirupsen/logrus"
 )
 
 type Scheduler[T any, PT interface {
@@ -19,6 +21,7 @@ type Scheduler[T any, PT interface {
 	MaxDuration  time.Duration
 	GetJobsFunc  func() ([]T, error)
 	JobExecFunc  func(job PT) error
+	ReportFunc   func(start, end time.Time, success, fail uint)
 }
 
 func (s *Scheduler[T, PT]) StartAsync() error {
@@ -71,10 +74,11 @@ func ParseTimeAtDay(timeStr string) (uint, uint, error) {
 
 func (s *Scheduler[T, PT]) scheduleRenewJobs() {
 
+	start := time.Now()
+
 	jobs, err := s.GetJobsFunc()
 	if err != nil {
 		log.WithError(err).Error("error when obtaining jobs to schedule, will omit job scheduling today")
-		//TODO maybe retry?
 		return
 	}
 
@@ -86,19 +90,44 @@ func (s *Scheduler[T, PT]) scheduleRenewJobs() {
 	log.WithField("jobcount", len(jobs)).Info("Triggering renewal jobs...")
 
 	interval := time.Duration(s.MaxDuration.Nanoseconds() / int64(len(jobs)))
+	jobresults := make(chan error, len(jobs))
 	for i := range jobs {
 		job := &jobs[i]
-		go s.execRenewJob(job)
-		time.Sleep(interval)
+		go s.execRenewJob(job, jobresults)
+		if i != len(jobs)-1 {
+			time.Sleep(interval)
+		}
+	}
+
+	success := uint(0)
+	failed := uint(0)
+	for range jobs {
+		err := <-jobresults
+		if err == nil {
+			success++
+		} else {
+			failed++
+		}
 	}
 
 	log.WithField("jobcount", len(jobs)).Info("Triggering renewal jobs completed")
+	end := time.Now()
+	s.ReportFunc(start, end, success, failed)
 
 }
 
-func (s *Scheduler[T, PT]) execRenewJob(job PT) {
+func (s *Scheduler[T, PT]) execRenewJob(job PT, resultchan chan error) {
+	var err error
+	defer func() {
+		if pan := recover(); pan != nil {
+			log.WithFields(logrus.Fields{"cause": pan, "stack": string(debug.Stack())}).Error("Job panicked.")
+			resultchan <- fmt.Errorf("job panicked: %v", pan)
+			return
+		}
+		resultchan <- err
+	}()
 	log.WithField("job", job.String()).Info("Job execution started")
-	err := s.JobExecFunc(job)
+	err = s.JobExecFunc(job)
 	if err != nil {
 		log.WithError(err).WithField("job", job.String()).Error("Job execution failed")
 		return

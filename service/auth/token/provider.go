@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	TokenHeaderKey    = "X-DNS3L-Access-Token"
+	TokenHeaderKey    = "X-DNS3L-API-Key"
 	TokenLength       = 32
 	TokenLengthBase64 = 44 // 4*ceil(32/3)
 )

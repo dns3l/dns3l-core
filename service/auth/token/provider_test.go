@@ -82,7 +82,7 @@ func makereq(token string) *http.Request {
 	req := &http.Request{
 		Header: make(map[string][]string),
 	}
-	req.Header.Add("X-DNS3L-Access-Token", token)
+	req.Header.Add("X-DNS3L-API-Key", token)
 	return req
 }
 

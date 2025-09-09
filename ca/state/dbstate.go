@@ -2,6 +2,7 @@ package state
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -9,6 +10,7 @@ import (
 	"github.com/Masterminds/squirrel"
 	"github.com/dns3l/dns3l-core/ca/types"
 	"github.com/dns3l/dns3l-core/common"
+	"github.com/dns3l/dns3l-core/renew"
 	authtypes "github.com/dns3l/dns3l-core/service/auth/types"
 	"github.com/dns3l/dns3l-core/state"
 	"github.com/dns3l/dns3l-core/util"
@@ -44,8 +46,11 @@ var caCertsQueryColumns = []string{
 	"issued_by_email",
 	"claim_time",
 	"renewed_time",
+	"next_renewal_time",
 	"valid_start_time",
 	"valid_end_time",
+	"last_access_time",
+	"access_count",
 	"cert",
 	"ttl_seconds",
 }
@@ -68,7 +73,8 @@ func (s *CAStateManagerSQLSession) GetCACertByID(keyname string, caid string) (*
 	}
 	var ttlsec int
 	err = rows.Scan(&info.Name, &info.PrivKey, &info.ACMEUser, &info.IssuedBy.Name, &info.IssuedBy.Email,
-		&info.ClaimTime, &info.RenewedTime, &info.ValidStartTime, &info.ValidEndTime, &info.CertPEM, &ttlsec)
+		&info.ClaimTime, &info.RenewedTime, &info.NextRenewalTime, &info.ValidStartTime, &info.ValidEndTime,
+		&info.LastAccessTime, &info.AccessCount, &info.CertPEM, &ttlsec)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	} else if err != nil {
@@ -208,7 +214,8 @@ func (s *CAStateManagerSQLSession) rowToCACertInfo(rows *sql.Rows, info *types.C
 	info.IssuedBy = &authtypes.UserInfo{}
 	var ttlsec int
 	err := rows.Scan(&info.Name, &info.PrivKey, &info.ACMEUser, &info.IssuedBy.Name, &info.IssuedBy.Email,
-		&info.ClaimTime, &info.RenewedTime, &info.ValidStartTime, &info.ValidEndTime, &info.CertPEM, &ttlsec,
+		&info.ClaimTime, &info.RenewedTime, &info.NextRenewalTime, &info.ValidStartTime, &info.ValidEndTime,
+		&info.LastAccessTime, &info.AccessCount, &info.CertPEM, &ttlsec,
 		&domainsRevStr)
 	info.TTLSelected = time.Duration(ttlsec) * time.Second
 	if err != nil {
@@ -355,9 +362,9 @@ func (s *CAStateManagerSQLSession) GetDomains(keyName, caid string) ([]string, e
 	return domains, nil
 }
 
-func (s *CAStateManagerSQLSession) GetResource(keyName, caid, resourceName string) (string, error) {
+func (s *CAStateManagerSQLSession) GetResource(keyName, caid string, increaseCtr bool, resourceName string) (string, error) {
 
-	returns, err := s.GetResources(keyName, caid, resourceName)
+	returns, err := s.GetResources(keyName, caid, increaseCtr, resourceName)
 	if err != nil {
 		return "", err
 	}
@@ -367,7 +374,7 @@ func (s *CAStateManagerSQLSession) GetResource(keyName, caid, resourceName strin
 	return returns[0], nil
 }
 
-func (s *CAStateManagerSQLSession) GetResources(keyName, caid string, resourceNames ...string) ([]string, error) {
+func (s *CAStateManagerSQLSession) GetResources(keyName, caid string, increaseCtr bool, resourceNames ...string) ([]string, error) {
 
 	returns := make([]string, len(resourceNames))
 	returnsPtr := make([]interface{}, len(resourceNames))
@@ -387,6 +394,15 @@ func (s *CAStateManagerSQLSession) GetResources(keyName, caid string, resourceNa
 	}
 	if err != nil {
 		return nil, err
+	}
+
+	if increaseCtr {
+
+		_, err = s.db.Exec(`CALL `+s.prov.Prov.DBName("read_increment")+`(?, ?);`, keyName, caid)
+		if err != nil {
+			return nil, err
+		}
+
 	}
 
 	return returns, nil
@@ -516,5 +532,38 @@ func (s *CAStateManagerSQLSession) UserHasCerts(user *authtypes.UserInfo, caid s
 	}
 
 	return false, nil
+
+}
+
+// PutLastRenewSummary implements types.CAStateManagerSession.
+func (s *CAStateManagerSQLSession) PutLastRenewSummary(info *renew.ServerInfoRenewal) error {
+	infoBytes, err := json.Marshal(info)
+	if err != nil {
+		return fmt.Errorf("error while marshaling renew info: %w", err)
+	}
+	_, err = s.db.Exec("CALL "+s.prov.Prov.DBName("set_renew_info")+"(?);", string(infoBytes))
+	return err
+}
+
+// GetLastRenewSummary implements types.CAStateManagerSession.
+func (s *CAStateManagerSQLSession) GetLastRenewSummary() (*renew.ServerInfoRenewal, error) {
+
+	var resultBytes string
+	row := s.db.QueryRow(`SELECT renew_info FROM ` + s.prov.Prov.DBName("renew_info") + `;`)
+	err := row.Scan(&resultBytes)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	result := &renew.ServerInfoRenewal{}
+	err = json.Unmarshal([]byte(resultBytes), result)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
 
 }

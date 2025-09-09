@@ -9,7 +9,7 @@ GO_LDFLAGS := "\
 	-extldflags '-static' -w -s"
 GOENV := GOARCH=$(GOARCH) GOOS=linux
 GODIRS := ./ca/... ./cmd/... ./context/...  ./dns/... ./service/... ./util/... ./renew/...
-DOCKER_COMPTEST := $(DOCKER) run -v $(shell pwd):/workdir -t golang:1.20-alpine /workdir/docker/run-in-docker golang-alpine
+DOCKER_COMPTEST := $(DOCKER) run -v $(shell pwd):/workdir -t golang:1.24-alpine /workdir/docker/run-in-docker golang-alpine
 
 all: service
 

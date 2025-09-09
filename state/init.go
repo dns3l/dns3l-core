@@ -5,39 +5,6 @@ import (
 	"fmt"
 )
 
-func getSQLCreateStatementSQLite(dbProv SQLDBProvider, createdb bool) string {
-	return `
-CREATE TABLE IF NOT EXISTS ` + dbProv.DBName("acmeusers") + ` (
-	user_id TEXT,
-	ca_id TEXT,
-	privatekey TEXT,
-	registration TEXT,
-	registration_date TIMESTAMP,
-	PRIMARY KEY (user_id, ca_id)
-	);
-CREATE TABLE IF NOT EXISTS ` + dbProv.DBName("keycerts") + ` (
-	key_name TEXT,
-	key_rz TEXT,
-	ca_id TEXT,
-	acme_user TEXT,
-	issued_by TEXT,
-	issued_by_email TEXT,
-	priv_key TEXT,
-	cert TEXT,
-	issuer_cert TEXT,
-	domains TEXT,
-	claim_time TIMESTAMP,
-	renewed_time TIMESTAMP,
-	next_renewal_time TIMESTAMP,
-	valid_start_time TIMESTAMP,
-	valid_end_time TIMESTAMP,
-	renew_count INTEGER,
-	ttl_seconds INTEGER,
-	PRIMARY KEY (key_name, ca_id)
-	);
-`
-}
-
 func createWithMySQL(db *sql.DB, dbProv SQLDBProvider, createdb bool) error {
 
 	if createdb {
@@ -86,6 +53,8 @@ func createWithMySQL(db *sql.DB, dbProv SQLDBProvider, createdb bool) error {
 	next_renewal_time TIMESTAMP DEFAULT 0,
 	valid_start_time TIMESTAMP DEFAULT 0,
 	valid_end_time TIMESTAMP DEFAULT 0,
+	last_access_time TIMESTAMP DEFAULT 0,
+	access_count INTEGER DEFAULT 0,
 	renew_count INTEGER,
 	ttl_seconds INTEGER DEFAULT 0,
 	PRIMARY KEY (key_name, ca_id)
@@ -120,6 +89,47 @@ func createWithMySQL(db *sql.DB, dbProv SQLDBProvider, createdb bool) error {
 		return err
 	}
 
+	_, err = db.Exec(`DROP PROCEDURE IF EXISTS ` + dbProv.DBName("read_increment") + `;`)
+	if err != nil {
+		return err
+	}
+
+	_, err = db.Exec(`CREATE PROCEDURE ` + dbProv.DBName("read_increment") + ` (IN my_key_name CHAR(255), IN my_ca_id CHAR(63))
+	BEGIN
+	  UPDATE ` + dbProv.DBName("keycerts") + ` SET last_access_time = utc_timestamp(), access_count = access_count + 1
+	  WHERE key_name = my_key_name AND ca_id = my_ca_id;
+	END;`)
+	if err != nil {
+		return err
+	}
+
+	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS ` + dbProv.DBName("renew_info") + ` (
+	renew_info TEXT
+	);`)
+	if err != nil {
+		return err
+	}
+
+	_, err = db.Exec(`DROP PROCEDURE IF EXISTS ` + dbProv.DBName("set_renew_info") + ` ;`)
+	if err != nil {
+		return err
+	}
+
+	_, err = db.Exec(`CREATE PROCEDURE ` + dbProv.DBName("set_renew_info") + ` (IN myrenew_info TEXT)
+	BEGIN
+	  DECLARE EXIT HANDLER FOR SQLEXCEPTION, NOT FOUND
+	  BEGIN
+	    ROLLBACK;
+	  END;
+	  START TRANSACTION;
+	    TRUNCATE TABLE ` + dbProv.DBName("renew_info") + `;
+        INSERT INTO ` + dbProv.DBName("renew_info") + ` VALUES (myrenew_info);
+	  COMMIT;
+	END;`)
+	if err != nil {
+		return err
+	}
+
 	log.Info("Tables set or updated.")
 
 	return nil
@@ -133,13 +143,7 @@ func CreateSQLTables(dbProv SQLDBProvider, createdb bool) error {
 		return err
 	}
 
-	if dbProv.GetType() == "sqlite3" {
-		//in sqlite, we don't need to create databases
-		_, err = db.Exec(getSQLCreateStatementSQLite(dbProv, createdb))
-		if err != nil {
-			return err
-		}
-	} else if dbProv.GetType() == "mysql" {
+	if dbProv.GetType() == "mysql" {
 		err = createWithMySQL(db, dbProv, createdb)
 		if err != nil {
 			return err

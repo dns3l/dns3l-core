@@ -96,6 +96,11 @@ func TestWithLEStaging() {
 		State: casm,
 	}
 
+	err = h.Init()
+	if err != nil {
+		panic(err)
+	}
+
 	err = state.CreateSQLTables(dbprov, true)
 	if err != nil {
 		panic(err)
