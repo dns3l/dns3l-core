@@ -10,7 +10,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-var Version = "1.1" //this is the API version, not the one of the daemon
+var Version = "1.2" //this is the API version, not the one of the daemon
 
 type RestV1Handler struct {
 	Service   ServiceV1
