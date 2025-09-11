@@ -52,7 +52,7 @@ FLUSH PRIVILEGES;
 EOSQL
   else # change password (optionally)
     set -e
-    echo "Change password ${DNS3L_DB_PASS}..."
+    echo "Change password..."
     /dckrz -wait tcp://${DNS3L_DB_HOST}:3306 -timeout ${SERVICE_TIMEOUT} -- \
       cat <<EOSQL | mariadb -uroot -p"${MARIADB_ROOT_PASSWORD}" -h"${DNS3L_DB_HOST}" ${MARIADB_ARGS}
 ALTER USER IF EXISTS ${DNS3L_DB_USER}@'%' IDENTIFIED BY '${DNS3L_DB_PASS}';
