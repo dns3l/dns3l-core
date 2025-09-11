@@ -52,6 +52,7 @@ var caCertsQueryColumns = []string{
 	"last_access_time",
 	"access_count",
 	"cert",
+	"renew_count",
 	"ttl_seconds",
 }
 
@@ -74,7 +75,7 @@ func (s *CAStateManagerSQLSession) GetCACertByID(keyname string, caid string) (*
 	var ttlsec int
 	err = rows.Scan(&info.Name, &info.PrivKey, &info.ACMEUser, &info.IssuedBy.Name, &info.IssuedBy.Email,
 		&info.ClaimTime, &info.RenewedTime, &info.NextRenewalTime, &info.ValidStartTime, &info.ValidEndTime,
-		&info.LastAccessTime, &info.AccessCount, &info.CertPEM, &ttlsec)
+		&info.LastAccessTime, &info.AccessCount, &info.CertPEM, &info.RenewCount, &ttlsec)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	} else if err != nil {
@@ -215,7 +216,7 @@ func (s *CAStateManagerSQLSession) rowToCACertInfo(rows *sql.Rows, info *types.C
 	var ttlsec int
 	err := rows.Scan(&info.Name, &info.PrivKey, &info.ACMEUser, &info.IssuedBy.Name, &info.IssuedBy.Email,
 		&info.ClaimTime, &info.RenewedTime, &info.NextRenewalTime, &info.ValidStartTime, &info.ValidEndTime,
-		&info.LastAccessTime, &info.AccessCount, &info.CertPEM, &ttlsec,
+		&info.LastAccessTime, &info.AccessCount, &info.CertPEM, &info.RenewCount, &ttlsec,
 		&domainsRevStr)
 	info.TTLSelected = time.Duration(ttlsec) * time.Second
 	if err != nil {
@@ -483,7 +484,7 @@ func (s *CAStateManagerSQLSession) ListToRenew(atTime time.Time,
 	return s.listTimeExpired(atTime, limit, "next_renewal_time")
 }
 
-func (s *CAStateManagerSQLSession) listTimeExpired(atTime time.Time, limit uint,
+func (s *CAStateManagerSQLSession) listTimeExpired(atTime time.Time, _ uint,
 	field string) ([]types.CertificateRenewInfo, error) {
 	q := squirrel.Select("key_name", "ca_id", "valid_end_time", "next_renewal_time", "ttl_seconds").From(
 		s.prov.Prov.DBName("keycerts")).Where(squirrel.Lt{field: atTime}).OrderBy("valid_end_time")
