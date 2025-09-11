@@ -6,10 +6,10 @@
 
 
 Core parts of dns3l written in Go:
-- Backend daemon for [DNS3L](https://github.com/dta4/dns3l)
+- Backend daemon for [DNS3L](https://github.com/dns3l/dns3l)
 - API/Libraries for DNS3L functionality
 
-**Requires go >= 1.20**
+**Requires go >= 1.24**
 
 ## Implementation Status
 
@@ -21,11 +21,13 @@ Implemented:
 - DNS handlers
 - ACME handlers
 - State, DB connection
-- Auth
+- OIDC Auth
+- Static token auth
 
 Not yet implemented:
 
 - Legacy CA handlers
+- Self-service token auth support
 
 # dns3ld (backend daemon)
 
@@ -58,7 +60,7 @@ to choose other tag names as needed.
 
 ```
 $./dns3ld --help
-DNS3LD backend daemon, version 1.0.0
+DNS3LD backend daemon, version 1.5.4
 
 Usage:
   dns3ld [flags]
@@ -70,6 +72,8 @@ Available Commands:
   help        Help about any command
 
 Flags:
+  -b, --bootstrapcert   Whether initial bootstrapping of certs should run on this instance. Useful if multiple
+                                        instances run on the same DB and you want to disable bootstrapping for the replicas. (default true)
   -c, --config string   YAML-formatted configuration for dns3ld. (default "config.yaml")
   -h, --help            help for dns3ld
   -r, --renew           Whether automatic cert renewal jobs should run. Useful if multiple instances run on the
@@ -91,7 +95,7 @@ Example:
 
 ```yaml
   backend:
-    image: ghcr.io/dns3l/dns3ld:1.0.1
+    image: ghcr.io/dns3l/dns3ld:1.5.4
     container_name: dns3l-backend
     restart: always
     volumes:
