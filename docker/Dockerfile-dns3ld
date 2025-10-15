@@ -1,4 +1,4 @@
-FROM golang:1.24-alpine AS build
+FROM golang:1.24-alpine@sha256:8f8959f38530d159bf71d0b3eb0c547dc61e7959d8225d1599cf762477384923 AS build
 
 WORKDIR /go/build
 RUN apk add --no-cache \
@@ -7,19 +7,13 @@ RUN apk add --no-cache \
 COPY . .
 RUN make service
 
-FROM alpine:3.22
+FROM alpine:3.22@sha256:4b7ce07002c69e8f3d704a9c5d6fd3053be500b7f1c69fc0d80990c2ad8dd412
 
 LABEL org.opencontainers.image.title="dns3ld"
 LABEL org.opencontainers.image.description="DNS3L daemon with API for core functionality"
 LABEL org.opencontainers.image.version=0.0.0
 
 ENV VERSION=0.0.0
-
-ENV PAGER=less
-
-ARG http_proxy
-ARG https_proxy
-ARG no_proxy
 
 # provided via BuildKit
 ARG TARGETPLATFORM
@@ -28,10 +22,10 @@ ARG TARGETARCH
 ARG TARGETVARIANT
 
 # defaults for none BuildKit
-ENV _platform=${TARGETPLATFORM:-linux/amd64}
-ENV _os=${TARGETOS:-linux}
-ENV _arch=${TARGETARCH:-amd64}
-ENV _variant=${TARGETVARIANT:-}
+ARG _platform=${TARGETPLATFORM:-linux/amd64}
+ARG _os=${TARGETOS:-linux}
+ARG _arch=${TARGETARCH:-amd64}
+ARG _variant=${TARGETVARIANT:-}
 
 ARG DNS3LUID=10045
 ARG DNS3LGID=10045
@@ -39,11 +33,8 @@ ARG DNS3LGID=10045
 ENV DNS3LPATH=/home/dns3ld
 
 RUN apk --update upgrade && \
-    apk add --no-cache \
-        ca-certificates curl less bash busybox-extras \
-        jq tzdata coreutils openssl \
-        mariadb-client libcap \
-        certbot && \
+    apk add --no-cache tini bash coreutils tzdata openssl ca-certificates curl busybox-extras \
+        mariadb-client libcap && \
     addgroup -g ${DNS3LGID} dns3ld && \
     adduser -D -u ${DNS3LUID} -G dns3ld dns3ld && \
     chmod g-s ${DNS3LPATH} && \
@@ -51,15 +42,20 @@ RUN apk --update upgrade && \
     rm -rf /var/cache/apk/*
 
 # Install dockerize
+# https://github.com/powerman/dockerize doesn't enabled SHA digests for assets via GitHub API
 #
-ENV DCKRZ_VERSION="0.23.1"
-RUN curl -fsSL https://github.com/powerman/dockerize/releases/download/v$DCKRZ_VERSION/dockerize-v${DCKRZ_VERSION}-${_os}-${_arch}${_variant} > /dckrz && \
-    chmod a+x /dckrz
+ARG DCKRZ_LINUX_AMD64_SHA256=9239915df1cc59b4ad3927f9aad6a36ffc256d459cff9b073ae9d7f9c9149a03
+ARG DCKRZ_LINUX_ARM64_SHA256=3a11c2f207151c304e8cf7aef060cf30ce8d56979b346329087f3a2c6b6055cb
+ENV DCKRZ_VERSION="0.24.0"
+RUN curl -fsSL https://github.com/powerman/dockerize/releases/download/v${DCKRZ_VERSION}/dockerize-v${DCKRZ_VERSION}-${_os}-${_arch}${_variant} > /dckrz && \
+    chmod a+x /dckrz && \
+    echo "${DCKRZ_LINUX_AMD64_SHA256} */dckrz" >> /dckrz.sha256 && \
+    echo "${DCKRZ_LINUX_ARM64_SHA256} */dckrz" >> /dckrz.sha256 && \
+    sha256sum -c /dckrz.sha256 2>/dev/null | grep 'OK$'
 
 COPY --from=build /go/build/dns3ld /app/dns3ld
 COPY docker/docker-entrypoint.sh /entrypoint.sh
 COPY docker/run-dns3ld.sh /run-dns3ld.sh
-COPY --chown=dns3ld:dns3ld docker/certbot.conf $DNS3LPATH/certbot.ini
 
 WORKDIR $DNS3LPATH
 
