@@ -1,6 +1,8 @@
 package comp
 
 import (
+	"fmt"
+
 	"github.com/dns3l/dns3l-core/service"
 	"github.com/dns3l/dns3l-core/state"
 	testauth "github.com/dns3l/dns3l-core/test/auth"
@@ -39,6 +41,11 @@ func (c *ComponentTest) Exec(testfn func(*service.Service) error) error {
 		return err
 	}
 
+	err = SetStrictSQLModes(conf.DB)
+	if err != nil {
+		return fmt.Errorf("error while setting strict SQL modes: %w", err)
+	}
+
 	err = state.CreateSQLTables(conf.DB, true)
 	if err != nil {
 		return err
@@ -69,6 +76,17 @@ func (c *ComponentTest) Exec(testfn func(*service.Service) error) error {
 
 	return testfn(&srv)
 
+}
+
+func SetStrictSQLModes(dbprov state.SQLDBProvider) error {
+	log.Debug("Setting strict SQL modes.")
+	conn, _, err := dbprov.GetAnonDBConn()
+	if err != nil {
+		return err
+	}
+	_, err = conn.Exec("SET GLOBAL sql_mode = 'STRICT_TRANS_TABLES,STRICT_ALL_TABLES,NO_ZERO_IN_DATE," +
+		"NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,TRADITIONAL,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION';")
+	return err
 }
 
 func (c *ComponentTest) prepareTestConfig(mdb *mariadb.MariaDBController) (*service.Config, error) {

@@ -73,14 +73,20 @@ func (s *CAStateManagerSQLSession) GetCACertByID(keyname string, caid string) (*
 		return nil, nil
 	}
 	var ttlsec int
+	var next_renewal_time, valid_start_time, valid_end_time, last_access_time *time.Time
 	err = rows.Scan(&info.Name, &info.PrivKey, &info.ACMEUser, &info.IssuedBy.Name, &info.IssuedBy.Email,
-		&info.ClaimTime, &info.RenewedTime, &info.NextRenewalTime, &info.ValidStartTime, &info.ValidEndTime,
-		&info.LastAccessTime, &info.AccessCount, &info.CertPEM, &info.RenewCount, &ttlsec)
+		&info.ClaimTime, &info.RenewedTime, &next_renewal_time, &valid_start_time, &valid_end_time,
+		&last_access_time, &info.AccessCount, &info.CertPEM, &info.RenewCount, &ttlsec)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	} else if err != nil {
 		return nil, err
 	}
+	info.NextRenewalTime = NilToZeroTime(next_renewal_time)
+	info.ValidStartTime = NilToZeroTime(valid_start_time)
+	info.ValidEndTime = NilToZeroTime(valid_end_time)
+	info.LastAccessTime = NilToZeroTime(last_access_time)
+
 	info.TTLSelected = time.Duration(ttlsec) * time.Second
 
 	info.Domains, err = s.GetDomains(keyname, caid)
@@ -214,14 +220,19 @@ func (s *CAStateManagerSQLSession) rowToCACertInfo(rows *sql.Rows, info *types.C
 	var domainsRevStr string
 	info.IssuedBy = &authtypes.UserInfo{}
 	var ttlsec int
+	var next_renewal_time, valid_start_time, valid_end_time, last_access_time *time.Time
 	err := rows.Scan(&info.Name, &info.PrivKey, &info.ACMEUser, &info.IssuedBy.Name, &info.IssuedBy.Email,
-		&info.ClaimTime, &info.RenewedTime, &info.NextRenewalTime, &info.ValidStartTime, &info.ValidEndTime,
-		&info.LastAccessTime, &info.AccessCount, &info.CertPEM, &info.RenewCount, &ttlsec,
+		&info.ClaimTime, &info.RenewedTime, &next_renewal_time, &valid_start_time, &valid_end_time,
+		&last_access_time, &info.AccessCount, &info.CertPEM, &info.RenewCount, &ttlsec,
 		&domainsRevStr)
 	info.TTLSelected = time.Duration(ttlsec) * time.Second
 	if err != nil {
 		return err
 	}
+	info.NextRenewalTime = NilToZeroTime(next_renewal_time)
+	info.ValidStartTime = NilToZeroTime(valid_start_time)
+	info.ValidEndTime = NilToZeroTime(valid_end_time)
+	info.LastAccessTime = NilToZeroTime(last_access_time)
 
 	info.Domains = strings.Split(domainsRevStr, ",")
 

@@ -16,6 +16,7 @@ import (
 // Optionally, if set, executes the function provided in SetDBPreExec() first.
 type SQLDBProvider interface {
 	GetDBConn() (*sql.DB, error)
+	GetAnonDBConn() (*sql.DB, string, error)
 	SetDBPreExec(func(*sql.DB) error)
 	DBName(name string) string
 	GetType() string
@@ -82,14 +83,15 @@ func getAnonDBDSN(inputdsn string) (string, string, error) {
 	return dsn.FormatDSN(), oldDBName, nil
 }
 
-// Creates the database before setting tables.
-// Returns no error if database already exists.
-func (c *SQLDBProviderDefault) CreateDB() error {
+// Returns a DB conn not bound to the database
+// The second parameter is the configured database
+// name to which the connection is NOT bound.
+func (c *SQLDBProviderDefault) GetAnonDBConn() (*sql.DB, string, error) {
 
 	//DB creation cannot be done over the go MySQL abstraction so we need a quirks here.
 	anondsn, dbname, err := getAnonDBDSN(c.URL)
 	if err != nil {
-		return err
+		return nil, "", err
 	}
 
 	dbprov := &SQLDBProviderDefault{
@@ -101,10 +103,22 @@ func (c *SQLDBProviderDefault) CreateDB() error {
 
 	err = dbprov.Init()
 	if err != nil {
-		return err
+		return nil, "", err
 	}
 
 	conn, err := dbprov.GetDBConn()
+	if err != nil {
+		return nil, "", err
+	}
+
+	return conn, dbname, err
+}
+
+// Creates the database before setting tables.
+// Returns no error if database already exists.
+func (c *SQLDBProviderDefault) CreateDB() error {
+
+	conn, dbname, err := c.GetAnonDBConn()
 	if err != nil {
 		return err
 	}
