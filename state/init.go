@@ -21,14 +21,7 @@ func createWithMySQL(db *sql.DB, dbProv SQLDBProvider, createdb bool) error {
 
 	log.Info("Setting or updating tables...")
 
-	// Ensure sql_mode is set correctly
-	// Default for MariaDB >= 10.2.4
-	_, err := db.Exec("SET sql_mode = 'STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION';")
-	if err != nil {
-		return err
-	}
-
-	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS ` + dbProv.DBName("acmeusers") + ` (
+	_, err := db.Exec(`CREATE TABLE IF NOT EXISTS ` + dbProv.DBName("acmeusers") + ` (
 	user_id CHAR(255),
 	ca_id CHAR(64),
 	privatekey TEXT,
@@ -50,10 +43,10 @@ func createWithMySQL(db *sql.DB, dbProv SQLDBProvider, createdb bool) error {
 	issuer_cert MEDIUMTEXT,
 	claim_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 	renewed_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-	next_renewal_time TIMESTAMP DEFAULT 0,
-	valid_start_time TIMESTAMP DEFAULT 0,
-	valid_end_time TIMESTAMP DEFAULT 0,
-	last_access_time TIMESTAMP DEFAULT 0,
+	next_renewal_time TIMESTAMP NULL DEFAULT NULL,
+	valid_start_time TIMESTAMP NULL DEFAULT NULL,
+	valid_end_time TIMESTAMP NULL DEFAULT NULL,
+	last_access_time TIMESTAMP NULL DEFAULT NULL,
 	access_count INTEGER DEFAULT 0,
 	renew_count INTEGER,
 	ttl_seconds INTEGER DEFAULT 0,

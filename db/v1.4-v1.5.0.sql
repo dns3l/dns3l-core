@@ -5,8 +5,13 @@ Be sure to replace the table/proc prefix
 
 delimiter //
 
+ALTER TABLE dns3l_keycerts
+  MODIFY COLUMN next_renewal_time TIMESTAMP NULL DEFAULT NULL,
+  MODIFY COLUMN valid_start_time TIMESTAMP NULL DEFAULT NULL,
+  MODIFY COLUMN valid_end_time TIMESTAMP NULL DEFAULT NULL//
+
 ALTER TABLE dns3l_keycerts 
-	ADD COLUMN last_access_time TIMESTAMP DEFAULT 0 AFTER valid_end_time,
+	ADD COLUMN last_access_time TIMESTAMP NULL DEFAULT NULL AFTER valid_end_time,
 	ADD COLUMN access_count INTEGER DEFAULT 0 AFTER last_access_time//
 
 CREATE PROCEDURE dns3l_read_increment (IN my_key_name CHAR(255), IN my_ca_id CHAR(63))

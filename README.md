@@ -50,7 +50,7 @@ make docker
 or explicitly (same semantics)
 
 ```
-docker build -t dns3ld:$(awk -v FS="dns3ld=" 'NF>1{print $2}' VERSIONS)-dev -f docker/Dockerfile-dns3ld .
+docker buildx build -t dns3ld:$(awk -v FS="dns3ld=" 'NF>1{print $2}' VERSIONS)-dev -f docker/Dockerfile-dns3ld .
 ```
 
 The awk command above is an example that will create the right tag name from the VERSIONS file, feel free
