@@ -325,7 +325,6 @@ func (e *Engine) appendRootCertX(issuerCertStr string, rootCertURLs []string, de
 			}
 
 			lastcert := issuerCert[len(issuerCert)-1]
-			fmt.Println(lastcert.SerialNumber)
 
 			_, err = lastcert.Verify(opts)
 			if err != nil {
