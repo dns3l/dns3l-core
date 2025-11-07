@@ -64,7 +64,7 @@ func (r *Renewer) Init() error {
 		ReportFunc: func(_, end time.Time, success, fail uint) {
 			err := r.Service.Config.CA.Functions.PutLastRenewSummary(
 				&renew.ServerInfoRenewal{
-					LastRun:    end,
+					LastRun:    &end,
 					Successful: success,
 					Failed:     fail,
 				})

@@ -271,8 +271,9 @@ func (t *TestRunner) RunDBFull() {
 
 		testStateClean(srv.Config.DB)
 
+		now := time.Now()
 		err := srv.Config.CA.Functions.PutLastRenewSummary(
-			&renew.ServerInfoRenewal{LastRun: time.Now(), Successful: 3, Failed: 4})
+			&renew.ServerInfoRenewal{LastRun: &now, Successful: 3, Failed: 4})
 		if err != nil {
 			panic(err)
 		}
