@@ -84,6 +84,8 @@ func (s *Scheduler[T, PT]) scheduleRenewJobs() {
 
 	if len(jobs) <= 0 {
 		log.WithField("jobcount", 0).Info("No renewal jobs to trigger.")
+		end := time.Now()
+		s.ReportFunc(start, end, 0, 0)
 		return
 	}
 
