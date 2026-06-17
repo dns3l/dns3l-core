@@ -377,7 +377,7 @@ func (h *CAFunctionHandler) DeleteCertificatesAllCA(keyID string) error {
 		if _, is := err.(*cmn.NotFoundError); is {
 			log.WithError(err).WithField("caID", keyID).Debugf("Provider '%s' not managing "+
 				"key '%s', this is normal.", id, keyID)
-		} else {
+		} else if err != nil {
 			return fmt.Errorf("problems deleting key '%s' in ca '%s', %w", id, keyID, err)
 		}
 	}
