@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	api "github.com/dns3l/dns3l-core/api/v1"
 	"github.com/dns3l/dns3l-core/common"
 	"github.com/dns3l/dns3l-core/service/auth"
 	"github.com/dns3l/dns3l-core/util"
@@ -18,11 +19,6 @@ type RestV1Handler struct {
 
 	//Must be inited externally PRIOR to Rest API execution
 	Auth auth.RESTAPIAuthProvider
-}
-
-type ErrorMsg struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
 }
 
 func (hdlr *RestV1Handler) RegisterHandle(r *mux.Router) {
@@ -132,7 +128,7 @@ func (hdlr *RestV1Handler) HandleCAAnonCert(w http.ResponseWriter, r *http.Reque
 		return
 	case http.MethodPost:
 		//Claim Cert
-		cinfo := &CertClaimInfo{}
+		cinfo := &api.CertClaimInfo{}
 		err := json.NewDecoder(r.Body).Decode(&cinfo)
 		if err != nil {
 			httpError(w, r, http.StatusBadRequest, err.Error())
@@ -401,7 +397,7 @@ func httpError(w http.ResponseWriter, r *http.Request, sc int, message string) {
 		WithField("message", message).Debug("HTTP request failed.")
 	//TODO parse ForwardedFor
 	w.WriteHeader(sc)
-	util.LogIfError(log, json.NewEncoder(w).Encode(&ErrorMsg{
+	util.LogIfError(log, json.NewEncoder(w).Encode(&api.ErrorMsg{
 		Code:    sc,
 		Message: message,
 	}))

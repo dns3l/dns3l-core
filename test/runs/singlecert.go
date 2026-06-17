@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	api "github.com/dns3l/dns3l-core/api/v1"
 	"github.com/dns3l/dns3l-core/service"
-	srvapiv1 "github.com/dns3l/dns3l-core/service/apiv1"
 	"github.com/dns3l/dns3l-core/state"
 	"github.com/dns3l/dns3l-core/test/apiv1"
 	testauth "github.com/dns3l/dns3l-core/test/auth"
@@ -88,7 +88,7 @@ func (t *TestRunner) RunSingleEntry() {
 				if t.Dump {
 					fmt.Println(out)
 				}
-				res := srvapiv1.CertResources{}
+				res := api.CertResources{}
 				fromJson(&res, resstr)
 
 				key := testhttp.AssertSuccess("Get key 1 PEM key by alice",

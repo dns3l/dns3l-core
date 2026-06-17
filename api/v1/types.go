@@ -1,15 +1,12 @@
-package apiv1
+package v1
 
-import (
-	"github.com/dns3l/dns3l-core/renew"
-	"github.com/dns3l/dns3l-core/service/auth"
-)
+import "time"
 
 type ServerInfo struct {
-	Version *ServerInfoVersion       `json:"version"`
-	Contact *ServerInfoContact       `json:"contact"`
-	Auth    auth.ServerInfoAuth      `json:"auth"` //populated by auth plugin
-	Renewal *renew.ServerInfoRenewal `json:"renewal"`
+	Version *ServerInfoVersion `json:"version"`
+	Contact *ServerInfoContact `json:"contact"`
+	Auth    any                `json:"auth"`
+	Renewal *ServerInfoRenewal `json:"renewal"`
 }
 
 type ServerInfoVersion struct {
@@ -21,6 +18,13 @@ type ServerInfoContact struct {
 	URL   string   `json:"url"`
 	EMail []string `json:"email"`
 }
+
+type ServerInfoRenewal struct {
+	LastRun    *time.Time `json:"lastRun"`
+	Successful uint       `json:"successful"`
+	Failed     uint       `json:"failed"`
+}
+
 type DNSHandlerInfo struct {
 	ID          string   `json:"id"`
 	Name        string   `json:"name"`
@@ -51,19 +55,19 @@ type CAInfo struct {
 }
 
 type AutoDNSInfo struct {
-	IPv4 string `json:"ipv4" validate:"required,ipv4"`
+	IPv4 string `json:"ipv4,omitempty" validate:"required,ipv4"`
 }
 
 type CertClaimInfo struct {
 	Name            string         `json:"name" validate:"required,fqdn"`
 	Wildcard        bool           `json:"wildcard"`
-	SubjectAltNames []string       `json:"san" validate:"dive,required,fqdn|fqdnWildcard"`
-	AutoDNS         *AutoDNSInfo   `json:"autodns"`
-	Hints           CertClaimHints `json:"hints"`
+	SubjectAltNames []string       `json:"san,omitempty" validate:"dive,required,fqdn|fqdnWildcard"`
+	AutoDNS         *AutoDNSInfo   `json:"autodns,omitempty"`
+	Hints           CertClaimHints `json:"hints,omitempty"`
 }
 
 type CertClaimHints struct {
-	TTL uint16 `json:"ttl"` //Time from now until cert expiry in days
+	TTL uint16 `json:"ttl,omitempty"` // Time from now until cert expiry in days.
 }
 
 type CertResources struct {
@@ -92,4 +96,9 @@ type CertInfo struct {
 	SubjectCN   string `json:"subjectCN"`
 	IssuerCN    string `json:"issuerCN"`
 	Serial      string `json:"serial"`
+}
+
+type ErrorMsg struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
 }

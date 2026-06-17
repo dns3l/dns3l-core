@@ -1,7 +1,7 @@
-name: docker-dns3ld
+name: docker-dns3lcli
 
 env:
-  dest_repo:  ghcr.io/dns3l/dns3ld
+  dest_repo: ghcr.io/dns3l/dns3lcli
 
 on:
   push:
@@ -19,7 +19,7 @@ jobs:
         uses: actions/checkout@v4
       - name: Determine version tag
         run: >
-          set -e; dest_tag=$(awk -v FS="dns3ld=" 'NF>1{print $2}' VERSIONS); echo "dest_tag=$dest_tag" >> $GITHUB_ENV; echo "Docker tag: $dest_tag"
+          set -e; dest_tag=$(awk -v FS="dns3lcli=" 'NF>1{print $2}' VERSIONS); echo "dest_tag=$dest_tag" >> $GITHUB_ENV; echo "Docker tag: $dest_tag"
       - name: Setup QEMU
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
@@ -38,6 +38,6 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           platforms: linux/amd64,linux/arm64
-          file: docker/Dockerfile-dns3ld
+          file: docker/Dockerfile-dns3lcli
           push: true
           tags: ${{ env.dest_repo }}:${{ env.dest_tag }},${{ env.dest_repo }}:latest
