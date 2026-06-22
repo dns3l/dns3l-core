@@ -118,10 +118,10 @@ func CertificateMatchesKey(certPEM, keyPEM []byte) (bool, error) {
 	switch priv := key.(type) {
 	case *rsa.PrivateKey:
 		pub, ok := cert.PublicKey.(*rsa.PublicKey)
-		return ok && pub.N.Cmp(priv.PublicKey.N) == 0 && pub.E == priv.PublicKey.E, nil
+		return ok && pub.N.Cmp(priv.N) == 0 && pub.E == priv.E, nil
 	case *ecdsa.PrivateKey:
 		pub, ok := cert.PublicKey.(*ecdsa.PublicKey)
-		return ok && pub.X.Cmp(priv.PublicKey.X) == 0 && pub.Y.Cmp(priv.PublicKey.Y) == 0, nil
+		return ok && pub.X.Cmp(priv.X) == 0 && pub.Y.Cmp(priv.Y) == 0, nil
 	case ed25519.PrivateKey:
 		pub, ok := cert.PublicKey.(ed25519.PublicKey)
 		return ok && string(pub) == string(priv.Public().(ed25519.PublicKey)), nil

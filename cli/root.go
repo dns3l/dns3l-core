@@ -465,7 +465,7 @@ func (f *CommandFactory) runSlowCommand(cmd *cobra.Command, requireAuth bool, me
 	go progress(f.ErrOut, done)
 	resp, err := f.Client(cfg).Do(cmd.Context(), method, path, query, body)
 	stop()
-	fmt.Fprintln(f.ErrOut)
+	_, _ = fmt.Fprintln(f.ErrOut)
 	if err != nil {
 		return err
 	}
@@ -494,10 +494,14 @@ func (f *CommandFactory) runPEMSingle(cmd *cobra.Command, path string, output st
 		return WritePEMFile(output, resp.Body, false)
 	}
 	_, err = f.Out.Write(resp.Body)
-	if len(resp.Body) > 0 && resp.Body[len(resp.Body)-1] != '\n' {
-		fmt.Fprintln(f.Out)
+	if err != nil {
+		return err
 	}
-	return err
+	if len(resp.Body) > 0 && resp.Body[len(resp.Body)-1] != '\n' {
+		_, err = fmt.Fprintln(f.Out)
+		return err
+	}
+	return nil
 }
 
 func (f *CommandFactory) runPEMAll(cmd *cobra.Command, path string, outputDir string, check bool) error {
@@ -566,13 +570,13 @@ func changedFlags(cmd *cobra.Command) ChangedFlags {
 func progress(out io.Writer, done <-chan struct{}) {
 	ticker := time.NewTicker(2 * time.Second)
 	defer ticker.Stop()
-	fmt.Fprint(out, "certificate claim in progress")
+	_, _ = fmt.Fprint(out, "certificate claim in progress")
 	for {
 		select {
 		case <-done:
 			return
 		case <-ticker.C:
-			fmt.Fprint(out, ".")
+			_, _ = fmt.Fprint(out, ".")
 		}
 	}
 }

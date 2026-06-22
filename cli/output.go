@@ -153,14 +153,20 @@ func PrintCertResources(out io.Writer, resources apiv1.CertResources, check bool
 			}
 		}
 		if !first {
-			fmt.Fprintln(out)
+			if _, err := fmt.Fprintln(out); err != nil {
+				return err
+			}
 		}
-		fmt.Fprintln(out, pemResourceCaption(name, color))
+		if _, err := fmt.Fprintln(out, pemResourceCaption(name, color)); err != nil {
+			return err
+		}
 		if _, err := fmt.Fprint(out, value); err != nil {
 			return err
 		}
 		if !strings.HasSuffix(value, "\n") {
-			fmt.Fprintln(out)
+			if _, err := fmt.Fprintln(out); err != nil {
+				return err
+			}
 		}
 		first = false
 	}
@@ -198,7 +204,6 @@ func printAny(out io.Writer, value any, color bool) error {
 		_, err := fmt.Fprintln(out, scalarText(typed, color))
 		return err
 	}
-	return nil
 }
 
 func scalarText(value any, color bool) string {
