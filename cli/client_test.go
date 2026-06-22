@@ -16,6 +16,9 @@ func TestClientFetchesTokenAndCallsAPI(t *testing.T) {
 			return testResponse(http.StatusOK, `{"id_token":"oidc-token"}`), nil
 		case "/api/v1/crt":
 			apiCalled = true
+			if got := r.Header.Get("User-Agent"); got != userAgent() {
+				t.Fatalf("unexpected user agent: %q", got)
+			}
 			if got := r.Header.Get("Authorization"); got != "Bearer oidc-token" {
 				t.Fatalf("unexpected Authorization header: %q", got)
 			}

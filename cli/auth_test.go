@@ -14,6 +14,9 @@ func TestTokenFetcherFetch(t *testing.T) {
 		if r.URL.Path != "/auth/token" {
 			t.Fatalf("unexpected path %s", r.URL.Path)
 		}
+		if got := r.Header.Get("User-Agent"); got != userAgent() {
+			t.Fatalf("unexpected user agent: %q", got)
+		}
 		user, pass, ok := r.BasicAuth()
 		sawAuth = ok && user == "dns3l-api" && pass == "secret"
 		if err := r.ParseForm(); err != nil {

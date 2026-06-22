@@ -26,6 +26,7 @@ func (f *TokenFetcher) Fetch(ctx context.Context, cfg *RuntimeConfig) (string, e
 		return "", fmt.Errorf("create token request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("User-Agent", userAgent())
 	req.SetBasicAuth(cfg.OIDCClientID, cfg.OIDCClientSecret)
 
 	client := f.Client

@@ -73,6 +73,7 @@ func (c *Client) Do(ctx context.Context, method, path string, query url.Values, 
 		req.Header.Set("Content-Type", "application/json")
 	}
 	req.Header.Set("Accept", "application/json, text/plain")
+	req.Header.Set("User-Agent", userAgent())
 	if err := c.applyAuth(ctx, req); err != nil {
 		return nil, err
 	}
