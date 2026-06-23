@@ -213,12 +213,6 @@ If you already have a token, pass it directly:
 dns3lcli --server https://my-server.com/api/v1 --token "$DNS3L_ID_TOKEN" crt list
 ```
 
-If dns3ld is configured with static API keys, use:
-
-```
-dns3lcli --server https://my-server.com/api/v1 --api-key "$DNS3L_API_KEY" crt list
-```
-
 Use `--no-auth` to force anonymous access. Certificate listing, certificate
 metadata, and public certificate PEM data can also try anonymous access
 automatically when no auth data is configured, depending on the dns3ld server
@@ -255,7 +249,6 @@ List certificates:
 ```
 dns3lcli --server https://my-server.com/api/v1 crt list
 dns3lcli --server https://my-server.com/api/v1 crt list --ca les
-dns3lcli --server https://my-server.com/api/v1 crt list --search '*.example.com'
 ```
 
 Show certificate metadata:

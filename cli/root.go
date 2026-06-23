@@ -235,7 +235,6 @@ func (f *CommandFactory) newCRTCommand() *cobra.Command {
 
 func (f *CommandFactory) newCRTListCommand() *cobra.Command {
 	var caID string
-	var search string
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List certificates",
@@ -246,9 +245,6 @@ func (f *CommandFactory) newCRTListCommand() *cobra.Command {
 				path = "/ca/" + pathEscape(caID) + "/crt"
 			}
 			query := url.Values{}
-			if search != "" {
-				query.Set("search", search)
-			}
 			return f.runJSONCommand(cmd, false, http.MethodGet, path, query, nil, func(body []byte, color bool) error {
 				certs, err := DecodeJSON[[]apiv1.CertInfo](body)
 				if err != nil {
@@ -259,7 +255,6 @@ func (f *CommandFactory) newCRTListCommand() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&caID, "ca", "", "limit to a CA ID")
-	cmd.Flags().StringVar(&search, "search", "", "certificate search expression")
 	return cmd
 }
 
