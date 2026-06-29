@@ -1,0 +1,77 @@
+name: dns3lcli
+on:
+  push:
+    branches:
+      - "*"
+  pull_request:
+permissions:
+  contents: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+
+      - name: Cache
+        uses: actions/cache@v4
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Test dns3lcli
+        run: go test -v ./cli ./cmd/dns3lcli
+
+  build:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+
+      - name: Read dns3lcli version
+        run: |
+          set -eu
+          version="$(awk -F= '$1 == "dns3lcli" { print $2; exit }' VERSIONS)"
+          if [ -z "$version" ]; then
+            echo "dns3lcli version not found in VERSIONS" >&2
+            exit 1
+          fi
+          echo "DNS3LCLI_VERSION=$version" >> "$GITHUB_ENV"
+          echo "DNS3LCLI_RELEASE_TAG=dns3lcli-$version" >> "$GITHUB_ENV"
+          echo "dns3lcli version: $version"
+
+      - name: Build cross-platform binaries
+        run: make cli-all
+
+      - name: Upload binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: dns3lcli-binaries
+          path: dist/dns3lcli_*.gz
+
+      - name: Create release if missing
+        if: github.ref == 'refs/heads/master'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          if gh release view "$DNS3LCLI_RELEASE_TAG" >/dev/null 2>&1; then
+            echo "Release $DNS3LCLI_RELEASE_TAG already exists for dns3lcli version $DNS3LCLI_VERSION; doing nothing."
+            exit 0
+          fi
+          gh release create "$DNS3LCLI_RELEASE_TAG" dist/dns3lcli_*.gz \
+            --target "$GITHUB_SHA" \
+            --title "dns3lcli $DNS3LCLI_VERSION" \
+            --notes "dns3lcli $DNS3LCLI_VERSION"

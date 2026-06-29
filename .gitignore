@@ -2,5 +2,6 @@
 *.txt
 !help.txt
 **.vscode
-dns3lcli
-dns3lcli.exe
+/dns3lcli
+/dns3lcli.exe
+dist/

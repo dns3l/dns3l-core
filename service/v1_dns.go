@@ -3,9 +3,9 @@ package service
 import (
 	"fmt"
 
+	apiv1 "github.com/dns3l/dns3l-core/api/v1"
 	"github.com/dns3l/dns3l-core/ca"
 	"github.com/dns3l/dns3l-core/common"
-	"github.com/dns3l/dns3l-core/service/apiv1"
 )
 
 func (s *V1) GetDNSHandlers() []apiv1.DNSHandlerInfo {

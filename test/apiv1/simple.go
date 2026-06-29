@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	api "github.com/dns3l/dns3l-core/api/v1"
 	"github.com/dns3l/dns3l-core/service"
-	"github.com/dns3l/dns3l-core/service/apiv1"
 	httptest "github.com/dns3l/dns3l-core/test/http"
 )
 
@@ -20,15 +20,15 @@ func CreateKeyExtended(srv *service.Service, caid string, user string, name stri
 			"POST",
 			fmt.Sprintf("/api/ca/%s/crt", caid),
 			user,
-			&apiv1.CertClaimInfo{
+			&api.CertClaimInfo{
 				Name:            name,
 				Wildcard:        false,
 				SubjectAltNames: sans,
 
-				AutoDNS: &apiv1.AutoDNSInfo{
+				AutoDNS: &api.AutoDNSInfo{
 					IPv4: "1.2.3.4",
 				},
-				Hints: apiv1.CertClaimHints{
+				Hints: api.CertClaimHints{
 					TTL: ttl,
 				},
 			},
