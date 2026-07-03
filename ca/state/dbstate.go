@@ -166,7 +166,7 @@ func constructListCACertsQuery(dbn func(name string) string, keyName string, cai
 
 	return `SELECT
 		` + keycertsDistinctQueryStr(dbn) + `
-		GROUP_CONCAT(` + dbn("domains") + `.dom_name_rev)
+		GROUP_CONCAT(` + dbn("domains") + `.dom_name_rev),COUNT(*) OVER () AS total_count
 		FROM ` + dbn("domains") + ` JOIN ` + dbn("keycerts") + ` USING (key_name, ca_id) WHERE
 		(` + dbn("keycerts") + `.key_name, ` + dbn("keycerts") + `.ca_id) IN (
 				select key_name, ca_id FROM ` + dbn("domains") + ` WHERE
@@ -201,12 +201,17 @@ func (s *CAStateManagerSQLSession) ListCACerts(keyName string, caid string, auth
 
 	res := make([]types.CACertInfo, 0, 100)
 
+	var totalCount uint64
 	for rows.Next() {
 		res = append(res, types.CACertInfo{})
-		err = s.rowToCACertInfo(rows, &res[len(res)-1])
+		err = s.rowToCACertInfo(rows, &res[len(res)-1], &totalCount)
 		if err != nil {
 			return nil, err
 		}
+	}
+
+	if pginfo != nil {
+		pginfo.TotalCount = totalCount
 	}
 
 	err = rows.Err()
@@ -216,7 +221,7 @@ func (s *CAStateManagerSQLSession) ListCACerts(keyName string, caid string, auth
 	return res, nil
 }
 
-func (s *CAStateManagerSQLSession) rowToCACertInfo(rows *sql.Rows, info *types.CACertInfo) error {
+func (s *CAStateManagerSQLSession) rowToCACertInfo(rows *sql.Rows, info *types.CACertInfo, total_count *uint64) error {
 	var domainsRevStr string
 	info.IssuedBy = &authtypes.UserInfo{}
 	var ttlsec int
@@ -224,7 +229,7 @@ func (s *CAStateManagerSQLSession) rowToCACertInfo(rows *sql.Rows, info *types.C
 	err := rows.Scan(&info.Name, &info.PrivKey, &info.ACMEUser, &info.IssuedBy.Name, &info.IssuedBy.Email,
 		&info.ClaimTime, &info.RenewedTime, &next_renewal_time, &valid_start_time, &valid_end_time,
 		&last_access_time, &info.AccessCount, &info.CertPEM, &info.RenewCount, &ttlsec,
-		&domainsRevStr)
+		&domainsRevStr, total_count)
 	info.TTLSelected = time.Duration(ttlsec) * time.Second
 	if err != nil {
 		return err

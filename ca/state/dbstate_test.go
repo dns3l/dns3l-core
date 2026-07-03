@@ -1,12 +1,9 @@
 package state
 
-import (
-	"fmt"
-	"testing"
+/*
 
-	"github.com/dns3l/dns3l-core/util"
-	"github.com/xwb1989/sqlparser"
-)
+// DISABLED, since sqlparser does not support 'COUNT(*) OVER ()'
+// We rely on the thorough comptest for DB conformity instead.
 
 func Test(t *testing.T) {
 	q, pms := constructListCACertsQuery(func(name string) string {
@@ -58,3 +55,5 @@ func assertSQLValid(sql string) {
 		panic(err)
 	}
 }
+
+*/

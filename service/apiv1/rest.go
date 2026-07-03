@@ -115,7 +115,7 @@ func (hdlr *RestV1Handler) HandleCAAnonCert(w http.ResponseWriter, r *http.Reque
 	switch r.Method {
 	case http.MethodGet:
 		//Get info of all CA's certs
-		certInfos, err := hdlr.Service.GetCertificateInfos(caID, "", authz, nil)
+		certInfos, err := hdlr.Service.GetCertificateInfos(caID, "", authz, util.PaginationInfoFromRequest(r))
 		//TODO pagination
 		if err != nil {
 			httpError(w, r, 404, err.Error()) //TODO detect Not Found error
@@ -310,7 +310,7 @@ func (hdlr *RestV1Handler) HandleAnonCert(w http.ResponseWriter, r *http.Request
 
 	if r.Method == http.MethodGet {
 		//Get all certs
-		certInfos, err := hdlr.Service.GetCertificateInfos("", "", authz, nil)
+		certInfos, err := hdlr.Service.GetCertificateInfos("", "", authz, util.PaginationInfoFromRequest(r))
 		//TODO pagination
 		if err != nil {
 			httpErrorFromErr(w, r, err)
@@ -343,7 +343,7 @@ func (hdlr *RestV1Handler) HandleNamedCert(w http.ResponseWriter, r *http.Reques
 	switch r.Method {
 	case http.MethodGet:
 		//Get info of specific cert
-		certInfos, err := hdlr.Service.GetCertificateInfos("", crtID, authz, nil)
+		certInfos, err := hdlr.Service.GetCertificateInfos("", crtID, authz, util.PaginationInfoFromRequest(r))
 		//TODO pagination
 		if err != nil {
 			httpErrorFromErr(w, r, err)
