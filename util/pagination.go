@@ -23,14 +23,14 @@ func (p *PaginationInfo) MakeSQL() string {
 	return ""
 }
 
-func (p *PaginationInfo) SetHTTPHeaders(r *http.Response) {
+func (p *PaginationInfo) SetHTTPHeaders(r http.ResponseWriter) {
 	if p.Limit > 0 {
-		r.Header.Add("Page-Limit", strconv.FormatUint(p.Limit, 10))
+		r.Header().Add("Page-Limit", strconv.FormatUint(p.Limit, 10))
 	}
 	if p.Offset > 0 {
-		r.Header.Add("Page-Offset", strconv.FormatUint(p.Offset, 10))
+		r.Header().Add("Page-Offset", strconv.FormatUint(p.Offset, 10))
 	}
-	r.Header.Add("Total-Count", strconv.FormatUint(p.TotalCount, 10))
+	r.Header().Add("Total-Count", strconv.FormatUint(p.TotalCount, 10))
 }
 
 func PaginationInfoFromRequest(r *http.Request) *PaginationInfo {

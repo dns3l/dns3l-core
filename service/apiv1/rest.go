@@ -11,7 +11,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-var Version = "1.2" //this is the API version, not the one of the daemon
+var Version = "1.3" //this is the API version, not the one of the daemon
 
 type RestV1Handler struct {
 	Service   ServiceV1
@@ -115,14 +115,17 @@ func (hdlr *RestV1Handler) HandleCAAnonCert(w http.ResponseWriter, r *http.Reque
 	switch r.Method {
 	case http.MethodGet:
 		//Get info of all CA's certs
-		certInfos, err := hdlr.Service.GetCertificateInfos(caID, "", authz, util.PaginationInfoFromRequest(r))
+		pginfo := util.PaginationInfoFromRequest(r)
+		certInfos, err := hdlr.Service.GetCertificateInfos(caID, "", authz, pginfo)
 		//TODO pagination
 		if err != nil {
 			httpError(w, r, 404, err.Error()) //TODO detect Not Found error
 			return
 		}
-
 		w.WriteHeader(200)
+		if pginfo != nil {
+			pginfo.SetHTTPHeaders(w)
+		}
 		util.LogIfError(log, json.NewEncoder(w).Encode(certInfos))
 		success(w, r)
 		return
@@ -310,13 +313,17 @@ func (hdlr *RestV1Handler) HandleAnonCert(w http.ResponseWriter, r *http.Request
 
 	if r.Method == http.MethodGet {
 		//Get all certs
-		certInfos, err := hdlr.Service.GetCertificateInfos("", "", authz, util.PaginationInfoFromRequest(r))
+		pginfo := util.PaginationInfoFromRequest(r)
+		certInfos, err := hdlr.Service.GetCertificateInfos("", "", authz, pginfo)
 		//TODO pagination
 		if err != nil {
 			httpErrorFromErr(w, r, err)
 			return
 		}
 		w.WriteHeader(200)
+		if pginfo != nil {
+			pginfo.SetHTTPHeaders(w)
+		}
 		util.LogIfError(log, json.NewEncoder(w).Encode(certInfos))
 		success(w, r)
 		return
@@ -343,13 +350,17 @@ func (hdlr *RestV1Handler) HandleNamedCert(w http.ResponseWriter, r *http.Reques
 	switch r.Method {
 	case http.MethodGet:
 		//Get info of specific cert
-		certInfos, err := hdlr.Service.GetCertificateInfos("", crtID, authz, util.PaginationInfoFromRequest(r))
+		pginfo := util.PaginationInfoFromRequest(r)
+		certInfos, err := hdlr.Service.GetCertificateInfos("", crtID, authz, pginfo)
 		//TODO pagination
 		if err != nil {
 			httpErrorFromErr(w, r, err)
 			return
 		}
 		w.WriteHeader(200)
+		if pginfo != nil {
+			pginfo.SetHTTPHeaders(w)
+		}
 		util.LogIfError(log, json.NewEncoder(w).Encode(certInfos))
 		success(w, r)
 		return
