@@ -107,7 +107,12 @@ func PrintCA(out io.Writer, ca apiv1.CAInfo, color bool) error {
 	}, color)
 }
 
-func PrintCerts(out io.Writer, certs []apiv1.CertInfo, color bool) error {
+func PrintCerts(out io.Writer, headerStr string, certs []apiv1.CertInfo, color bool) error {
+
+	if headerStr != "" {
+		fmt.Fprintf(out, "%s\n\n", headerStr)
+	}
+
 	tbl := newOutputTable(out, "NAME", "VALID", "VALID_TO", "WILDCARD", "CLAIMED_BY", "ISSUER", "RENEWALS", "ACCESSES")
 	for _, cert := range certs {
 		claimedBy := strings.TrimSpace(cert.ClaimedBy.Name)

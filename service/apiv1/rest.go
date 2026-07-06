@@ -122,10 +122,10 @@ func (hdlr *RestV1Handler) HandleCAAnonCert(w http.ResponseWriter, r *http.Reque
 			httpError(w, r, 404, err.Error()) //TODO detect Not Found error
 			return
 		}
-		w.WriteHeader(200)
 		if pginfo != nil {
 			pginfo.SetHTTPHeaders(w)
 		}
+		w.WriteHeader(200)
 		util.LogIfError(log, json.NewEncoder(w).Encode(certInfos))
 		success(w, r)
 		return
@@ -320,10 +320,11 @@ func (hdlr *RestV1Handler) HandleAnonCert(w http.ResponseWriter, r *http.Request
 			httpErrorFromErr(w, r, err)
 			return
 		}
-		w.WriteHeader(200)
 		if pginfo != nil {
 			pginfo.SetHTTPHeaders(w)
 		}
+		w.WriteHeader(200)
+
 		util.LogIfError(log, json.NewEncoder(w).Encode(certInfos))
 		success(w, r)
 		return
@@ -357,10 +358,10 @@ func (hdlr *RestV1Handler) HandleNamedCert(w http.ResponseWriter, r *http.Reques
 			httpErrorFromErr(w, r, err)
 			return
 		}
-		w.WriteHeader(200)
 		if pginfo != nil {
 			pginfo.SetHTTPHeaders(w)
 		}
+		w.WriteHeader(200)
 		util.LogIfError(log, json.NewEncoder(w).Encode(certInfos))
 		success(w, r)
 		return

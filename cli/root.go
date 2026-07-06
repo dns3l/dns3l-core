@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -140,8 +141,8 @@ func (f *CommandFactory) newInfoCommand() *cobra.Command {
 		Short: "Show server information",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return f.runJSONCommand(cmd, false, http.MethodGet, "/info", nil, nil, func(body []byte, color bool) error {
-				info, err := DecodeJSON[apiv1.ServerInfo](body)
+			return f.runJSONCommand(cmd, false, http.MethodGet, "/info", nil, nil, func(resp *Response, color bool) error {
+				info, err := DecodeJSON[apiv1.ServerInfo](resp.Body)
 				if err != nil {
 					return err
 				}
@@ -157,8 +158,8 @@ func (f *CommandFactory) newDNSCommand() *cobra.Command {
 		Short: "Show DNS provider information",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return f.runJSONCommand(cmd, false, http.MethodGet, "/dns", nil, nil, func(body []byte, color bool) error {
-				handlers, err := DecodeJSON[[]apiv1.DNSHandlerInfo](body)
+			return f.runJSONCommand(cmd, false, http.MethodGet, "/dns", nil, nil, func(resp *Response, color bool) error {
+				handlers, err := DecodeJSON[[]apiv1.DNSHandlerInfo](resp.Body)
 				if err != nil {
 					return err
 				}
@@ -171,8 +172,8 @@ func (f *CommandFactory) newDNSCommand() *cobra.Command {
 		Short: "Show DNS root zones",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return f.runJSONCommand(cmd, false, http.MethodGet, "/dns/rtzn", nil, nil, func(body []byte, color bool) error {
-				rootzones, err := DecodeJSON[[]apiv1.DNSRootzoneInfo](body)
+			return f.runJSONCommand(cmd, false, http.MethodGet, "/dns/rtzn", nil, nil, func(resp *Response, color bool) error {
+				rootzones, err := DecodeJSON[[]apiv1.DNSRootzoneInfo](resp.Body)
 				if err != nil {
 					return err
 				}
@@ -193,8 +194,8 @@ func (f *CommandFactory) newCACommand() *cobra.Command {
 		Short: "List CAs",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return f.runJSONCommand(cmd, false, http.MethodGet, "/ca", nil, nil, func(body []byte, color bool) error {
-				cas, err := DecodeJSON[[]apiv1.CAInfo](body)
+			return f.runJSONCommand(cmd, false, http.MethodGet, "/ca", nil, nil, func(resp *Response, color bool) error {
+				cas, err := DecodeJSON[[]apiv1.CAInfo](resp.Body)
 				if err != nil {
 					return err
 				}
@@ -207,8 +208,8 @@ func (f *CommandFactory) newCACommand() *cobra.Command {
 		Short: "Show one CA",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return f.runJSONCommand(cmd, false, http.MethodGet, "/ca/"+pathEscape(args[0]), nil, nil, func(body []byte, color bool) error {
-				ca, err := DecodeJSON[apiv1.CAInfo](body)
+			return f.runJSONCommand(cmd, false, http.MethodGet, "/ca/"+pathEscape(args[0]), nil, nil, func(resp *Response, color bool) error {
+				ca, err := DecodeJSON[apiv1.CAInfo](resp.Body)
 				if err != nil {
 					return err
 				}
@@ -235,6 +236,8 @@ func (f *CommandFactory) newCRTCommand() *cobra.Command {
 
 func (f *CommandFactory) newCRTListCommand() *cobra.Command {
 	var caID string
+	var limit uint64
+	var offset uint64
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List certificates",
@@ -245,17 +248,50 @@ func (f *CommandFactory) newCRTListCommand() *cobra.Command {
 				path = "/ca/" + pathEscape(caID) + "/crt"
 			}
 			query := url.Values{}
-			return f.runJSONCommand(cmd, false, http.MethodGet, path, query, nil, func(body []byte, color bool) error {
-				certs, err := DecodeJSON[[]apiv1.CertInfo](body)
+			if limit > 0 {
+				query.Add("limit", strconv.FormatUint(limit, 10))
+			}
+			if offset > 0 {
+				query.Add("offset", strconv.FormatUint(offset, 10))
+			}
+			return f.runJSONCommand(cmd, false, http.MethodGet, path, query, nil, func(resp *Response, color bool) error {
+				certs, err := DecodeJSON[[]apiv1.CertInfo](resp.Body)
 				if err != nil {
 					return err
 				}
-				return PrintCerts(f.Out, certs, color)
+				return PrintCerts(f.Out, paginationInfo(resp.Headers), certs, color)
 			})
 		},
 	}
 	cmd.Flags().StringVar(&caID, "ca", "", "limit to a CA ID")
+	cmd.Flags().Uint64Var(&limit, "limit", 0, "maximum number of entries to list (0 means infinite)")
+	cmd.Flags().Uint64Var(&offset, "offset", 0, "maximum number of entries to list")
 	return cmd
+}
+
+func paginationInfo(header http.Header) string {
+	offset := strToUint64_0(header.Get("Page-Offset"), "offset")
+	limit := strToUint64_0(header.Get("Page-Limit"), "limit")
+	totalcount := strToUint64_0(header.Get("Total-Count"), "totalcount")
+	if limit > 0 {
+		return fmt.Sprintf("Showing element %d - %d of %d elements", offset, offset+limit-1, totalcount)
+	}
+	if offset > 0 {
+		return fmt.Sprintf("Showing element %d - %d", offset, totalcount-offset)
+	}
+	return ""
+}
+
+func strToUint64_0(s, desc string) uint64 {
+	if s == "" {
+		return 0
+	}
+	u, err := strconv.ParseUint(s, 10, 64)
+	if err != nil {
+		log.WithFields(log.Fields{"desc": desc, "value": s}).Debug("could not parse unsigned integer, assuming 0")
+		return 0
+	}
+	return u
 }
 
 func (f *CommandFactory) newCRTGetCommand() *cobra.Command {
@@ -383,9 +419,9 @@ func (f *CommandFactory) newCRTDeleteCommand() *cobra.Command {
 			if caID != "" {
 				path = "/ca/" + pathEscape(caID) + "/crt/" + name
 			}
-			return f.runJSONCommand(cmd, true, http.MethodDelete, path, nil, nil, func(body []byte, _ bool) error {
-				if len(strings.TrimSpace(string(body))) > 0 {
-					return PrintGenericJSON(f.Out, body, false)
+			return f.runJSONCommand(cmd, true, http.MethodDelete, path, nil, nil, func(resp *Response, _ bool) error {
+				if len(strings.TrimSpace(string(resp.Body))) > 0 {
+					return PrintGenericJSON(f.Out, resp.Body, false)
 				}
 				_, err := fmt.Fprintln(f.Out, "deleted")
 				return err
@@ -429,7 +465,7 @@ func (f *CommandFactory) newCRTPemCommand() *cobra.Command {
 	return cmd
 }
 
-func (f *CommandFactory) runJSONCommand(cmd *cobra.Command, requireAuth bool, method, path string, query url.Values, body any, print func([]byte, bool) error) error {
+func (f *CommandFactory) runJSONCommand(cmd *cobra.Command, requireAuth bool, method, path string, query url.Values, body any, print func(*Response, bool) error) error {
 	cfg, err := f.runtimeConfig(cmd, requireAuth)
 	if err != nil {
 		return err
@@ -441,7 +477,7 @@ func (f *CommandFactory) runJSONCommand(cmd *cobra.Command, requireAuth bool, me
 	if cfg.JSON {
 		return WriteJSON(f.Out, resp.Body)
 	}
-	return print(resp.Body, SupportsColor(os.Stdout))
+	return print(resp, SupportsColor(os.Stdout))
 }
 
 func (f *CommandFactory) runSlowCommand(cmd *cobra.Command, requireAuth bool, method, path string, query url.Values, body any) error {

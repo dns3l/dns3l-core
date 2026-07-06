@@ -230,6 +230,70 @@ func TestRootCommandListUsesRegularTimeout(t *testing.T) {
 	}
 }
 
+func TestRootCommandListPagination(t *testing.T) {
+	var capturedTimeout time.Duration
+	httpClient := testHTTPClient(func(r *http.Request) (*http.Response, error) {
+		if r.URL.Path != "/api/v1/crt" {
+			t.Fatalf("unexpected path %s", r.URL.Path)
+		}
+		if r.URL.Query().Get("limit") != "5" {
+			t.Fatalf("no pagination limit sent %s", r.URL.Path)
+		}
+		if r.URL.Query().Get("offset") != "10" {
+			t.Fatalf("no pagination offset sent %s", r.URL.Path)
+		}
+		hdrs := make(http.Header)
+		hdrs.Add("Page-Limit", "5")
+		hdrs.Add("Page-Offset", "10")
+		hdrs.Add("Total-Count", "123")
+		return testResponseHdrs(http.StatusOK, `[]`, hdrs), nil
+	})
+
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	cmd := testRootCommandWithFactory(&out, &errOut, func(cfg *RuntimeConfig) *Client {
+		capturedTimeout = cfg.Timeout
+		client := NewClient(cfg)
+		client.HTTPClient = httpClient
+		client.TokenFetcher.Client = httpClient
+		return client
+	})
+	cmd.SetArgs([]string{
+		"--server", "https://example.com/api/v1",
+		"--timeout", "2s",
+		"--timeout-claim", "7m",
+		"crt", "list", "--limit", "5", "--offset", "10",
+	})
+	if err := cmd.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	if capturedTimeout != 2*time.Second {
+		t.Fatalf("non-claim command did not use regular timeout, got %s", capturedTimeout)
+	}
+}
+
+func TestPaginationInfo(t *testing.T) {
+	hdrs := make(http.Header)
+	hdrs.Add("Page-Limit", "5")
+	hdrs.Add("Page-Offset", "10")
+	hdrs.Add("Total-Count", "123")
+	pinfo := paginationInfo(hdrs)
+	if pinfo != "Showing element 10 - 14 of 123 elements" {
+		t.Fatalf("paginationInfo was %s", pinfo)
+	}
+	hdrs = make(http.Header)
+	hdrs.Add("Page-Offset", "10")
+	hdrs.Add("Total-Count", "123")
+	pinfo = paginationInfo(hdrs)
+	if pinfo != "Showing element 10 - 113" {
+		t.Fatalf("paginationInfo was %s", pinfo)
+	}
+
+	if strToUint64_0("foo", "bar") != 0 {
+		t.Fatalf("strToUint64_0 returned non-0 on illegal uint value")
+	}
+}
+
 func TestRootCommandCRTListAnonymousWithoutAuthData(t *testing.T) {
 	httpClient := testHTTPClient(func(r *http.Request) (*http.Response, error) {
 		if r.URL.Path == "/auth/token" {

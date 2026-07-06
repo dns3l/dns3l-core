@@ -23,6 +23,7 @@ type Client struct {
 type Response struct {
 	StatusCode  int
 	ContentType string
+	Headers     http.Header
 	Body        []byte
 }
 
@@ -107,6 +108,7 @@ func (c *Client) Do(ctx context.Context, method, path string, query url.Values, 
 	return &Response{
 		StatusCode:  resp.StatusCode,
 		ContentType: resp.Header.Get("Content-Type"),
+		Headers:     resp.Header,
 		Body:        respBody,
 	}, nil
 }

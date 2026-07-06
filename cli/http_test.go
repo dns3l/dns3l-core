@@ -17,10 +17,14 @@ func testHTTPClient(fn roundTripFunc) *http.Client {
 }
 
 func testResponse(status int, body string) *http.Response {
+	return testResponseHdrs(status, body, make(http.Header))
+}
+
+func testResponseHdrs(status int, body string, headers http.Header) *http.Response {
 	return &http.Response{
 		StatusCode: status,
 		Status:     http.StatusText(status),
-		Header:     make(http.Header),
+		Header:     headers,
 		Body:       io.NopCloser(strings.NewReader(body)),
 	}
 }
