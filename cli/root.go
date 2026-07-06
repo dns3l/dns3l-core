@@ -265,7 +265,7 @@ func (f *CommandFactory) newCRTListCommand() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&caID, "ca", "", "limit to a CA ID")
 	cmd.Flags().Uint64Var(&limit, "limit", 0, "maximum number of entries to list (0 means infinite)")
-	cmd.Flags().Uint64Var(&offset, "offset", 0, "maximum number of entries to list")
+	cmd.Flags().Uint64Var(&offset, "offset", 0, "number of matching items to skip")
 	return cmd
 }
 
@@ -274,10 +274,7 @@ func paginationInfo(header http.Header) string {
 	limit := strToUint64_0(header.Get("Page-Limit"), "limit")
 	totalcount := strToUint64_0(header.Get("Total-Count"), "totalcount")
 	if limit > 0 {
-		return fmt.Sprintf("Showing element %d - %d of %d elements", offset, offset+limit-1, totalcount)
-	}
-	if offset > 0 {
-		return fmt.Sprintf("Showing element %d - %d", offset, totalcount-offset)
+		return fmt.Sprintf("Showing element %d - %d of %d elements", offset+1, offset+limit, totalcount)
 	}
 	return ""
 }

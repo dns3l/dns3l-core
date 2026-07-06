@@ -278,14 +278,7 @@ func TestPaginationInfo(t *testing.T) {
 	hdrs.Add("Page-Offset", "10")
 	hdrs.Add("Total-Count", "123")
 	pinfo := paginationInfo(hdrs)
-	if pinfo != "Showing element 10 - 14 of 123 elements" {
-		t.Fatalf("paginationInfo was %s", pinfo)
-	}
-	hdrs = make(http.Header)
-	hdrs.Add("Page-Offset", "10")
-	hdrs.Add("Total-Count", "123")
-	pinfo = paginationInfo(hdrs)
-	if pinfo != "Showing element 10 - 113" {
+	if pinfo != "Showing element 11 - 15 of 123 elements" {
 		t.Fatalf("paginationInfo was %s", pinfo)
 	}
 
