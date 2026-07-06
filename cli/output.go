@@ -107,14 +107,7 @@ func PrintCA(out io.Writer, ca apiv1.CAInfo, color bool) error {
 	}, color)
 }
 
-func PrintCerts(out io.Writer, headerStr string, certs []apiv1.CertInfo, color bool) error {
-
-	if headerStr != "" {
-		if _, err := fmt.Fprintf(out, "%s\n\n", headerStr); err != nil {
-			return err
-		}
-	}
-
+func PrintCerts(out io.Writer, footerStr string, certs []apiv1.CertInfo, color bool) error {
 	tbl := newOutputTable(out, "NAME", "VALID", "VALID_TO", "WILDCARD", "CLAIMED_BY", "ISSUER", "RENEWALS", "ACCESSES")
 	for _, cert := range certs {
 		claimedBy := strings.TrimSpace(cert.ClaimedBy.Name)
@@ -126,6 +119,11 @@ func PrintCerts(out io.Writer, headerStr string, certs []apiv1.CertInfo, color b
 			claimedBy, cert.IssuerCN, cert.RenewCount, cert.AccessCount)
 	}
 	tbl.Print()
+	if footerStr != "" {
+		if _, err := fmt.Fprintf(out, "[%s]\n", footerStr); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
