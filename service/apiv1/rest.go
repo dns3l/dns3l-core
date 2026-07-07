@@ -117,7 +117,6 @@ func (hdlr *RestV1Handler) HandleCAAnonCert(w http.ResponseWriter, r *http.Reque
 		//Get info of all CA's certs
 		pginfo := util.PaginationInfoFromRequest(r)
 		certInfos, err := hdlr.Service.GetCertificateInfos(caID, "", authz, pginfo)
-		//TODO pagination
 		if err != nil {
 			httpError(w, r, 404, err.Error()) //TODO detect Not Found error
 			return
@@ -315,7 +314,6 @@ func (hdlr *RestV1Handler) HandleAnonCert(w http.ResponseWriter, r *http.Request
 		//Get all certs
 		pginfo := util.PaginationInfoFromRequest(r)
 		certInfos, err := hdlr.Service.GetCertificateInfos("", "", authz, pginfo)
-		//TODO pagination
 		if err != nil {
 			httpErrorFromErr(w, r, err)
 			return
@@ -353,7 +351,6 @@ func (hdlr *RestV1Handler) HandleNamedCert(w http.ResponseWriter, r *http.Reques
 		//Get info of specific cert
 		pginfo := util.PaginationInfoFromRequest(r)
 		certInfos, err := hdlr.Service.GetCertificateInfos("", crtID, authz, pginfo)
-		//TODO pagination
 		if err != nil {
 			httpErrorFromErr(w, r, err)
 			return
