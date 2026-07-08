@@ -250,6 +250,32 @@ func (t *TestRunner) RunDBFull() {
 
 		}
 
+		// Testing pagination
+
+		out := testhttp.AssertSuccess("List keys page 1",
+			apiv1.ListKeysPage1(srv, t.CAID, "kilgore"))
+
+		if t.Dump {
+			fmt.Println(out)
+		}
+		num := apiv1.CountJSONArray(out)
+		fmt.Printf("List keys: %d keys returned.\n", num)
+		if num != 10 {
+			panic("Pagination returned wrong number")
+		}
+
+		out = testhttp.AssertSuccess("List keys page 1",
+			apiv1.ListKeysPage2(srv, t.CAID, "kilgore"))
+
+		if t.Dump {
+			fmt.Println(out)
+		}
+		num = apiv1.CountJSONArray(out)
+		fmt.Printf("List keys: %d keys returned.\n", num)
+		if num != 10 {
+			panic("Pagination returned wrong number")
+		}
+
 		// Testing domain name equals permissions filter
 
 		testhttp.AssertSuccess("Create key 0", apiv1.CreateKey(srv, t.CAID, "bob",
@@ -258,7 +284,7 @@ func (t *TestRunner) RunDBFull() {
 		testhttp.AssertSuccess("Create key 0.1", apiv1.CreateKey(srv, t.CAID, "bob",
 			"footest.bar.sub2."+t.Domain, []string{}))
 
-		out := testhttp.AssertSuccess("List all keys visible for Bob",
+		out = testhttp.AssertSuccess("List all keys visible for Bob",
 			apiv1.ListAllKeys(srv, "alice"))
 		assertContainsKey(out, "bar.sub2."+t.Domain)
 		assertContainsKey(out, "footest.bar.sub2."+t.Domain)
