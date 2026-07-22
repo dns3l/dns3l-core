@@ -266,8 +266,7 @@ one JSON object rather than a one-element list.
 Claim a certificate:
 
 ```
-dns3lcli crt claim les \
-  --name www.example.com \
+dns3lcli crt claim les www.example.com \
   --san alt.example.com \
   --autodns-ipv4 192.0.2.10 \
   --ttl 30
@@ -290,14 +289,14 @@ dns3lcli crt delete www.example.com
 Download one PEM resource to stdout:
 
 ```
-dns3lcli crt pem les www.example.com crt
-dns3lcli crt pem les www.example.com fullchain
+dns3lcli crt pem les www.example.com --resource crt
+dns3lcli crt pem les www.example.com --resource fullchain
 ```
 
 Download one PEM resource to a file:
 
 ```
-dns3lcli crt pem les www.example.com fullchain --output www.example.com-fullchain.pem
+dns3lcli crt pem les www.example.com --resource fullchain --output www.example.com-fullchain.pem
 ```
 
 Download all PEM resources to stdout:

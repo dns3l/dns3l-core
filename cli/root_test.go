@@ -132,8 +132,7 @@ func TestRootCommandClaimBody(t *testing.T) {
 		"--ad-password", "pw",
 		"--oidc-client-id", "dns3l-api",
 		"--oidc-client-secret", "secret",
-		"crt", "claim", "les",
-		"--name", "test.example.com",
+		"crt", "claim", "les", "test.example.com",
 		"--wildcard",
 		"--san", "alt.example.com",
 		"--autodns-ipv4", "192.0.2.10",
@@ -187,8 +186,7 @@ func TestRootCommandClaimUsesClaimTimeout(t *testing.T) {
 		"--oidc-client-secret", "secret",
 		"--timeout", "2s",
 		"--timeout-claim", "7m",
-		"crt", "claim", "les",
-		"--name", "test.example.com",
+		"crt", "claim", "les", "test.example.com",
 	})
 	if err := cmd.Execute(); err != nil {
 		t.Fatal(err)
@@ -398,7 +396,7 @@ func TestRootCommandPEMFullchainAnonymousWithoutAuthData(t *testing.T) {
 	var out bytes.Buffer
 	var errOut bytes.Buffer
 	cmd := testRootCommand(&out, &errOut, httpClient)
-	cmd.SetArgs([]string{"--server", "https://example.com/api/v1", "crt", "pem", "les", "test.example.com", "fullchain"})
+	cmd.SetArgs([]string{"--server", "https://example.com/api/v1", "crt", "pem", "les", "test.example.com", "--resource", "fullchain"})
 	if err := cmd.Execute(); err != nil {
 		t.Fatal(err)
 	}
@@ -416,7 +414,7 @@ func TestRootCommandPEMKeyRequiresAuthData(t *testing.T) {
 	var out bytes.Buffer
 	var errOut bytes.Buffer
 	cmd := testRootCommand(&out, &errOut, httpClient)
-	cmd.SetArgs([]string{"--server", "https://example.com/api/v1", "crt", "pem", "les", "test.example.com", "key"})
+	cmd.SetArgs([]string{"--server", "https://example.com/api/v1", "crt", "pem", "les", "test.example.com", "--resource", "key"})
 	err := cmd.Execute()
 	if err == nil {
 		t.Fatal("expected missing auth data error")

@@ -381,22 +381,19 @@ func (f *CommandFactory) newCRTClaimCommand() *cobra.Command {
 	var san []string
 	var autodnsIPv4 string
 	cmd := &cobra.Command{
-		Use:   "claim <ca-id>",
+		Use:   "claim <ca-id> <name>",
 		Short: "Claim a certificate from an ACME CA",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			claim.Name = args[1]
 			claim.SubjectAltNames = san
 			if autodnsIPv4 != "" {
 				claim.AutoDNS = &apiv1.AutoDNSInfo{IPv4: autodnsIPv4}
-			}
-			if strings.TrimSpace(claim.Name) == "" {
-				return errors.New("--name is required")
 			}
 			path := "/ca/" + pathEscape(args[0]) + "/crt"
 			return f.runSlowCommand(cmd, true, http.MethodPost, path, nil, claim)
 		},
 	}
-	cmd.Flags().StringVar(&claim.Name, "name", "", "certificate FQDN")
 	cmd.Flags().BoolVar(&claim.Wildcard, "wildcard", false, "claim wildcard certificate")
 	cmd.Flags().StringArrayVar(&san, "san", nil, "subject alternative name; repeatable")
 	cmd.Flags().StringVar(&autodnsIPv4, "autodns-ipv4", "", "AutoDNS IPv4 address")
@@ -433,14 +430,14 @@ func (f *CommandFactory) newCRTPemCommand() *cobra.Command {
 	var output string
 	var outputDir string
 	var noCheck bool
+	var resource string
 	cmd := &cobra.Command{
-		Use:   "pem <ca-id> <crt-name> [crt|key|chain|root|rootchain|fullchain]",
+		Use:   "pem <ca-id> <crt-name>",
 		Short: "Download PEM-encoded certificate resources",
-		Args:  cobra.RangeArgs(2, 3),
+		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			path := "/ca/" + pathEscape(args[0]) + "/crt/" + pathEscape(args[1]) + "/pem"
-			if len(args) == 3 {
-				resource := args[2]
+			if resource != "" {
 				if !validPEMResource(resource) {
 					return fmt.Errorf("unknown PEM resource %q", resource)
 				}
@@ -459,6 +456,7 @@ func (f *CommandFactory) newCRTPemCommand() *cobra.Command {
 	cmd.Flags().StringVarP(&output, "output", "o", "", "write one PEM resource to this file")
 	cmd.Flags().StringVar(&outputDir, "output-dir", "", "write all PEM resources to this directory")
 	cmd.Flags().BoolVar(&noCheck, "no-pem-check", false, "disable PEM format validation")
+	cmd.Flags().StringVarP(&resource, "resource", "r", "", "download a single PEM resource (crt|key|chain|root|rootchain|fullchain) instead of all")
 	return cmd
 }
 

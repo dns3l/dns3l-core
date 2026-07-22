@@ -4,4 +4,5 @@
 **.vscode
 /dns3lcli
 /dns3lcli.exe
+/dns3ld
 dist/
