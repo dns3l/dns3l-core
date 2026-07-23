@@ -51,11 +51,11 @@ func (pj *PagedJSON) WriteJSON(out io.Writer) error {
 		_, err := fmt.Fprintln(out, "[]")
 		return err
 	}
-	_, err := json.Marshal(pj.elems)
+	body, err := json.Marshal(pj.elems)
 	if err != nil {
 		return err
 	}
-	return err
+	return WriteJSON(out, body)
 }
 
 func DecodeJSON[T any](body []byte) (T, error) {

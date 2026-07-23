@@ -191,6 +191,7 @@ The most relevant flags and their config/env equivalents are:
 | `--api-key` | `api_key` | `DNS3L_API_KEY` |
 | `--timeout` | `timeout` | `DNS3L_TIMEOUT` |
 | `--timeout-claim` | `timeout_claim` | `DNS3L_TIMEOUT_CLAIM` |
+| `--hidden-paging` | `hidden_paging` | `DNS3L_HIDDEN_PAGING` |
 
 Run `dns3lcli --help` to see the same mappings inline with the flags.
 
@@ -249,6 +250,26 @@ List certificates:
 ```
 dns3lcli --server https://my-server.com/api/v1 crt list
 dns3lcli --server https://my-server.com/api/v1 crt list --ca les
+```
+
+Use `--limit` and `--offset` to page through results manually. The requested
+page size and position are echoed back below the table (or, with `--json`, in
+the `Page-Limit`/`Page-Offset`/`Total-Count` response headers, not visible in
+the JSON body itself).
+
+`--hidden-paging` (`hidden_paging`, `DNS3L_HIDDEN_PAGING`) lets `dns3lcli`
+transparently split a single `crt list` request into several smaller HTTP
+requests against the server, e.g. to stay within a server-imposed maximum
+page size. Set it to the maximum number of elements to fetch per HTTP
+request; `dns3lcli` then issues as many requests as needed to satisfy
+`--limit` (or, if `--limit` is omitted, to fetch all remaining elements) and
+prints the combined result as if it had been a single request. It defaults to
+`0`, which disables this behavior. `--hidden-paging` has no effect when
+`--limit` is set to a value at or below it, since a single request is then
+sufficient:
+
+```
+dns3lcli --server https://my-server.com/api/v1 crt list --hidden-paging 100
 ```
 
 Show certificate metadata:

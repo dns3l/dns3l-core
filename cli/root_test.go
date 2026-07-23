@@ -66,6 +66,7 @@ func TestRootCommandHelpDocumentsConfigAndEnvironment(t *testing.T) {
 		"DNS3L_API_KEY",
 		"DNS3L_TIMEOUT",
 		"DNS3L_TIMEOUT_CLAIM",
+		"DNS3L_HIDDEN_PAGING",
 	}
 	for _, want := range expected {
 		if !strings.Contains(help, want) {
@@ -267,6 +268,211 @@ func TestRootCommandListPagination(t *testing.T) {
 	}
 	if capturedTimeout != 2*time.Second {
 		t.Fatalf("non-claim command did not use regular timeout, got %s", capturedTimeout)
+	}
+}
+
+func TestRootCommandCRTListHiddenPagingTable(t *testing.T) {
+	var calls []string
+	httpClient := testHTTPClient(func(r *http.Request) (*http.Response, error) {
+		if r.URL.Path != "/api/v1/crt" {
+			t.Fatalf("unexpected path %s", r.URL.Path)
+		}
+		calls = append(calls, r.URL.Query().Get("limit")+"/"+r.URL.Query().Get("offset"))
+		hdrs := make(http.Header)
+		switch len(calls) {
+		case 1:
+			hdrs.Add("Page-Limit", "2")
+			hdrs.Add("Page-Offset", "0")
+			hdrs.Add("Total-Count", "3")
+			return testResponseHdrs(http.StatusOK, `[{"name":"a"},{"name":"b"}]`, hdrs), nil
+		case 2:
+			hdrs.Add("Page-Limit", "1")
+			hdrs.Add("Page-Offset", "2")
+			hdrs.Add("Total-Count", "3")
+			return testResponseHdrs(http.StatusOK, `[{"name":"c"}]`, hdrs), nil
+		default:
+			t.Fatalf("unexpected extra request #%d: %v", len(calls), calls)
+			return nil, nil
+		}
+	})
+
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	cmd := testRootCommand(&out, &errOut, httpClient)
+	cmd.SetArgs([]string{
+		"--server", "https://example.com/api/v1",
+		"--hidden-paging", "2",
+		"crt", "list", "--limit", "3",
+	})
+	if err := cmd.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	if len(calls) != 2 {
+		t.Fatalf("expected 2 hidden-paged requests, got %v", calls)
+	}
+	if calls[0] != "2/" || calls[1] != "1/2" {
+		t.Fatalf("unexpected pagination requests: %v", calls)
+	}
+	output := out.String()
+	for _, name := range []string{"a", "b", "c"} {
+		if !strings.Contains(output, name) {
+			t.Fatalf("output missing certificate %q: %q", name, output)
+		}
+	}
+	if !strings.Contains(output, "Showing element 1 - 3 of 3 elements") {
+		t.Fatalf("output missing combined pagination footer: %q", output)
+	}
+}
+
+func TestRootCommandCRTListHiddenPagingTableWithoutOuterLimitOmitsFooter(t *testing.T) {
+	// When no --limit is given, hidden paging fetches all available elements
+	// across multiple hidden requests. The combined PaginationInfo mirrors the
+	// caller-supplied (zero/unlimited) limit, so - consistently with the
+	// non-hidden-paging behavior for limit-less requests - no footer is shown.
+	var calls []string
+	httpClient := testHTTPClient(func(r *http.Request) (*http.Response, error) {
+		calls = append(calls, r.URL.Query().Get("limit")+"/"+r.URL.Query().Get("offset"))
+		hdrs := make(http.Header)
+		switch len(calls) {
+		case 1:
+			hdrs.Add("Page-Limit", "2")
+			hdrs.Add("Page-Offset", "0")
+			hdrs.Add("Total-Count", "3")
+			return testResponseHdrs(http.StatusOK, `[{"name":"a"},{"name":"b"}]`, hdrs), nil
+		case 2:
+			hdrs.Add("Page-Limit", "2")
+			hdrs.Add("Page-Offset", "2")
+			hdrs.Add("Total-Count", "3")
+			return testResponseHdrs(http.StatusOK, `[{"name":"c"}]`, hdrs), nil
+		default:
+			t.Fatalf("unexpected extra request #%d: %v", len(calls), calls)
+			return nil, nil
+		}
+	})
+
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	cmd := testRootCommand(&out, &errOut, httpClient)
+	cmd.SetArgs([]string{
+		"--server", "https://example.com/api/v1",
+		"--hidden-paging", "2",
+		"crt", "list",
+	})
+	if err := cmd.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	output := out.String()
+	for _, name := range []string{"a", "b", "c"} {
+		if !strings.Contains(output, name) {
+			t.Fatalf("output missing certificate %q: %q", name, output)
+		}
+	}
+	if strings.Contains(output, "Showing element") {
+		t.Fatalf("did not expect a pagination footer without an outer --limit: %q", output)
+	}
+}
+
+func TestRootCommandCRTListHiddenPagingJSON(t *testing.T) {
+	var calls int
+	httpClient := testHTTPClient(func(r *http.Request) (*http.Response, error) {
+		calls++
+		hdrs := make(http.Header)
+		if calls == 1 {
+			hdrs.Add("Page-Limit", "2")
+			hdrs.Add("Page-Offset", "0")
+			hdrs.Add("Total-Count", "3")
+			return testResponseHdrs(http.StatusOK, `[{"name":"a"},{"name":"b"}]`, hdrs), nil
+		}
+		hdrs.Add("Page-Limit", "1")
+		hdrs.Add("Page-Offset", "2")
+		hdrs.Add("Total-Count", "3")
+		return testResponseHdrs(http.StatusOK, `[{"name":"c"}]`, hdrs), nil
+	})
+
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	cmd := testRootCommand(&out, &errOut, httpClient)
+	cmd.SetArgs([]string{
+		"--server", "https://example.com/api/v1",
+		"--json", "--hidden-paging", "2",
+		"crt", "list",
+	})
+	if err := cmd.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	if calls != 2 {
+		t.Fatalf("expected 2 hidden-paged requests, got %d", calls)
+	}
+	var got []map[string]any
+	if err := json.Unmarshal(out.Bytes(), &got); err != nil {
+		t.Fatalf("output is not valid JSON: %v (%q)", err, out.String())
+	}
+	if len(got) != 3 {
+		t.Fatalf("expected 3 combined elements, got %d: %q", len(got), out.String())
+	}
+	for i, name := range []string{"a", "b", "c"} {
+		if got[i]["name"] != name {
+			t.Fatalf("unexpected element %d: %v", i, got[i])
+		}
+	}
+}
+
+func TestRootCommandCRTListHiddenPagingBelowLimitUsesSingleRequest(t *testing.T) {
+	var calls int
+	httpClient := testHTTPClient(func(r *http.Request) (*http.Response, error) {
+		calls++
+		if r.URL.Query().Get("limit") != "5" {
+			t.Fatalf("unexpected limit %q", r.URL.Query().Get("limit"))
+		}
+		hdrs := make(http.Header)
+		hdrs.Add("Page-Limit", "5")
+		hdrs.Add("Page-Offset", "0")
+		hdrs.Add("Total-Count", "5")
+		return testResponseHdrs(http.StatusOK,
+			`[{"name":"a"},{"name":"b"},{"name":"c"},{"name":"d"},{"name":"e"}]`, hdrs), nil
+	})
+
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	cmd := testRootCommand(&out, &errOut, httpClient)
+	cmd.SetArgs([]string{
+		"--server", "https://example.com/api/v1",
+		"--hidden-paging", "10",
+		"crt", "list", "--limit", "5",
+	})
+	if err := cmd.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	if calls != 1 {
+		t.Fatalf("expected a single request when --limit fits within --hidden-paging size, got %d", calls)
+	}
+}
+
+func TestRootCommandCRTListHiddenPagingDisabledByDefault(t *testing.T) {
+	var calls int
+	httpClient := testHTTPClient(func(r *http.Request) (*http.Response, error) {
+		calls++
+		if r.URL.Query().Get("limit") != "" {
+			t.Fatalf("did not expect a limit to be sent without --limit or --hidden-paging")
+		}
+		return testResponse(http.StatusOK, `[{"name":"a"}]`), nil
+	})
+
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	cmd := testRootCommand(&out, &errOut, httpClient)
+	cmd.SetArgs([]string{
+		"--server", "https://example.com/api/v1",
+		"crt", "list",
+	})
+	if err := cmd.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	if calls != 1 {
+		t.Fatalf("expected a single request when hidden-paging is disabled, got %d", calls)
+	}
+	if !strings.Contains(out.String(), "a") {
+		t.Fatalf("output missing certificate: %q", out.String())
 	}
 }
 

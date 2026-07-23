@@ -175,6 +175,94 @@ func TestPagerGoodCase(t *testing.T) {
 
 }
 
+func TestPagerLimitExactMultipleOfHiddenStopsAtLimit(t *testing.T) {
+	// olimit is an exact multiple of hidden, and more data is available on the
+	// server beyond olimit. The paginator must stop fetching once olimit
+	// elements have been collected instead of continuing to page through all
+	// remaining server data.
+	xp := expectPage{
+		t: t,
+		expects: []expectPageElem{
+			{
+				limit:  10,
+				offset: 0,
+				pginfo: &PaginationInfo{
+					limit:      10,
+					offset:     0,
+					totalcount: 100,
+				},
+				num: 10,
+			},
+			{
+				limit:  10,
+				offset: 10,
+				pginfo: &PaginationInfo{
+					limit:      10,
+					offset:     10,
+					totalcount: 100,
+				},
+				num: 10,
+			},
+		},
+	}
+	p := NewPaginator(10)
+	pinfo, num, err := p.Page(20, 0, xp.ExpectPage)
+	assert.NoError(t, err)
+	assert.Equal(t, uint64(20), num, "paginator must stop exactly at olimit instead of continuing to page")
+	assert.NotNil(t, pinfo)
+	assert.Equal(t, uint64(20), pinfo.limit)
+	assert.Equal(t, uint64(0), pinfo.offset)
+	assert.Equal(t, uint64(100), pinfo.totalcount)
+	xp.AssertEnd()
+
+	// Same scenario, but with a non-zero outer offset and more than two hidden
+	// pages required to satisfy olimit.
+	xp = expectPage{
+		t: t,
+		expects: []expectPageElem{
+			{
+				limit:  10,
+				offset: 4,
+				pginfo: &PaginationInfo{
+					limit:      10,
+					offset:     4,
+					totalcount: 100,
+				},
+				num: 10,
+			},
+			{
+				limit:  10,
+				offset: 14,
+				pginfo: &PaginationInfo{
+					limit:      10,
+					offset:     14,
+					totalcount: 100,
+				},
+				num: 10,
+			},
+			{
+				limit:  10,
+				offset: 24,
+				pginfo: &PaginationInfo{
+					limit:      10,
+					offset:     24,
+					totalcount: 100,
+				},
+				num: 10,
+			},
+		},
+	}
+	p = NewPaginator(10)
+	pinfo, num, err = p.Page(30, 4, xp.ExpectPage)
+	assert.NoError(t, err)
+	assert.Equal(t, uint64(30), num, "paginator must stop exactly at olimit instead of continuing to page")
+	assert.NotNil(t, pinfo)
+	assert.Equal(t, uint64(30), pinfo.limit)
+	assert.Equal(t, uint64(4), pinfo.offset)
+	assert.Equal(t, uint64(100), pinfo.totalcount)
+	xp.AssertEnd()
+}
+
 func TestPagerOuterOffset(t *testing.T) {
 	// Limit sent smaller than hidden page
 	xp := expectPage{

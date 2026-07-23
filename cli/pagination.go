@@ -72,13 +72,13 @@ func (h *Paginator) Page(olimit, ooffset uint64,
 			// Behave as if pagination was not supported
 			return &PaginationInfo{}, total, nil
 		}
-		if num < h.hidden {
-			// we have all elements
+		if num < h.hidden || (olimit > 0 && total >= olimit) {
+			// we have all elements, or reached the caller-requested limit
 			return &PaginationInfo{offset: ooffset, limit: olimit, totalcount: pinfo.totalcount}, total, nil
 		}
 		curoffset += num
 		if olimit > 0 {
-			curlimit = min(h.hidden, olimit-num)
+			curlimit = min(h.hidden, olimit-total)
 		}
 	}
 
