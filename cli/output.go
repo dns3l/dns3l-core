@@ -32,6 +32,32 @@ func WriteJSON(out io.Writer, body []byte) error {
 	return err
 }
 
+type PagedJSON struct {
+	elems []any
+}
+
+func (pj *PagedJSON) Add(body []byte) (uint64, error) {
+	newelems, err := DecodeJSON[[]any](body)
+	if err != nil {
+		return 0, err
+	}
+	num := len(newelems)
+	pj.elems = append(pj.elems, newelems...)
+	return uint64(num), nil
+}
+
+func (pj *PagedJSON) WriteJSON(out io.Writer) error {
+	if len(pj.elems) == 0 {
+		_, err := fmt.Fprintln(out, "[]")
+		return err
+	}
+	body, err := json.Marshal(pj.elems)
+	if err != nil {
+		return err
+	}
+	return WriteJSON(out, body)
+}
+
 func DecodeJSON[T any](body []byte) (T, error) {
 	var value T
 	if err := json.Unmarshal(body, &value); err != nil {

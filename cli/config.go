@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -33,6 +34,7 @@ type RuntimeConfig struct {
 	Trace              bool
 	Timeout            time.Duration
 	TimeoutClaim       time.Duration
+	HiddenPaging       uint64
 
 	APIBaseURL string
 	AuthURL    string
@@ -54,6 +56,7 @@ type FlagOptions struct {
 	Trace              bool
 	Timeout            time.Duration
 	TimeoutClaim       time.Duration
+	HiddenPaging       uint64
 }
 
 type ChangedFlags map[string]bool
@@ -74,6 +77,7 @@ type fileConfig struct {
 	APIKey             string `yaml:"api_key"`
 	Timeout            string `yaml:"timeout"`
 	TimeoutClaim       string `yaml:"timeout_claim"`
+	HiddenPaging       uint64 `yaml:"hidden_paging"`
 }
 
 func ResolveConfig(opts FlagOptions, changed ChangedFlags, requireAuth bool) (*RuntimeConfig, error) {
@@ -164,6 +168,9 @@ func applyConfigFile(cfg *RuntimeConfig, path string, explicit bool) error {
 		}
 		cfg.TimeoutClaim = timeout
 	}
+	if fc.HiddenPaging > 0 {
+		cfg.HiddenPaging = fc.HiddenPaging
+	}
 	return nil
 }
 
@@ -184,6 +191,12 @@ func applyEnv(cfg *RuntimeConfig) {
 	if raw := strings.TrimSpace(os.Getenv("DNS3L_TIMEOUT_CLAIM")); raw != "" {
 		if timeout, err := time.ParseDuration(raw); err == nil {
 			cfg.TimeoutClaim = timeout
+		}
+	}
+	if raw := strings.TrimSpace(os.Getenv("DNS3L_HIDDEN_PAGING")); raw != "" {
+		hp, err := strconv.ParseUint(raw, 10, 32)
+		if err == nil {
+			cfg.HiddenPaging = hp
 		}
 	}
 }
@@ -218,6 +231,9 @@ func applyFlags(cfg *RuntimeConfig, opts FlagOptions, changed ChangedFlags) {
 	}
 	if changed["timeout-claim"] {
 		cfg.TimeoutClaim = opts.TimeoutClaim
+	}
+	if changed["hidden-paging"] {
+		cfg.HiddenPaging = opts.HiddenPaging
 	}
 	cfg.NoAuth = opts.NoAuth
 	cfg.JSON = opts.JSON

@@ -90,6 +90,7 @@ func (f *CommandFactory) newRootCommand() *cobra.Command {
 	root.PersistentFlags().BoolVar(&f.opts.Trace, "trace", false, "write trace logs to stderr")
 	root.PersistentFlags().DurationVar(&f.opts.Timeout, "timeout", DefaultTimeout, "HTTP timeout (config: timeout; env: DNS3L_TIMEOUT)")
 	root.PersistentFlags().DurationVar(&f.opts.TimeoutClaim, "timeout-claim", DefaultClaimTimeout, "HTTP timeout for certificate claims (config: timeout_claim; env: DNS3L_TIMEOUT_CLAIM)")
+	root.PersistentFlags().Uint64Var(&f.opts.HiddenPaging, "hidden-paging", 0, "max elements to fetch with one request, 0 = disabled (config: hidden_paging; env: DNS3L_HIDDEN_PAGING)")
 
 	root.AddCommand(f.newInfoCommand())
 	root.AddCommand(f.newDNSCommand())
@@ -141,12 +142,16 @@ func (f *CommandFactory) newInfoCommand() *cobra.Command {
 		Short: "Show server information",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return f.runJSONCommand(cmd, false, http.MethodGet, "/info", nil, nil, func(resp *Response, color bool) error {
+			cfg, err := f.runtimeConfig(cmd, false)
+			if err != nil {
+				return err
+			}
+			return f.runJSONCommand(cmd, cfg, http.MethodGet, "/info", nil, nil, func(resp *Response) error {
 				info, err := DecodeJSON[apiv1.ServerInfo](resp.Body)
 				if err != nil {
 					return err
 				}
-				return PrintInfo(f.Out, info, color)
+				return PrintInfo(f.Out, info, SupportsColor(os.Stdout))
 			})
 		},
 	}
@@ -158,12 +163,16 @@ func (f *CommandFactory) newDNSCommand() *cobra.Command {
 		Short: "Show DNS provider information",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return f.runJSONCommand(cmd, false, http.MethodGet, "/dns", nil, nil, func(resp *Response, color bool) error {
+			cfg, err := f.runtimeConfig(cmd, false)
+			if err != nil {
+				return err
+			}
+			return f.runJSONCommand(cmd, cfg, http.MethodGet, "/dns", nil, nil, func(resp *Response) error {
 				handlers, err := DecodeJSON[[]apiv1.DNSHandlerInfo](resp.Body)
 				if err != nil {
 					return err
 				}
-				return PrintDNSHandlers(f.Out, handlers, color)
+				return PrintDNSHandlers(f.Out, handlers, SupportsColor(os.Stdout))
 			})
 		},
 	}
@@ -172,12 +181,16 @@ func (f *CommandFactory) newDNSCommand() *cobra.Command {
 		Short: "Show DNS root zones",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return f.runJSONCommand(cmd, false, http.MethodGet, "/dns/rtzn", nil, nil, func(resp *Response, color bool) error {
+			cfg, err := f.runtimeConfig(cmd, false)
+			if err != nil {
+				return err
+			}
+			return f.runJSONCommand(cmd, cfg, http.MethodGet, "/dns/rtzn", nil, nil, func(resp *Response) error {
 				rootzones, err := DecodeJSON[[]apiv1.DNSRootzoneInfo](resp.Body)
 				if err != nil {
 					return err
 				}
-				return PrintDNSRootzones(f.Out, rootzones, color)
+				return PrintDNSRootzones(f.Out, rootzones, SupportsColor(os.Stdout))
 			})
 		},
 	})
@@ -194,12 +207,16 @@ func (f *CommandFactory) newCACommand() *cobra.Command {
 		Short: "List CAs",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return f.runJSONCommand(cmd, false, http.MethodGet, "/ca", nil, nil, func(resp *Response, color bool) error {
+			cfg, err := f.runtimeConfig(cmd, false)
+			if err != nil {
+				return err
+			}
+			return f.runJSONCommand(cmd, cfg, http.MethodGet, "/ca", nil, nil, func(resp *Response) error {
 				cas, err := DecodeJSON[[]apiv1.CAInfo](resp.Body)
 				if err != nil {
 					return err
 				}
-				return PrintCAs(f.Out, cas, color)
+				return PrintCAs(f.Out, cas, SupportsColor(os.Stdout))
 			})
 		},
 	})
@@ -208,12 +225,16 @@ func (f *CommandFactory) newCACommand() *cobra.Command {
 		Short: "Show one CA",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return f.runJSONCommand(cmd, false, http.MethodGet, "/ca/"+pathEscape(args[0]), nil, nil, func(resp *Response, color bool) error {
+			cfg, err := f.runtimeConfig(cmd, false)
+			if err != nil {
+				return err
+			}
+			return f.runJSONCommand(cmd, cfg, http.MethodGet, "/ca/"+pathEscape(args[0]), nil, nil, func(resp *Response) error {
 				ca, err := DecodeJSON[apiv1.CAInfo](resp.Body)
 				if err != nil {
 					return err
 				}
-				return PrintCA(f.Out, ca, color)
+				return PrintCA(f.Out, ca, SupportsColor(os.Stdout))
 			})
 		},
 	})
@@ -243,24 +264,32 @@ func (f *CommandFactory) newCRTListCommand() *cobra.Command {
 		Short: "List certificates",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			cfg, err := f.runtimeConfig(cmd, false)
+			if err != nil {
+				return err
+			}
 			path := "/crt"
 			if caID != "" {
 				path = "/ca/" + pathEscape(caID) + "/crt"
 			}
-			query := url.Values{}
-			if limit > 0 {
-				query.Add("limit", strconv.FormatUint(limit, 10))
-			}
-			if offset > 0 {
-				query.Add("offset", strconv.FormatUint(offset, 10))
-			}
-			return f.runJSONCommand(cmd, false, http.MethodGet, path, query, nil, func(resp *Response, color bool) error {
-				certs, err := DecodeJSON[[]apiv1.CertInfo](resp.Body)
-				if err != nil {
-					return err
+			if cfg.HiddenPaging > 0 {
+				return f.crtListPaged(cmd, cfg, path, caID, limit, offset)
+			} else {
+				query := url.Values{}
+				if limit > 0 {
+					query.Add("limit", strconv.FormatUint(limit, 10))
 				}
-				return PrintCerts(f.Out, paginationInfo(resp.Headers), certs, color)
-			})
+				if offset > 0 {
+					query.Add("offset", strconv.FormatUint(offset, 10))
+				}
+				return f.runJSONCommand(cmd, cfg, http.MethodGet, path, query, nil, func(resp *Response) error {
+					certs, err := DecodeJSON[[]apiv1.CertInfo](resp.Body)
+					if err != nil {
+						return err
+					}
+					return PrintCerts(f.Out, PaginationInfoFromHeaders(resp.Headers).String(), certs, SupportsColor(os.Stdout))
+				})
+			}
 		},
 	}
 	cmd.Flags().StringVar(&caID, "ca", "", "limit to a CA ID")
@@ -269,26 +298,21 @@ func (f *CommandFactory) newCRTListCommand() *cobra.Command {
 	return cmd
 }
 
-func paginationInfo(header http.Header) string {
-	offset := strToUint64_0(header.Get("Page-Offset"), "offset")
-	limit := strToUint64_0(header.Get("Page-Limit"), "limit")
-	totalcount := strToUint64_0(header.Get("Total-Count"), "totalcount")
-	if limit > 0 {
-		return fmt.Sprintf("Showing element %d - %d of %d elements", offset+1, offset+limit, totalcount)
-	}
-	return ""
-}
-
-func strToUint64_0(s, desc string) uint64 {
-	if s == "" {
-		return 0
-	}
-	u, err := strconv.ParseUint(s, 10, 64)
-	if err != nil {
-		log.WithFields(log.Fields{"desc": desc, "value": s}).Debug("could not parse unsigned integer, assuming 0")
-		return 0
-	}
-	return u
+func (f *CommandFactory) crtListPaged(cmd *cobra.Command, cfg *RuntimeConfig, path string,
+	caID string, limit uint64, offset uint64) error {
+	certs := make([]apiv1.CertInfo, 0)
+	return f.runJSONCommandPaged(cmd, cfg, http.MethodGet, path, nil, func(resp *Response) (uint64, error) {
+		certadd, err := DecodeJSON[[]apiv1.CertInfo](resp.Body)
+		if err != nil {
+			return 0, err
+		}
+		num := len(certadd)
+		certs = append(certs, certadd...)
+		return uint64(num), nil
+	}, limit, offset, cfg.HiddenPaging,
+		func(pi *PaginationInfo) error {
+			return PrintCerts(f.Out, pi.String(), certs, SupportsColor(os.Stdout))
+		})
 }
 
 func (f *CommandFactory) newCRTGetCommand() *cobra.Command {
@@ -381,22 +405,23 @@ func (f *CommandFactory) newCRTClaimCommand() *cobra.Command {
 	var san []string
 	var autodnsIPv4 string
 	cmd := &cobra.Command{
-		Use:   "claim <ca-id>",
+		Use:   "claim <ca-id> <name>",
 		Short: "Claim a certificate from an ACME CA",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			cfg, err := f.runtimeConfig(cmd, true)
+			if err != nil {
+				return err
+			}
+			claim.Name = args[1]
 			claim.SubjectAltNames = san
 			if autodnsIPv4 != "" {
 				claim.AutoDNS = &apiv1.AutoDNSInfo{IPv4: autodnsIPv4}
 			}
-			if strings.TrimSpace(claim.Name) == "" {
-				return errors.New("--name is required")
-			}
 			path := "/ca/" + pathEscape(args[0]) + "/crt"
-			return f.runSlowCommand(cmd, true, http.MethodPost, path, nil, claim)
+			return f.runSlowCommand(cmd, cfg, http.MethodPost, path, nil, claim)
 		},
 	}
-	cmd.Flags().StringVar(&claim.Name, "name", "", "certificate FQDN")
 	cmd.Flags().BoolVar(&claim.Wildcard, "wildcard", false, "claim wildcard certificate")
 	cmd.Flags().StringArrayVar(&san, "san", nil, "subject alternative name; repeatable")
 	cmd.Flags().StringVar(&autodnsIPv4, "autodns-ipv4", "", "AutoDNS IPv4 address")
@@ -411,12 +436,16 @@ func (f *CommandFactory) newCRTDeleteCommand() *cobra.Command {
 		Short: "Delete a certificate",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			cfg, err := f.runtimeConfig(cmd, true)
+			if err != nil {
+				return err
+			}
 			name := pathEscape(args[0])
 			path := "/crt/" + name
 			if caID != "" {
 				path = "/ca/" + pathEscape(caID) + "/crt/" + name
 			}
-			return f.runJSONCommand(cmd, true, http.MethodDelete, path, nil, nil, func(resp *Response, _ bool) error {
+			return f.runJSONCommand(cmd, cfg, http.MethodDelete, path, nil, nil, func(resp *Response) error {
 				if len(strings.TrimSpace(string(resp.Body))) > 0 {
 					return PrintGenericJSON(f.Out, resp.Body, false)
 				}
@@ -433,14 +462,18 @@ func (f *CommandFactory) newCRTPemCommand() *cobra.Command {
 	var output string
 	var outputDir string
 	var noCheck bool
+	var resource string
 	cmd := &cobra.Command{
-		Use:   "pem <ca-id> <crt-name> [crt|key|chain|root|rootchain|fullchain]",
+		Use:   "pem <ca-id> <crt-name>",
 		Short: "Download PEM-encoded certificate resources",
-		Args:  cobra.RangeArgs(2, 3),
+		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			cfg, err := f.runtimeConfig(cmd, resource == "key")
+			if err != nil {
+				return err
+			}
 			path := "/ca/" + pathEscape(args[0]) + "/crt/" + pathEscape(args[1]) + "/pem"
-			if len(args) == 3 {
-				resource := args[2]
+			if resource != "" {
 				if !validPEMResource(resource) {
 					return fmt.Errorf("unknown PEM resource %q", resource)
 				}
@@ -448,25 +481,65 @@ func (f *CommandFactory) newCRTPemCommand() *cobra.Command {
 					return errors.New("--output-dir can only be used when downloading all PEM resources")
 				}
 				path += "/" + pathEscape(resource)
-				return f.runPEMSingle(cmd, path, output, !noCheck, resource == "key")
+				return f.runPEMSingle(cmd, path, output, !noCheck, cfg)
 			}
 			if output != "" {
 				return errors.New("--output can only be used when downloading one PEM resource")
 			}
-			return f.runPEMAll(cmd, path, outputDir, !noCheck)
+			return f.runPEMAll(cfg, cmd, path, outputDir, !noCheck)
 		},
 	}
 	cmd.Flags().StringVarP(&output, "output", "o", "", "write one PEM resource to this file")
 	cmd.Flags().StringVar(&outputDir, "output-dir", "", "write all PEM resources to this directory")
 	cmd.Flags().BoolVar(&noCheck, "no-pem-check", false, "disable PEM format validation")
+	cmd.Flags().StringVarP(&resource, "resource", "r", "", "download a single PEM resource (crt|key|chain|root|rootchain|fullchain) instead of all")
 	return cmd
 }
 
-func (f *CommandFactory) runJSONCommand(cmd *cobra.Command, requireAuth bool, method, path string, query url.Values, body any, print func(*Response, bool) error) error {
-	cfg, err := f.runtimeConfig(cmd, requireAuth)
+func (f *CommandFactory) runJSONCommandPaged(cmd *cobra.Command, cfg *RuntimeConfig, method, path string,
+	body any, printStep func(*Response) (uint64, error), limit, offset, hiddenPaging uint64,
+	finalPrint func(*PaginationInfo) error) error {
+
+	hp := NewPaginator(hiddenPaging)
+	pj := PagedJSON{}
+
+	pi, _, err := hp.Page(limit, offset, func(limit uint64, offset uint64) (*PaginationInfo, uint64, error) {
+		query := url.Values{}
+		if limit > 0 {
+			query.Add("limit", strconv.FormatUint(limit, 10))
+		}
+		if offset > 0 {
+			query.Add("offset", strconv.FormatUint(offset, 10))
+		}
+
+		resp, err := f.Client(cfg).Do(cmd.Context(), method, path, query, body)
+		if err != nil {
+			return nil, 0, err
+		}
+		pi := PaginationInfoFromHeaders(resp.Headers)
+		if cfg.JSON {
+			num, err := pj.Add(resp.Body)
+			return pi, num, err
+		}
+		num, err := printStep(resp)
+		return pi, num, err
+
+	})
+
 	if err != nil {
 		return err
 	}
+
+	if cfg.JSON {
+		return pj.WriteJSON(f.Out)
+	} else {
+		return finalPrint(pi)
+	}
+
+}
+
+func (f *CommandFactory) runJSONCommand(cmd *cobra.Command, cfg *RuntimeConfig, method, path string, query url.Values, body any,
+	print func(*Response) error) error {
 	resp, err := f.Client(cfg).Do(cmd.Context(), method, path, query, body)
 	if err != nil {
 		return err
@@ -474,14 +547,10 @@ func (f *CommandFactory) runJSONCommand(cmd *cobra.Command, requireAuth bool, me
 	if cfg.JSON {
 		return WriteJSON(f.Out, resp.Body)
 	}
-	return print(resp, SupportsColor(os.Stdout))
+	return print(resp)
 }
 
-func (f *CommandFactory) runSlowCommand(cmd *cobra.Command, requireAuth bool, method, path string, query url.Values, body any) error {
-	cfg, err := f.runtimeConfig(cmd, requireAuth)
-	if err != nil {
-		return err
-	}
+func (f *CommandFactory) runSlowCommand(cmd *cobra.Command, cfg *RuntimeConfig, method, path string, query url.Values, body any) error {
 	cfg.Timeout = cfg.TimeoutClaim
 	done := make(chan struct{})
 	var once sync.Once
@@ -504,11 +573,7 @@ func (f *CommandFactory) runSlowCommand(cmd *cobra.Command, requireAuth bool, me
 	return err
 }
 
-func (f *CommandFactory) runPEMSingle(cmd *cobra.Command, path string, output string, check bool, requireAuth bool) error {
-	cfg, err := f.runtimeConfig(cmd, requireAuth)
-	if err != nil {
-		return err
-	}
+func (f *CommandFactory) runPEMSingle(cmd *cobra.Command, path string, output string, check bool, cfg *RuntimeConfig) error {
 	resp, err := f.Client(cfg).Do(cmd.Context(), http.MethodGet, path, nil, nil)
 	if err != nil {
 		return err
@@ -532,11 +597,7 @@ func (f *CommandFactory) runPEMSingle(cmd *cobra.Command, path string, output st
 	return nil
 }
 
-func (f *CommandFactory) runPEMAll(cmd *cobra.Command, path string, outputDir string, check bool) error {
-	cfg, err := f.runtimeConfig(cmd, true)
-	if err != nil {
-		return err
-	}
+func (f *CommandFactory) runPEMAll(cfg *RuntimeConfig, cmd *cobra.Command, path string, outputDir string, check bool) error {
 	resp, err := f.Client(cfg).Do(cmd.Context(), http.MethodGet, path, nil, nil)
 	if err != nil {
 		return err
