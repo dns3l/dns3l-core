@@ -1,7 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"os"
+	"path/filepath"
+	"runtime"
 
 	"github.com/dns3l/dns3l-core/context"
 	"github.com/dns3l/dns3l-core/service"
@@ -11,8 +14,7 @@ import (
 )
 
 func main() {
-
-	log.SetLevel(log.DebugLevel)
+	initStdLogger()
 
 	err := Execute()
 	if err != nil {
@@ -25,7 +27,6 @@ var rootCmd = &cobra.Command{
 	Short: "dns3l backend daemon",
 	Long:  `DNS3LD backend daemon, version ` + context.ServiceVersion,
 	Run: func(cmd *cobra.Command, args []string) {
-
 		confPath, err := cmd.PersistentFlags().GetString("config")
 		if err != nil {
 			panic(err)
@@ -65,7 +66,6 @@ var dbCreateCmd = &cobra.Command{
 	Long: `Creates the database and the table structure given the database driver and DB
 	connection information in the config file`,
 	Run: func(cmd *cobra.Command, args []string) {
-
 		confPath, err := cmd.Parent().PersistentFlags().GetString("config")
 		if err != nil {
 			panic(err)
@@ -110,4 +110,50 @@ func Execute() error {
 
 	rootCmd.AddCommand(dbCreateCmd)
 	return rootCmd.Execute()
+}
+
+func initStdLogger() {
+	moduleRoot, gotModuleRoot := getModuleRoot()
+
+	// prints caller information in form of 'caller:line'
+	// where caller is either only the file name or the relative path to the moduleroot.
+	// Relation to moduleroot is only printed if it could be determined.
+	prettifier := func(f *runtime.Frame) (function string, file string) {
+		caller := f.File
+		if gotModuleRoot {
+			rel, err := filepath.Rel(moduleRoot, f.File)
+			if err == nil {
+				caller = rel
+			}
+		}
+		return "", fmt.Sprintf("%s:%d", caller, f.Line)
+	}
+
+	formatter := &log.TextFormatter{
+		CallerPrettyfier: prettifier,
+	}
+
+	log.SetFormatter(formatter)
+	log.SetReportCaller(true)
+	log.SetLevel(log.DebugLevel)
+}
+
+// getModuleRoot returns the absolute path to the module root directory and a boolean indicating success.
+// It uses runtime.Caller to get the file path of the current file and then constructs the module root path
+// by going up two directories.
+// WARNING: This function only works within this directory structure and may not work if the code is moved
+func getModuleRoot() (string, bool) {
+	// get current file path
+	_, file, _, ok := runtime.Caller(0)
+	if !ok {
+		return "", false
+	}
+	// go up two directories to get the module root
+	moduleRoot := filepath.Join(filepath.Dir(file), "..", "..")
+	// get absolute path
+	moduleRoot, err := filepath.Abs(moduleRoot)
+	if err != nil {
+		return "", false
+	}
+	return moduleRoot, true
 }
