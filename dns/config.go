@@ -8,7 +8,7 @@ import (
 )
 
 type Config struct {
-	Providers map[string]*ProviderInfo `yaml:"providers" validate:"required,dive"` //configured DNS providers mapped with their ID
+	Providers map[string]*ProviderInfo `yaml:"providers" validate:"dive"` //configured DNS providers mapped with their ID
 }
 
 type ProviderInfo struct {

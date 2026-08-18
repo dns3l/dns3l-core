@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+. common.bash
+
+# Check required commands.
+for cmd in openssl yq; do
+  if ! command -v "$cmd" >/dev/null 2>&1; then
+    echo "Error: required command '$cmd' was not found in PATH." >&2
+    exit 1
+  fi
+done
+
+# Generate the root CA private keys.
+openssl genpkey \
+  -algorithm RSA \
+  -pkeyopt rsa_keygen_bits:4096 \
+  -out "$CA1_KEY"
+openssl genpkey \
+  -algorithm RSA \
+  -pkeyopt rsa_keygen_bits:4096 \
+  -out "$CA2_KEY"
+chmod 600 "$CA1_KEY" "$CA2_KEY"
+
+# Generate self-signed root CA certificates, valid for 10 years.
+openssl req \
+  -x509 \
+  -new \
+  -sha256 \
+  -key "$CA1_KEY" \
+  -days 3650 \
+  -subj "/C=DE/O=Example/CN=DNS3L Bogus CA 1" \
+  -addext "basicConstraints=critical,CA:TRUE" \
+  -addext "keyUsage=critical,keyCertSign,cRLSign" \
+  -out "$CA1_CERT"
+openssl req \
+  -x509 \
+  -new \
+  -sha256 \
+  -key "$CA2_KEY" \
+  -days 3650 \
+  -subj "/C=DE/O=Example/CN=DNS3L Bogus CA 2" \
+  -addext "basicConstraints=critical,CA:TRUE" \
+  -addext "keyUsage=critical,keyCertSign,cRLSign" \
+  -out "$CA2_CERT"
+
+# Generate some decent passwords
+DBROOTPASS=$(openssl rand --base64 24)
+DBPASS=$(openssl rand --base64 24)
+DBURL="dns3l:$DBPASS@tcp(db)/dns3ld?parseTime=true"
+
+# Generate a config from template
+yq \
+  '.ca.providers.ca1.ca_private_key = strload("'"$CA1_KEY"'") | 
+   .ca.providers.ca1.ca_certificate = strload("'"$CA1_CERT"'") |
+   .ca.providers.ca2.ca_private_key = strload("'"$CA2_KEY"'") | 
+   .ca.providers.ca2.ca_certificate = strload("'"$CA2_CERT"'") |
+   .db.url = "'"$DBURL"'"' \
+  minconfig.template.yaml > config.yaml
+chmod 600 config.yaml
+
+# Create an env file used by docker-compose
+cat <<EOF > env
+MARIADB_DATABASE=dns3ld
+MARIADB_USER=dns3l
+MARIADB_PASSWORD=$DBPASS
+MARIADB_ROOT_PASSWORD=$DBROOTPASS
+EOF
+chmod 600 env
+
+# Clean up temporary stuff
+rm "$CA1_KEY" "$CA2_KEY" "$CA1_CERT" "$CA2_CERT"

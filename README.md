@@ -7,56 +7,62 @@
 
 Core parts of dns3l written in Go:
 - Backend daemon for [DNS3L](https://github.com/dns3l/dns3l)
+- CLI client for DNS3L
 - API/Libraries for DNS3L functionality
 
 **Requires go >= 1.24**
 
-## Implementation Status
-
-Implemented:
-
-- Code skeleton
-- Config
-- REST API returns config
-- DNS handlers
-- ACME handlers
-- State, DB connection
-- OIDC Auth
-- Static token auth
-
-Not yet implemented:
-
-- Legacy CA handlers
-- Self-service token auth support
-
 # dns3ld (backend daemon)
+
+Check out this [ramp-up minimal setup](./rampup/README.md) to get started with
+dns3ld!
 
 ## Build
 
 Run
 
 ```
-make
+make service
 ```
 
 to obtain a statically linked binary.
 
 To obtain a Docker image, run
 
+## Build (Docker)
+
+There are two Dockerfiles available for dns3ld. When using dns3ld with the DNS3L stack,
+`docker/Dockerfile-dns3ld` should be used, which makes additional checks for the liveness
+of dependencies (like the database), and will probably only be of value with the entire
+stack (this image is released as `ghcr.io/dns3l/dns3ld`).
+
+For standalone backend usage, e.g. for development and evaluation, use `docker/Dockerfile-dns3ld-simple`. This image has no hard-wired dependency and can be
+used in standalone mode. It is used e.g. in the [ramp-up minimal setup](./rampup/README.md).
+
+To obtain the image for the DNS3L stack, use
 ```
-make docker
+make service-docker
 ```
 
 or explicitly (same semantics)
-
 ```
 docker buildx build -t dns3ld:$(awk -v FS="dns3ld=" 'NF>1{print $2}' VERSIONS)-dev -f docker/Dockerfile-dns3ld .
 ```
+The awk command above is an example that will create the right tag name from the VERSIONS file, feel free to choose other tag names as needed.
 
-The awk command above is an example that will create the right tag name from the VERSIONS file, feel free
-to choose other tag names as needed.
+To obtain the simple image, use
+```
+make service-docker-simple
+```
+
 
 ## Usage
+
+Before using dns3ld in production, you likely need to configure several endpoints,
+like ACME or DNS providers, in the server's YAML-based config. Refer to
+`config-example.yaml` for details on available
+provider integrations and how to configure them. If you just want to get started quickly,
+you can use the available [ramp-up minimal setup](./rampup/README.md).
 
 ```
 $./dns3ld --help
@@ -86,7 +92,7 @@ Use "dns3ld [command] --help" for more information about a command.
 Example
 
 ```
-./dns3ld --config config-example.yaml --socket 127.0.0.1:8080
+./dns3ld --config config.yaml --socket 127.0.0.1:8080
 ```
 
 ### docker-compose

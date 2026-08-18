@@ -1,0 +1,38 @@
+# The URL is presented over the config API
+url: https://dns3l.example.com
+adminemail:
+  # These addresses are presented over the config API
+  - admin1@example.com
+  - admin2@example.net
+ca: # DNS service providers
+  providers:
+    ca1:
+      type: bogus
+      catype: public
+      name: Bogus CA 1
+      url: https://ca1.dns3l.example.com
+    ca2:
+      type: bogus
+      catype: public
+      name: Bogus CA 2
+      url: https://ca2.dns3l.example.com
+rtzn:
+  - root: example.com. #Rootzones always have a dot at the end
+    autodns: null
+    acmedns: null
+    ca:
+      - ca1
+      - ca2
+dns:
+  providers:
+db:
+  type: mysql
+  url: <changed by script>
+auth:
+  authn_disabled: true
+  authn_disabled_email: dns3l@example.com
+renew:
+  jobStartTime: 03:00
+  maxDuration: 3h
+  limitPerDay: 2048
+  daysWarnBeforeExpiry: 10

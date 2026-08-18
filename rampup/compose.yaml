@@ -1,0 +1,46 @@
+x-dns3ld: &dns3ld
+  image: dns3ld-dev:rampup
+  build:
+    context: "../"
+    dockerfile: docker/Dockerfile-dns3ld-simple
+    args:
+      HTTP_PROXY: ${HTTP_PROXY}
+      HTTPS_PROXY: ${HTTPS_PROXY}
+      NO_PROXY: ${NO_PROXY}
+  volumes:
+    - ./config.yaml:/etc/dns3ld.yaml:ro
+
+services:
+  dns3ld-createdb:
+    <<: *dns3ld
+    container_name: dns3ld-createdb
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["dbcreate", "--config=/etc/dns3ld.yaml", "--tablesonly"]
+      
+  dns3ld:
+    <<: *dns3ld
+    container_name: dns3ld
+    depends_on:
+      dns3ld-createdb:
+        condition: service_completed_successfully
+    command: ["--config=/etc/dns3ld.yaml", "--socket=:8080"]
+    ports:
+      - 127.0.0.1:8080:8080
+    
+  db:
+    image: mariadb:11.8
+    container_name: db
+    env_file: env
+    volumes:
+      - db:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      start_period: 5s
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  db:

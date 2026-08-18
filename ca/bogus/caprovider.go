@@ -2,11 +2,13 @@ package bogus
 
 import (
 	"bytes"
+	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"math/big"
 	"time"
@@ -17,9 +19,12 @@ import (
 )
 
 type CAProvider struct {
-	C       *Config `validate:"required"`
-	ID      string
-	Context types.ProviderConfigurationContext
+	C            *Config `validate:"required"`
+	ID           string
+	Context      types.ProviderConfigurationContext
+	caPrivateKey crypto.Signer
+	caCert       *x509.Certificate
+	serialOffset int64
 }
 
 func (p *CAProvider) GetInfo() *types.CAProviderInfo {
@@ -41,6 +46,27 @@ func (p *CAProvider) Init(c types.ProviderConfigurationContext) error {
 	p.ID = c.GetCAID()
 
 	p.Context = c
+
+	p.serialOffset = int64(p.C.SerialOffset)
+
+	if p.C.CAPrivateKey != "" {
+
+		err := p.setCAPrivateKey()
+		if err != nil {
+			return err
+		}
+
+		err = p.setCACertificate()
+		if err != nil {
+			return err
+		}
+
+		err = p.verifyKeyMatchesCertificate()
+		if err != nil {
+			return err
+		}
+
+	}
 
 	log.Debugf("Bogus CA provider initialized.")
 
@@ -100,14 +126,26 @@ func (p *CAProvider) ClaimCertificate(cinfo *types.CertificateClaimInfo) error {
 	certStruct := x509.Certificate{
 		NotBefore:    time.Now(),
 		NotAfter:     time.Now().Add(ttl),
-		SerialNumber: big.NewInt(123456),
+		SerialNumber: big.NewInt(p.serialOffset),
 		Subject: pkix.Name{
 			CommonName:   cinfo.Name,
 			Organization: []string{"DNS3L Bogus Org"},
 		},
 		BasicConstraintsValid: true,
 	}
-	cert, err := x509.CreateCertificate(rand.Reader, &certStruct, &certStruct, &key.PublicKey, key)
+
+	var signer crypto.Signer
+	var parent *x509.Certificate
+	if p.caPrivateKey != nil {
+		signer = p.caPrivateKey
+		parent = p.caCert
+	} else {
+		//self-signed
+		signer = key
+		parent = &certStruct
+	}
+
+	cert, err := x509.CreateCertificate(rand.Reader, &certStruct, parent, &key.PublicKey, signer)
 	if err != nil {
 		return err
 	}
@@ -120,20 +158,26 @@ func (p *CAProvider) ClaimCertificate(cinfo *types.CertificateClaimInfo) error {
 
 	issuerChain := bytes.Buffer{}
 
-	err = pem.Encode(&issuerChain, &pem.Block{
-		Type:  "CERTIFICATE",
-		Bytes: cert,
-	})
-	if err != nil {
-		return err
-	}
+	if p.caPrivateKey != nil {
+		issuerChain.WriteString(p.C.CACertificate)
+	} else {
 
-	err = pem.Encode(&issuerChain, &pem.Block{
-		Type:  "CERTIFICATE",
-		Bytes: cert,
-	})
-	if err != nil {
-		return err
+		err = pem.Encode(&issuerChain, &pem.Block{
+			Type:  "CERTIFICATE",
+			Bytes: cert,
+		})
+		if err != nil {
+			return err
+		}
+
+		err = pem.Encode(&issuerChain, &pem.Block{
+			Type:  "CERTIFICATE",
+			Bytes: cert,
+		})
+		if err != nil {
+			return err
+		}
+
 	}
 
 	info := &types.CACertInfo{
@@ -149,6 +193,8 @@ func (p *CAProvider) ClaimCertificate(cinfo *types.CertificateClaimInfo) error {
 		CertPEM:         string(certPem),
 		TTLSelected:     cinfo.TTLSelected,
 	} //TODO maybe there is the need to configure specific lifetimes for our tests
+
+	p.serialOffset++
 
 	return castate.PutCACertData(cinfo.Name, p.ID, info,
 		info.CertPEM, issuerChain.String())
@@ -203,4 +249,73 @@ func (p *CAProvider) RevokeCertificate(keyID string, crt *types.CACertInfo) erro
 	//Nothing to do with the bogus provider
 	return nil
 
+}
+
+func (p *CAProvider) setCAPrivateKey() error {
+	block, _ := pem.Decode([]byte(p.C.CAPrivateKey))
+	if block == nil {
+		return errors.New("failed to decode ca private key PEM")
+	}
+
+	anycaPrivateKey, err := x509.ParsePKCS8PrivateKey(block.Bytes)
+	if err != nil {
+		return err
+	}
+	var is bool
+	p.caPrivateKey, is = anycaPrivateKey.(crypto.Signer)
+	if !is {
+		return errors.New("ca private key is not a crypto.Signer type")
+	}
+	return nil
+}
+
+func (p *CAProvider) setCACertificate() error {
+	block, _ := pem.Decode([]byte(p.C.CACertificate))
+	if block == nil || block.Type != "CERTIFICATE" {
+		return errors.New("failed to decode ca certificate PEM")
+	}
+
+	var err error
+	p.caCert, err = x509.ParseCertificate(block.Bytes)
+	if err != nil {
+		return err
+	}
+
+	if !p.caCert.IsCA {
+		return errors.New("configured ca cert is not a ca")
+	}
+
+	return nil
+}
+
+func (p *CAProvider) verifyKeyMatchesCertificate() error {
+	keyPublic, err := x509.MarshalPKIXPublicKey(p.caPrivateKey.Public())
+	if err != nil {
+		return err
+	}
+
+	certPublic, err := x509.MarshalPKIXPublicKey(p.caCert.PublicKey)
+	if err != nil {
+		return err
+	}
+
+	if !equalBytes(keyPublic, certPublic) {
+		return errors.New("ca private key does not match ca certificate public key")
+	}
+
+	return nil
+}
+
+func equalBytes(a, b []byte) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+
+	return true
 }
