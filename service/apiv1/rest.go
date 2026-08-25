@@ -121,11 +121,12 @@ func (hdlr *RestV1Handler) HandleCAAnonCert(w http.ResponseWriter, r *http.Reque
 			httpError(w, r, 404, err.Error()) //TODO detect Not Found error
 			return
 		}
+		withoutca := removeCAInfo(certInfos)
 		if pginfo != nil {
 			pginfo.SetHTTPHeaders(w)
 		}
 		w.WriteHeader(200)
-		util.LogIfError(log, json.NewEncoder(w).Encode(certInfos))
+		util.LogIfError(log, json.NewEncoder(w).Encode(withoutca))
 		success(w, r)
 		return
 	case http.MethodPost:
@@ -198,7 +199,7 @@ func (hdlr *RestV1Handler) HandleCANamedCert(w http.ResponseWriter, r *http.Requ
 			return
 		}
 		w.WriteHeader(200)
-		util.LogIfError(log, json.NewEncoder(w).Encode(certInfo))
+		util.LogIfError(log, json.NewEncoder(w).Encode(certInfo.CertInfo))
 		success(w, r)
 		return
 	default:
@@ -415,4 +416,14 @@ func httpError(w http.ResponseWriter, r *http.Request, sc int, message string) {
 func success(w http.ResponseWriter, r *http.Request) {
 	log.WithField("path", r.URL.Path).
 		WithField("rAddr", r.RemoteAddr).Debug("HTTP request succeeded.")
+}
+
+// removeCAInfo strips the CA information if the filter already explicitly
+// defines the CA to return, as required by the API.
+func removeCAInfo(in []api.CertInfoWithCA) []api.CertInfo {
+	result := make([]api.CertInfo, len(in))
+	for i := range in {
+		result[i] = in[i].CertInfo
+	}
+	return result
 }

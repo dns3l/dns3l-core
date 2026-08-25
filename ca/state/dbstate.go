@@ -40,6 +40,7 @@ func (s *CAStateManagerSQLSession) Close() error {
 
 var caCertsQueryColumns = []string{
 	"key_name",
+	"ca_id",
 	"priv_key",
 	"acme_user",
 	"issued_by",
@@ -74,7 +75,7 @@ func (s *CAStateManagerSQLSession) GetCACertByID(keyname string, caid string) (*
 	}
 	var ttlsec int
 	var next_renewal_time, valid_start_time, valid_end_time, last_access_time *time.Time
-	err = rows.Scan(&info.Name, &info.PrivKey, &info.ACMEUser, &info.IssuedBy.Name, &info.IssuedBy.Email,
+	err = rows.Scan(&info.Name, &info.CAID, &info.PrivKey, &info.ACMEUser, &info.IssuedBy.Name, &info.IssuedBy.Email,
 		&info.ClaimTime, &info.RenewedTime, &next_renewal_time, &valid_start_time, &valid_end_time,
 		&last_access_time, &info.AccessCount, &info.CertPEM, &info.RenewCount, &ttlsec)
 	if err == sql.ErrNoRows {
@@ -226,7 +227,7 @@ func (s *CAStateManagerSQLSession) rowToCACertInfo(rows *sql.Rows, info *types.C
 	info.IssuedBy = &authtypes.UserInfo{}
 	var ttlsec int
 	var next_renewal_time, valid_start_time, valid_end_time, last_access_time *time.Time
-	err := rows.Scan(&info.Name, &info.PrivKey, &info.ACMEUser, &info.IssuedBy.Name, &info.IssuedBy.Email,
+	err := rows.Scan(&info.Name, &info.CAID, &info.PrivKey, &info.ACMEUser, &info.IssuedBy.Name, &info.IssuedBy.Email,
 		&info.ClaimTime, &info.RenewedTime, &next_renewal_time, &valid_start_time, &valid_end_time,
 		&last_access_time, &info.AccessCount, &info.CertPEM, &info.RenewCount, &ttlsec,
 		&domainsRevStr, total_count)

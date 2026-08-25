@@ -213,7 +213,7 @@ func (s *V1) GetAllCertResources(caID, crtID string, authz authtypes.Authorizati
 
 // if caID and/or crtID is "", infos will not be filtered on that value.
 // Cannot filter for both
-func (s *V1) GetCertificateInfos(caID string, crtID string, authz authtypes.AuthorizationInfo, pginfo *util.PaginationInfo) ([]apiv1.CertInfo, error) {
+func (s *V1) GetCertificateInfos(caID string, crtID string, authz authtypes.AuthorizationInfo, pginfo *util.PaginationInfo) ([]apiv1.CertInfoWithCA, error) {
 
 	s.logAction(authz, fmt.Sprintf("GetCertificateInfos %s %s", caID, crtID))
 
@@ -242,7 +242,7 @@ func (s *V1) GetCertificateInfos(caID string, crtID string, authz authtypes.Auth
 	if err != nil {
 		return nil, err
 	}
-	res := make([]apiv1.CertInfo, len(r))
+	res := make([]apiv1.CertInfoWithCA, len(r))
 	for i, cinfo := range r {
 		err := apiCertInfoFromCACertInfo(&cinfo, &res[i])
 		if err != nil {
@@ -254,7 +254,7 @@ func (s *V1) GetCertificateInfos(caID string, crtID string, authz authtypes.Auth
 
 }
 
-func (s *V1) GetCertificateInfo(caID string, crtID string, authz authtypes.AuthorizationInfo) (*apiv1.CertInfo, error) {
+func (s *V1) GetCertificateInfo(caID string, crtID string, authz authtypes.AuthorizationInfo) (*apiv1.CertInfoWithCA, error) {
 
 	s.logAction(authz, fmt.Sprintf("GetCertificateInfo %s %s", caID, crtID))
 
@@ -277,7 +277,7 @@ func (s *V1) GetCertificateInfo(caID string, crtID string, authz authtypes.Autho
 		return nil, &common.NotFoundError{RequestedResource: crtID}
 	}
 
-	res := &apiv1.CertInfo{}
+	res := &apiv1.CertInfoWithCA{}
 	err = apiCertInfoFromCACertInfo(cinfo, res)
 	if err != nil {
 		return nil, err
@@ -304,7 +304,7 @@ func (s *V1) DeleteCertificatesAllCA(crtID string, authz authtypes.Authorization
 
 }
 
-func apiCertInfoFromCACertInfo(source *types.CACertInfo, target *apiv1.CertInfo) error {
+func apiCertInfoFromCACertInfo(source *types.CACertInfo, target *apiv1.CertInfoWithCA) error {
 	cbatch, err := util.ParseCertificatePEM([]byte(source.CertPEM))
 	if err != nil {
 		return err
@@ -317,6 +317,7 @@ func apiCertInfoFromCACertInfo(source *types.CACertInfo, target *apiv1.CertInfo)
 	cert := cbatch[0]
 
 	target.Name = source.Name
+	target.CA = source.CAID
 	target.ClaimedOn = source.ClaimTime.Format(time.RFC3339)
 	target.ValidTo = source.ValidEndTime.Format(time.RFC3339)
 	target.NextRenewal = source.NextRenewalTime.Format(time.RFC3339)
