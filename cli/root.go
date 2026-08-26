@@ -273,7 +273,7 @@ func (f *CommandFactory) newCRTListCommand() *cobra.Command {
 				path = "/ca/" + pathEscape(caID) + "/crt"
 			}
 			if cfg.HiddenPaging > 0 {
-				return f.crtListPaged(cmd, cfg, path, caID, limit, offset)
+				return f.crtListPaged(cmd, cfg, path, caID, limit, offset, caID != "")
 			} else {
 				query := url.Values{}
 				if limit > 0 {
@@ -283,11 +283,11 @@ func (f *CommandFactory) newCRTListCommand() *cobra.Command {
 					query.Add("offset", strconv.FormatUint(offset, 10))
 				}
 				return f.runJSONCommand(cmd, cfg, http.MethodGet, path, query, nil, func(resp *Response) error {
-					certs, err := DecodeJSON[[]apiv1.CertInfo](resp.Body)
+					certs, err := DecodeJSON[[]apiv1.CertInfoWithCA](resp.Body)
 					if err != nil {
 						return err
 					}
-					return PrintCerts(f.Out, PaginationInfoFromHeaders(resp.Headers).String(), certs, SupportsColor(os.Stdout))
+					return PrintCerts(f.Out, PaginationInfoFromHeaders(resp.Headers).String(), certs, SupportsColor(os.Stdout), caID != "")
 				})
 			}
 		},
@@ -299,10 +299,10 @@ func (f *CommandFactory) newCRTListCommand() *cobra.Command {
 }
 
 func (f *CommandFactory) crtListPaged(cmd *cobra.Command, cfg *RuntimeConfig, path string,
-	caID string, limit uint64, offset uint64) error {
-	certs := make([]apiv1.CertInfo, 0)
+	caID string, limit uint64, offset uint64, noca bool) error {
+	certs := make([]apiv1.CertInfoWithCA, 0)
 	return f.runJSONCommandPaged(cmd, cfg, http.MethodGet, path, nil, func(resp *Response) (uint64, error) {
-		certadd, err := DecodeJSON[[]apiv1.CertInfo](resp.Body)
+		certadd, err := DecodeJSON[[]apiv1.CertInfoWithCA](resp.Body)
 		if err != nil {
 			return 0, err
 		}
@@ -311,7 +311,7 @@ func (f *CommandFactory) crtListPaged(cmd *cobra.Command, cfg *RuntimeConfig, pa
 		return uint64(num), nil
 	}, limit, offset, cfg.HiddenPaging,
 		func(pi *PaginationInfo) error {
-			return PrintCerts(f.Out, pi.String(), certs, SupportsColor(os.Stdout))
+			return PrintCerts(f.Out, pi.String(), certs, SupportsColor(os.Stdout), noca)
 		})
 }
 
@@ -327,14 +327,14 @@ func (f *CommandFactory) newCRTGetCommand() *cobra.Command {
 			if caID != "" {
 				path = "/ca/" + pathEscape(caID) + "/crt/" + name
 			}
-			return f.runCRTGetCommand(cmd, path, caID != "", args[0])
+			return f.runCRTGetCommand(cmd, path, caID != "", args[0], caID != "")
 		},
 	}
 	cmd.Flags().StringVar(&caID, "ca", "", "CA ID")
 	return cmd
 }
 
-func (f *CommandFactory) runCRTGetCommand(cmd *cobra.Command, path string, caScoped bool, certName string) error {
+func (f *CommandFactory) runCRTGetCommand(cmd *cobra.Command, path string, caScoped bool, certName string, noca bool) error {
 	cfg, err := f.runtimeConfig(cmd, false)
 	if err != nil {
 		return err
@@ -347,11 +347,11 @@ func (f *CommandFactory) runCRTGetCommand(cmd *cobra.Command, path string, caSco
 		if cfg.JSON {
 			return WriteJSON(f.Out, resp.Body)
 		}
-		cert, err := DecodeJSON[apiv1.CertInfo](resp.Body)
+		cert, err := DecodeJSON[apiv1.CertInfoWithCA](resp.Body)
 		if err != nil {
 			return err
 		}
-		return PrintCert(f.Out, cert, SupportsColor(os.Stdout))
+		return PrintCert(f.Out, cert, SupportsColor(os.Stdout), noca)
 	}
 	if cfg.JSON {
 		body, err := singleCertJSONFromList(resp.Body, certName)
@@ -364,7 +364,7 @@ func (f *CommandFactory) runCRTGetCommand(cmd *cobra.Command, path string, caSco
 	if err != nil {
 		return err
 	}
-	return PrintCert(f.Out, cert, SupportsColor(os.Stdout))
+	return PrintCert(f.Out, cert, SupportsColor(os.Stdout), noca)
 }
 
 func singleCertJSONFromList(body []byte, certName string) ([]byte, error) {
@@ -378,13 +378,13 @@ func singleCertJSONFromList(body []byte, certName string) ([]byte, error) {
 	return certs[0], nil
 }
 
-func singleCertInfoFromList(body []byte, certName string) (apiv1.CertInfo, error) {
-	certs, err := DecodeJSON[[]apiv1.CertInfo](body)
+func singleCertInfoFromList(body []byte, certName string) (apiv1.CertInfoWithCA, error) {
+	certs, err := DecodeJSON[[]apiv1.CertInfoWithCA](body)
 	if err != nil {
-		return apiv1.CertInfo{}, err
+		return apiv1.CertInfoWithCA{}, err
 	}
 	if err := requireSingleCert(certName, len(certs)); err != nil {
-		return apiv1.CertInfo{}, err
+		return apiv1.CertInfoWithCA{}, err
 	}
 	return certs[0], nil
 }

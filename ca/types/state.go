@@ -50,6 +50,7 @@ type CAStateManagerSession interface {
 
 type CACertInfo struct {
 	Name            string
+	CAID            string
 	PrivKey         string
 	IssuedBy        *authtypes.UserInfo
 	ClaimTime       time.Time

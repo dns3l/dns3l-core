@@ -98,6 +98,11 @@ type CertInfo struct {
 	Serial      string `json:"serial"`
 }
 
+type CertInfoWithCA struct {
+	CertInfo
+	CA string `json:"ca"`
+}
+
 type ErrorMsg struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`

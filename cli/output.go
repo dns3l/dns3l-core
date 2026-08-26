@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -133,16 +134,24 @@ func PrintCA(out io.Writer, ca apiv1.CAInfo, color bool) error {
 	}, color)
 }
 
-func PrintCerts(out io.Writer, footerStr string, certs []apiv1.CertInfo, color bool) error {
-	tbl := newOutputTable(out, "NAME", "VALID", "VALID_TO", "WILDCARD", "CLAIMED_BY", "ISSUER", "RENEWALS", "ACCESSES")
+func PrintCerts(out io.Writer, footerStr string, certs []apiv1.CertInfoWithCA, color, noca bool) error {
+	tblhdr := []string{"NAME", "CA", "VALID", "VALID_TO", "WILDCARD", "CLAIMED_BY", "ISSUER", "RENEWALS", "ACCESSES"}
+	if noca {
+		tblhdr = slices.Delete(tblhdr, 1, 2)
+	}
+	tbl := newOutputTable(out, tblhdr...)
 	for _, cert := range certs {
 		claimedBy := strings.TrimSpace(cert.ClaimedBy.Name)
 		if cert.ClaimedBy.EMail != "" {
 			claimedBy = strings.TrimSpace(claimedBy + " <" + cert.ClaimedBy.EMail + ">")
 		}
-		tbl.AddRow(
-			cert.Name, boolText(cert.Valid, color), cert.ValidTo, boolText(cert.Wildcard, color),
-			claimedBy, cert.IssuerCN, cert.RenewCount, cert.AccessCount)
+		vals := []any{cert.Name, cert.CA, boolText(cert.Valid, color), cert.ValidTo, boolText(cert.Wildcard, color),
+			claimedBy, cert.IssuerCN, cert.RenewCount, cert.AccessCount}
+		if noca {
+			vals = slices.Delete(vals, 1, 2)
+		}
+		tbl.AddRow(vals...)
+
 	}
 	tbl.Print()
 	if footerStr != "" {
@@ -153,9 +162,11 @@ func PrintCerts(out io.Writer, footerStr string, certs []apiv1.CertInfo, color b
 	return nil
 }
 
-func PrintCert(out io.Writer, cert apiv1.CertInfo, color bool) error {
-	return printKeyValues(out, [][]string{
+func PrintCert(out io.Writer, cert apiv1.CertInfoWithCA, color, noca bool) error {
+
+	tbl := [][]string{
 		{"name", cert.Name},
+		{"ca", cert.CA},
 		{"valid", boolText(cert.Valid, color)},
 		{"valid to", cert.ValidTo},
 		{"claimed on", cert.ClaimedOn},
@@ -168,7 +179,13 @@ func PrintCert(out io.Writer, cert apiv1.CertInfo, color bool) error {
 		{"renew count", fmt.Sprint(cert.RenewCount)},
 		{"last access", cert.LastAccess},
 		{"access count", fmt.Sprint(cert.AccessCount)},
-	}, color)
+	}
+
+	if noca {
+		tbl = slices.Delete(tbl, 1, 2)
+	}
+
+	return printKeyValues(out, tbl, color)
 }
 
 func PrintCertResources(out io.Writer, resources apiv1.CertResources, check bool, color bool) error {
