@@ -365,20 +365,16 @@ func (h *CAFunctionHandler) ListCertsToRenew(limit uint) ([]types.CertificateRen
 
 func (h *CAFunctionHandler) DeleteCertificatesAllCA(keyID string) error {
 
-	/*
-		err = sess.DeleteCertAllCA(keyID)
-		if err != nil {
-			return err
-		}
-	*/
-
 	for id := range h.Config.Providers {
 		err := h.DeleteCertificate(id, keyID)
 		if _, is := err.(*cmn.NotFoundError); is {
 			log.WithError(err).WithField("caID", keyID).Debugf("Provider '%s' not managing "+
 				"key '%s', this is normal.", id, keyID)
+		} else if _, is := err.(*cmn.DisabledError); is {
+			log.WithError(err).WithField("caID", keyID).Warnf("Provider '%s' disabled, might not "+
+				"have revoked a certificate '%s' here.", id, keyID)
 		} else if err != nil {
-			return fmt.Errorf("problems deleting key '%s' in ca '%s', %w", id, keyID, err)
+			return fmt.Errorf("problems deleting key '%s' in ca '%s', %w", keyID, id, err)
 		}
 	}
 
