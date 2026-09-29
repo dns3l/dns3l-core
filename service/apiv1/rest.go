@@ -2,7 +2,7 @@ package apiv1
 
 import (
 	"encoding/json"
-	"fmt"
+	"errors"
 	"net/http"
 	"net/url"
 
@@ -140,7 +140,7 @@ func getSearchParamFromValues(urlValues url.Values) (string, error) {
 	if urlValues.Has(searchKey) {
 		search = urlValues[searchKey][0]
 		if !validSearchString(search) {
-			return "", fmt.Errorf(allowedCharsInSearchMessage)
+			return "", errors.New(allowedCharsInSearchMessage)
 		}
 		log.Debugf("look for %v in crt", search)
 	}
@@ -152,7 +152,7 @@ func getSuffixParamFromValues(urlValues url.Values) (string, error) {
 	if urlValues.Has(suffixKey) {
 		suffix = urlValues[suffixKey][0]
 		if !validSearchString(suffix) {
-			return "", fmt.Errorf(allowedCharsInSuffixMessage)
+			return "", errors.New(allowedCharsInSuffixMessage)
 		}
 		log.Debugf("look for suffix %v in crt", suffix)
 	}
