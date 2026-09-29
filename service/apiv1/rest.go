@@ -107,10 +107,12 @@ func (hdlr *RestV1Handler) GetCA(w http.ResponseWriter, r *http.Request) {
 
 func validSearchString(s string) bool {
 	for _, r := range s {
-		if !((r >= 'a' && r <= 'z') ||
+		if (r >= 'a' && r <= 'z') ||
 			(r >= 'A' && r <= 'Z') ||
 			(r >= '0' && r <= '9') ||
-			r == '.' || r == '*') {
+			r == '.' || r == '*' {
+			continue
+		} else {
 			return false
 		}
 	}
@@ -119,10 +121,12 @@ func validSearchString(s string) bool {
 
 func validSuffixString(s string) bool {
 	for _, r := range s {
-		if !((r >= 'a' && r <= 'z') ||
+		if (r >= 'a' && r <= 'z') ||
 			(r >= 'A' && r <= 'Z') ||
 			(r >= '0' && r <= '9') ||
-			r == '.') {
+			r == '.' {
+			continue
+		} else {
 			return false
 		}
 	}
