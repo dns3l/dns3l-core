@@ -17,8 +17,8 @@ const (
 	searchKey = "search"
 	suffixKey = "suffix"
 
-	allowedCharsInSearchMessage = "Only '.' '*' [A-Z] [1-9] allowd in search"
-	allowedCharsInSuffixMessage = "Only '.' [A-Z] [1-9] allowd in suffix"
+	allowedCharsInSearchMessage = "Only '.' '*' [A-Z] [1-9] allowde in search"
+	allowedCharsInSuffixMessage = "Only '.' [A-Z] [1-9] allowed in suffix"
 )
 
 type RestV1Handler struct {
