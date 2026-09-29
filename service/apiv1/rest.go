@@ -151,7 +151,7 @@ func getSuffixParamFromValues(urlValues url.Values) (string, error) {
 	suffix := ""
 	if urlValues.Has(suffixKey) {
 		suffix = urlValues[suffixKey][0]
-		if !validSearchString(suffix) {
+		if !validSuffixString(suffix) {
 			return "", errors.New(allowedCharsInSuffixMessage)
 		}
 		log.Debugf("look for suffix %v in crt", suffix)
