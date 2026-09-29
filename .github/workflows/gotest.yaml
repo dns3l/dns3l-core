@@ -2,9 +2,9 @@ name: go test
 on:
   push:
     tags:
-      - "*"
+      - "**"
     branches:
-      - "*"
+      - "**"
   pull_request:
 permissions:
   contents: read
