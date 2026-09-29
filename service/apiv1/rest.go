@@ -184,15 +184,13 @@ func (hdlr *RestV1Handler) HandleCAAnonCert(w http.ResponseWriter, r *http.Reque
 
 		search, err := getSearchParamFromValues(urlValues)
 		if err != nil {
-			httpError(w, r, 422,
-				err.Error())
+			httpErrorFromErr(w, r, err)
 			return
 		}
 
 		suffix, err := getSuffixParamFromValues(urlValues)
 		if err != nil {
-			httpError(w, r, 422,
-				err.Error())
+			httpErrorFromErr(w, r, err)
 			return
 		}
 
@@ -200,7 +198,7 @@ func (hdlr *RestV1Handler) HandleCAAnonCert(w http.ResponseWriter, r *http.Reque
 		certInfos, err := hdlr.Service.GetCertificateInfos(caID, "", authz,
 			pginfo, search, suffix)
 		if err != nil {
-			httpError(w, r, 404, err.Error()) //TODO detect Not Found error
+			httpErrorFromErr(w, r, err)
 			return
 		}
 		withoutca := removeCAInfo(certInfos)
@@ -401,15 +399,13 @@ func (hdlr *RestV1Handler) HandleAnonCert(w http.ResponseWriter, r *http.Request
 
 		search, err := getSearchParamFromValues(urlValues)
 		if err != nil {
-			httpError(w, r, 422,
-				err.Error())
+			httpErrorFromErr(w, r, err)
 			return
 		}
 
 		suffix, err := getSuffixParamFromValues(urlValues)
 		if err != nil {
-			httpError(w, r, 422,
-				err.Error())
+			httpErrorFromErr(w, r, err)
 			return
 		}
 
@@ -496,6 +492,8 @@ func httpErrorFromErr(w http.ResponseWriter, r *http.Request, e error) {
 		httpError(w, r, http.StatusConflict, e.Error())
 	case *common.Warning:
 		httpError(w, r, http.StatusOK, e.Error())
+	case *common.InputStringExeedsLimit:
+		httpError(w, r, http.StatusRequestURITooLong, e.Error())
 	default:
 		httpError(w, r, 500, e.Error())
 	}

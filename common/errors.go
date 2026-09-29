@@ -79,3 +79,16 @@ func (e *Warning) Error() string {
 	return e.SubErr.Error()
 
 }
+
+type InputStringExeedsLimit struct {
+	Limit         int
+	ParameterName string
+	Lenght        int
+}
+
+func (e *InputStringExeedsLimit) Error() string {
+	return fmt.Sprintf("request string parameter '%s' "+
+		"exeeds parameter lenght limit of %v characters with lenght of %v",
+		e.ParameterName, e.Limit, e.Lenght)
+
+}

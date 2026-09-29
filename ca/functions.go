@@ -324,6 +324,22 @@ func (h *CAFunctionHandler) GetCertificateInfos(caID string, keyID string,
 	}
 	defer util.LogDefer(log, sess.Close)
 
+	if len(search) > h.Config.Limits.CrtSearchCharacterLimit {
+		return nil, &cmn.InputStringExeedsLimit{
+			Limit:         h.Config.Limits.CrtSearchCharacterLimit,
+			ParameterName: "CrtSearchCharacterLimit",
+			Lenght:        len(search),
+		}
+	}
+
+	if len(suffix) > h.Config.Limits.CrtSuffixSearchCharacterLimit {
+		return nil, &cmn.InputStringExeedsLimit{
+			Limit:         h.Config.Limits.CrtSuffixSearchCharacterLimit,
+			ParameterName: "CrtSuffixSearchCharacterLimit",
+			Lenght:        len(suffix),
+		}
+	}
+
 	return sess.ListCACerts(keyID, caID, authzedDomains, pginfo, search, suffix) //TODO extend api with user query
 
 }
