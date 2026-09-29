@@ -2,7 +2,9 @@ package apiv1
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"net/url"
 
 	api "github.com/dns3l/dns3l-core/api/v1"
 	"github.com/dns3l/dns3l-core/common"
@@ -133,6 +135,30 @@ func validSuffixString(s string) bool {
 	return true
 }
 
+func getSearchParamFromValues(urlValues url.Values) (string, error) {
+	search := ""
+	if urlValues.Has(searchKey) {
+		search = urlValues[searchKey][0]
+		if !validSearchString(search) {
+			return "", fmt.Errorf(allowedCharsInSearchMessage)
+		}
+		log.Debugf("look for %v in crt", search)
+	}
+	return search, nil
+}
+
+func getSuffixParamFromValues(urlValues url.Values) (string, error) {
+	suffix := ""
+	if urlValues.Has(suffixKey) {
+		suffix = urlValues[suffixKey][0]
+		if !validSearchString(suffix) {
+			return "", fmt.Errorf(allowedCharsInSuffixMessage)
+		}
+		log.Debugf("look for suffix %v in crt", suffix)
+	}
+	return suffix, nil
+}
+
 // ////////////////////////////////////
 func (hdlr *RestV1Handler) HandleCAAnonCert(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
@@ -155,26 +181,19 @@ func (hdlr *RestV1Handler) HandleCAAnonCert(w http.ResponseWriter, r *http.Reque
 
 		urlValues := r.URL.Query()
 		log.Debugf("urlValues in request %v", urlValues)
-		search := ""
-		if urlValues.Has(searchKey) {
-			search = urlValues[searchKey][0]
-			if !validSearchString(search) {
-				httpError(w, r, 422,
-					allowedCharsInSearchMessage)
-				return
-			}
-			log.Debugf("look for %v in crt", search)
+
+		search, err := getSearchParamFromValues(urlValues)
+		if err != nil {
+			httpError(w, r, 422,
+				err.Error())
+			return
 		}
 
-		suffix := ""
-		if urlValues.Has(suffixKey) {
-			suffix = urlValues[suffixKey][0]
-			if !validSuffixString(suffix) {
-				httpError(w, r, 422,
-					allowedCharsInSuffixMessage)
-				return
-			}
-			log.Debugf("look for suffix %v in crt", suffix)
+		suffix, err := getSuffixParamFromValues(urlValues)
+		if err != nil {
+			httpError(w, r, 422,
+				err.Error())
+			return
 		}
 
 		pginfo := util.PaginationInfoFromRequest(r)
@@ -379,26 +398,19 @@ func (hdlr *RestV1Handler) HandleAnonCert(w http.ResponseWriter, r *http.Request
 
 		urlValues := r.URL.Query()
 		log.Debugf("urlValues in request %v", urlValues)
-		search := ""
-		if urlValues.Has(searchKey) {
-			search = urlValues[searchKey][0]
-			if !validSearchString(search) {
-				httpError(w, r, 422,
-					allowedCharsInSearchMessage)
-				return
-			}
-			log.Debugf("look for %v in crt", search)
+
+		search, err := getSearchParamFromValues(urlValues)
+		if err != nil {
+			httpError(w, r, 422,
+				err.Error())
+			return
 		}
 
-		suffix := ""
-		if urlValues.Has(suffixKey) {
-			suffix = urlValues[suffixKey][0]
-			if !validSuffixString(suffix) {
-				httpError(w, r, 422,
-					allowedCharsInSuffixMessage)
-				return
-			}
-			log.Debugf("look for suffix %v in crt", suffix)
+		suffix, err := getSuffixParamFromValues(urlValues)
+		if err != nil {
+			httpError(w, r, 422,
+				err.Error())
+			return
 		}
 
 		pginfo := util.PaginationInfoFromRequest(r)
