@@ -256,6 +256,14 @@ func (t *TestRunner) RunDBFull() {
 			}
 			fmt.Printf("List keys publicly readable search long: %d keys returned.\n", apiv1.CountJSONArray(out))
 
+			out = testhttp.AssertStatusCode("List keys publicly readable  search fail", 414,
+				apiv1.ListAllKeysSearch(srv, "fquux", "*foo.bar*-_%", ""))
+
+			if t.Dump {
+				fmt.Println(out)
+			}
+			fmt.Printf("List keys publicly readable search fail long: %d keys returned.\n", apiv1.CountJSONArray(out))
+
 			// ""/api/crt/%s""
 			out = testhttp.AssertSuccess("List key all CA",
 				apiv1.ListKeyAllCA(srv, "kilgore", prefix+".test1.bar.sub1."+t.Domain))
