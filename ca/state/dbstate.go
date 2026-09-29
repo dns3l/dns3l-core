@@ -116,8 +116,7 @@ func domainToReverseQueryForm(domain string) (string, string) {
 
 func searchStringToReverseQueryForm(search string) string {
 	search = util.StringReverse(search)
-	search = strings.ReplaceAll(search, "*", "%") // add % before and after so the exact sting can be  searched
-	return search
+	search = strings.ReplaceAll(search, "*", "%")
 }
 
 func domainReverseDBFormToNormal(domainRev string) string {
