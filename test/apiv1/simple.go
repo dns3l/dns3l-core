@@ -41,6 +41,13 @@ func ListKeys(srv *service.Service, caid string, user string) *httptest.HttpResu
 	)
 }
 
+func ListKeysSearch(srv *service.Service, caid, user, search, suffix string) *httptest.HttpResult {
+	return httptest.TestSendRequest(
+		srv.GetRouter(), httptest.CreateNewRequest("GET", fmt.Sprintf("/api/ca/%s/crt?search=%s&suffix=%s",
+			caid, search, suffix), user, nil),
+	)
+}
+
 func ListKeysPage1(srv *service.Service, caid string, user string) *httptest.HttpResult {
 	return httptest.TestSendRequest(
 		srv.GetRouter(), httptest.CreateNewRequest("GET", fmt.Sprintf("/api/ca/%s/crt?limit=10", caid), user, nil),
@@ -56,6 +63,13 @@ func ListKeysPage2(srv *service.Service, caid string, user string) *httptest.Htt
 func ListAllKeys(srv *service.Service, user string) *httptest.HttpResult {
 	return httptest.TestSendRequest(
 		srv.GetRouter(), httptest.CreateNewRequest("GET", "/api/crt", user, nil),
+	)
+}
+
+func ListAllKeysSearch(srv *service.Service, user, search, suffix string) *httptest.HttpResult {
+	return httptest.TestSendRequest(
+		srv.GetRouter(), httptest.CreateNewRequest("GET", fmt.Sprintf("/api/crt?search=%s&suffix=%s",
+			search, suffix), user, nil),
 	)
 }
 

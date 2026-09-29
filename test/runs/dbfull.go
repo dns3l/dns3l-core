@@ -155,7 +155,7 @@ func (t *TestRunner) RunDBFull() {
 						prefix + ".alt.foo.1337.sub2." + t.Domain,
 						prefix + ".alt2.foo.bar.sub1." + t.Domain,
 					}))
-
+			// "/api/ca/%s/crt"
 			out := testhttp.AssertSuccess("List keys",
 				apiv1.ListKeys(srv, t.CAID, "kilgore"))
 
@@ -180,6 +180,41 @@ func (t *TestRunner) RunDBFull() {
 			}
 			fmt.Printf("List keys publicly readable: %d keys returned.\n", apiv1.CountJSONArray(out))
 
+			// "/api/ca/%s/crt?search=%s&suffix=%s"
+
+			out = testhttp.AssertSuccess("List keys publicly readable suffix",
+				apiv1.ListKeysSearch(srv, t.CAID, "fquux", "", t.Domain))
+
+			if t.Dump {
+				fmt.Println(out)
+			}
+			fmt.Printf("List keys publicly readable suffix: %d keys returned.\n", apiv1.CountJSONArray(out))
+
+			out = testhttp.AssertSuccess("List keys publicly readable suffix long",
+				apiv1.ListKeysSearch(srv, t.CAID, "fquux", "", "foo.bar.sub1."+t.Domain))
+
+			if t.Dump {
+				fmt.Println(out)
+			}
+			fmt.Printf("List keys publicly readable suffix long: %d keys returned.\n", apiv1.CountJSONArray(out))
+
+			out = testhttp.AssertSuccess("List keys publicly readable suffix + search",
+				apiv1.ListKeysSearch(srv, t.CAID, "fquux", "", "foo.bar.sub1."+t.Domain))
+
+			if t.Dump {
+				fmt.Println(out)
+			}
+			fmt.Printf("List keys publicly readable suffix long: %d keys returned.\n", apiv1.CountJSONArray(out))
+
+			out = testhttp.AssertSuccess("List keys publicly readable  search",
+				apiv1.ListKeysSearch(srv, t.CAID, "fquux", "*foo.bar*", ""))
+
+			if t.Dump {
+				fmt.Println(out)
+			}
+			fmt.Printf("List keys publicly readable search long: %d keys returned.\n", apiv1.CountJSONArray(out))
+			// "/api/crt"
+
 			out = testhttp.AssertSuccess("List all keys",
 				apiv1.ListAllKeys(srv, "kilgore"))
 
@@ -187,6 +222,41 @@ func (t *TestRunner) RunDBFull() {
 				fmt.Println(out)
 			}
 
+			// "/api/crt?search=%s&suffix=%s"
+
+			out = testhttp.AssertSuccess("List all keys publicly readable suffix",
+				apiv1.ListAllKeysSearch(srv, "fquux", "", t.Domain))
+
+			if t.Dump {
+				fmt.Println(out)
+			}
+			fmt.Printf("List all keys publicly readable suffix: %d keys returned.\n", apiv1.CountJSONArray(out))
+
+			out = testhttp.AssertSuccess("List keys publicly readable suffix long",
+				apiv1.ListAllKeysSearch(srv, "fquux", "", "foo.bar.sub1."+t.Domain))
+
+			if t.Dump {
+				fmt.Println(out)
+			}
+			fmt.Printf("List all keys publicly readable suffix long: %d keys returned.\n", apiv1.CountJSONArray(out))
+
+			out = testhttp.AssertSuccess("List keys publicly readable suffix + search",
+				apiv1.ListAllKeysSearch(srv, "fquux", "", "foo.bar.sub1."+t.Domain))
+
+			if t.Dump {
+				fmt.Println(out)
+			}
+			fmt.Printf("List all keys publicly readable suffix long: %d keys returned.\n", apiv1.CountJSONArray(out))
+
+			out = testhttp.AssertSuccess("List keys publicly readable  search",
+				apiv1.ListAllKeysSearch(srv, "fquux", "*foo.bar*", ""))
+
+			if t.Dump {
+				fmt.Println(out)
+			}
+			fmt.Printf("List keys publicly readable search long: %d keys returned.\n", apiv1.CountJSONArray(out))
+
+			// ""/api/crt/%s""
 			out = testhttp.AssertSuccess("List key all CA",
 				apiv1.ListKeyAllCA(srv, "kilgore", prefix+".test1.bar.sub1."+t.Domain))
 
