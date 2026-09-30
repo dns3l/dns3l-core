@@ -21,8 +21,8 @@ type Config struct {
 	Limits    Limits
 }
 type Limits struct {
-	CrtSearchCharacterLimit       int `yaml:"crtSearchCharacterLimit" default:"500"`
-	CrtSuffixSearchCharacterLimit int `yaml:"crtSearchCharacterLimit" default:"500"`
+	CrtSearchCharacterLimit       int `yaml:"crtSearchCharacterLimit" default:"255"` // current max name length = 255 characters
+	CrtSuffixSearchCharacterLimit int `yaml:"crtSearchCharacterLimit" default:"255"` // current max name length = 255 characters
 }
 
 type ProviderInfo struct {
