@@ -40,15 +40,15 @@ cli-all:
 docker: cli-docker service-docker
 
 cli-docker:
-	$(DOCKER) buildx build --network host --platform linux/amd64,linux/arm64 --build-arg https_proxy=${https_proxy} -t dns3lcli:$(DNS3LCLI_VERSION)-dev -f docker/Dockerfile-dns3lcli .
+	$(DOCKER) buildx build --network host --build-arg https_proxy=${https_proxy} -t dns3lcli:$(DNS3LCLI_VERSION)-dev -f docker/Dockerfile-dns3lcli .
 
 docker-simple: service-docker-simple
 
 service-docker:
-	$(DOCKER) buildx build --network host --platform linux/amd64,linux/arm64 --build-arg https_proxy=${https_proxy} -t dns3ld:$(DNS3LD_VERSION)-dev -f docker/Dockerfile-dns3ld .
+	$(DOCKER) buildx build --network host --build-arg https_proxy=${https_proxy} -t dns3ld:$(DNS3LD_VERSION)-dev -f docker/Dockerfile-dns3ld .
 
 service-docker-simple:
-	$(DOCKER) buildx build --network host --platform linux/amd64,linux/arm64 --build-arg https_proxy=${https_proxy} -t dns3ld-simple:$(DNS3LD_VERSION)-dev -f docker/Dockerfile-dns3ld-simple .
+	$(DOCKER) buildx build --network host --build-arg https_proxy=${https_proxy} -t dns3ld-simple:$(DNS3LD_VERSION)-dev -f docker/Dockerfile-dns3ld-simple .
 
 test: unittest comptest
 

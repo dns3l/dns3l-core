@@ -46,8 +46,8 @@ func (s *fakeSession) GetCACertByID(keyID string, caID string) (*types.CACertInf
 
 func (s *fakeSession) DelCACertByID(keyID string, caID string) error { return nil }
 
-func (s *fakeSession) ListCACerts(string, string, []string, string,
-	*util.PaginationInfo) ([]types.CACertInfo, error) {
+func (s *fakeSession) ListCACerts(string, string, []string, *util.PaginationInfo,
+	string, string) ([]types.CACertInfo, error) {
 	panic("not used in this test")
 }
 func (s *fakeSession) PutCACertData(string, string, *types.CACertInfo, string, string) error {

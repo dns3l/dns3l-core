@@ -2,9 +2,9 @@ name: comptest
 on:
   push:
     tags:
-      - "*"
+      - "**"
     branches:
-      - "*"
+      - "**"
   pull_request:
 jobs:
   comptest:

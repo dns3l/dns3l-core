@@ -2,7 +2,9 @@ package apiv1
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
+	"net/url"
 
 	api "github.com/dns3l/dns3l-core/api/v1"
 	"github.com/dns3l/dns3l-core/common"
@@ -12,6 +14,14 @@ import (
 )
 
 var Version = "1.3" //this is the API version, not the one of the daemon
+
+const (
+	searchKey = "search"
+	suffixKey = "suffix"
+
+	allowedCharsInSearchMessage = "only '-' '.' [A-Z] [1-9] '*' allowed in search"
+	allowedCharsInSuffixMessage = "only '-' '.' [A-Z] [1-9] allowed in suffix"
+)
 
 type RestV1Handler struct {
 	Service   ServiceV1
@@ -97,6 +107,60 @@ func (hdlr *RestV1Handler) GetCA(w http.ResponseWriter, r *http.Request) {
 	success(w, r)
 }
 
+func validSearchString(s string) bool {
+	for _, r := range s {
+		if (r >= 'a' && r <= 'z') ||
+			(r >= 'A' && r <= 'Z') ||
+			(r >= '0' && r <= '9') ||
+			r == '.' || r == '*' ||
+			r == '-' {
+			continue
+		} else {
+			return false
+		}
+	}
+	return true
+}
+
+func validSuffixString(s string) bool {
+	for _, r := range s {
+		if (r >= 'a' && r <= 'z') ||
+			(r >= 'A' && r <= 'Z') ||
+			(r >= '0' && r <= '9') ||
+			r == '.' ||
+			r == '-' {
+			continue
+		} else {
+			return false
+		}
+	}
+	return true
+}
+
+func getSearchParamFromValues(urlValues url.Values) (string, error) {
+	search := ""
+	if urlValues.Has(searchKey) {
+		search = urlValues[searchKey][0]
+		if !validSearchString(search) {
+			return "", errors.New(allowedCharsInSearchMessage)
+		}
+		log.Debugf("look for %v in crt", search)
+	}
+	return search, nil
+}
+
+func getSuffixParamFromValues(urlValues url.Values) (string, error) {
+	suffix := ""
+	if urlValues.Has(suffixKey) {
+		suffix = urlValues[suffixKey][0]
+		if !validSuffixString(suffix) {
+			return "", errors.New(allowedCharsInSuffixMessage)
+		}
+		log.Debugf("look for suffix %v in crt", suffix)
+	}
+	return suffix, nil
+}
+
 func (hdlr *RestV1Handler) HandleCAAnonCert(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
 	vars := mux.Vars(r)
@@ -115,10 +179,27 @@ func (hdlr *RestV1Handler) HandleCAAnonCert(w http.ResponseWriter, r *http.Reque
 	switch r.Method {
 	case http.MethodGet:
 		//Get info of all CA's certs
-		pginfo := util.PaginationInfoFromRequest(r)
-		certInfos, err := hdlr.Service.GetCertificateInfos(caID, "", authz, pginfo)
+
+		urlValues := r.URL.Query()
+		log.Debugf("urlValues in request %v", urlValues)
+
+		search, err := getSearchParamFromValues(urlValues)
 		if err != nil {
-			httpError(w, r, 404, err.Error()) //TODO detect Not Found error
+			httpErrorFromErr(w, r, err)
+			return
+		}
+
+		suffix, err := getSuffixParamFromValues(urlValues)
+		if err != nil {
+			httpErrorFromErr(w, r, err)
+			return
+		}
+
+		pginfo := util.PaginationInfoFromRequest(r)
+		certInfos, err := hdlr.Service.GetCertificateInfos(caID, "", authz,
+			pginfo, search, suffix)
+		if err != nil {
+			httpErrorFromErr(w, r, err)
 			return
 		}
 		withoutca := removeCAInfo(certInfos)
@@ -313,8 +394,25 @@ func (hdlr *RestV1Handler) HandleAnonCert(w http.ResponseWriter, r *http.Request
 
 	if r.Method == http.MethodGet {
 		//Get all certs
+
+		urlValues := r.URL.Query()
+		log.Debugf("urlValues in request %v", urlValues)
+
+		search, err := getSearchParamFromValues(urlValues)
+		if err != nil {
+			httpErrorFromErr(w, r, err)
+			return
+		}
+
+		suffix, err := getSuffixParamFromValues(urlValues)
+		if err != nil {
+			httpErrorFromErr(w, r, err)
+			return
+		}
+
 		pginfo := util.PaginationInfoFromRequest(r)
-		certInfos, err := hdlr.Service.GetCertificateInfos("", "", authz, pginfo)
+		certInfos, err := hdlr.Service.GetCertificateInfos("", "",
+			authz, pginfo, search, suffix)
 		if err != nil {
 			httpErrorFromErr(w, r, err)
 			return
@@ -351,7 +449,7 @@ func (hdlr *RestV1Handler) HandleNamedCert(w http.ResponseWriter, r *http.Reques
 	case http.MethodGet:
 		//Get info of specific cert
 		pginfo := util.PaginationInfoFromRequest(r)
-		certInfos, err := hdlr.Service.GetCertificateInfos("", crtID, authz, pginfo)
+		certInfos, err := hdlr.Service.GetCertificateInfos("", crtID, authz, pginfo, "", "")
 		if err != nil {
 			httpErrorFromErr(w, r, err)
 			return
@@ -395,6 +493,8 @@ func httpErrorFromErr(w http.ResponseWriter, r *http.Request, e error) {
 		httpError(w, r, http.StatusConflict, e.Error())
 	case *common.Warning:
 		httpError(w, r, http.StatusOK, e.Error())
+	case *common.InputStringExeedsLimit:
+		httpError(w, r, http.StatusRequestURITooLong, e.Error())
 	default:
 		httpError(w, r, 500, e.Error())
 	}

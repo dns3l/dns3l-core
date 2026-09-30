@@ -16,7 +16,7 @@ type ServiceV1 interface {
 	DeleteCertificate(caID, crtID string, authz authtypes.AuthorizationInfo) error
 	GetCertificateResource(caID, crtID, obj string, authz authtypes.AuthorizationInfo) (string, string, error)
 	GetAllCertResources(caID, crtID string, authz authtypes.AuthorizationInfo) (*api.CertResources, error)
-	GetCertificateInfos(caID string, crtID string, authz authtypes.AuthorizationInfo, pginfo *util.PaginationInfo) ([]api.CertInfoWithCA, error)
+	GetCertificateInfos(caID string, crtID string, authz authtypes.AuthorizationInfo, pginfo *util.PaginationInfo, search, suffix string) ([]api.CertInfoWithCA, error)
 	GetCertificateInfo(caID string, crtID string, authz authtypes.AuthorizationInfo) (*api.CertInfoWithCA, error)
 	DeleteCertificatesAllCA(crtID string, authz authtypes.AuthorizationInfo) error
 }

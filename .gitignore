@@ -6,3 +6,5 @@
 /dns3lcli.exe
 /dns3ld
 dist/
+rampup/config.yaml
+rampup/env

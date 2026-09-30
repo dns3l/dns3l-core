@@ -15,8 +15,8 @@ type CAStateManager interface {
 type CAStateManagerSession interface {
 	Close() error
 
-	ListCACerts(keyName string, caid string, authzedDomains []string, queryFilter string,
-		pginfo *util.PaginationInfo) ([]CACertInfo, error)
+	ListCACerts(keyName string, caid string, authzedDomains []string,
+		pginfo *util.PaginationInfo, queryString, queryDomainSuffix string) ([]CACertInfo, error)
 
 	GetCACertByID(keyID string, caID string) (*CACertInfo, error)
 

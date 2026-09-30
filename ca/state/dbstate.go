@@ -114,12 +114,18 @@ func domainToReverseQueryForm(domain string) (string, string) {
 
 }
 
+func searchStringToReverseQueryForm(search string) string {
+	search = util.StringReverse(search)
+	search = strings.ReplaceAll(search, "*", "%")
+	return search
+}
+
 func domainReverseDBFormToNormal(domainRev string) string {
 	return util.StringReverse(domainRev)
 }
 
 func constructListCACertsQuery(dbn func(name string) string, keyName string, caid string,
-	authzFilter []string, queryFilter string, pginfo *util.PaginationInfo) (string, []interface{}) {
+	authzFilter []string, pginfo *util.PaginationInfo, queryString, queryDomainSuffix string) (string, []interface{}) {
 
 	//Note that we will never filter for keyName and caid at the same time.
 	//It will just ignore one of the filters
@@ -136,12 +142,6 @@ func constructListCACertsQuery(dbn func(name string) string, keyName string, cai
 		filterParams = append(filterParams, caid)
 	}
 
-	if queryFilter != "" {
-		filters = append(filters, "(dom_name_rev = ? OR dom_name_rev LIKE ?)")
-		filter1, filter2 := domainToReverseQueryForm(queryFilter)
-		filterParams = append(filterParams, filter1, filter2)
-	}
-
 	if len(authzFilter) > 0 {
 		filterAuth := make([]string, 0, 10)
 		for _, elem := range authzFilter {
@@ -150,6 +150,17 @@ func constructListCACertsQuery(dbn func(name string) string, keyName string, cai
 			filterParams = append(filterParams, filter1, filter2)
 		}
 		filters = append(filters, fmt.Sprintf("(%s)", strings.Join(filterAuth, " OR ")))
+	}
+
+	if queryDomainSuffix != "" {
+		filters = append(filters, "(dom_name_rev = ? OR dom_name_rev LIKE ?)")
+		filter1, filter2 := domainToReverseQueryForm(queryDomainSuffix)
+		filterParams = append(filterParams, filter1, filter2)
+	}
+
+	if queryString != "" {
+		filters = append(filters, "(dom_name_rev LIKE ?)")
+		filterParams = append(filterParams, searchStringToReverseQueryForm(queryString))
 	}
 
 	filtersStr := strings.Join(filters, " AND ")
@@ -188,10 +199,10 @@ func keycertsDistinctQueryStr(dbn func(name string) string) string {
 }
 
 func (s *CAStateManagerSQLSession) ListCACerts(keyName string, caid string, authzFilter []string,
-	queryFilter string, pginfo *util.PaginationInfo) ([]types.CACertInfo, error) {
+	pginfo *util.PaginationInfo, queryString, queryDomainSuffix string) ([]types.CACertInfo, error) {
 
 	q, params := constructListCACertsQuery(s.prov.Prov.DBName, keyName, caid,
-		authzFilter, queryFilter, pginfo)
+		authzFilter, pginfo, queryString, queryDomainSuffix)
 
 	rows, err := s.db.Query(q, params...)
 	if err != nil {

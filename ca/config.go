@@ -18,6 +18,11 @@ import (
 type Config struct {
 	Providers map[string]*ProviderInfo `validate:"required,dive"` //configured DNS providers mapped with their ID
 	Functions *CAFunctionHandler
+	Limits    Limits `yaml:"limits" `
+}
+type Limits struct {
+	CrtSearchCharacterLimit       int `yaml:"crtSearchCharacterLimit" default:"255"` // current max name length = 255 characters
+	CrtSuffixSearchCharacterLimit int `yaml:"crtSearchCharacterLimit" default:"255"` // current max name length = 255 characters
 }
 
 type ProviderInfo struct {

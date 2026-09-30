@@ -5,6 +5,9 @@ It contains 2 CA *bogus* providers which offer certificates from
 a private CA. You need docker-compose, openssl and yq for this setup
 to work. The setup is solely intended for development and evaluation.
 
+Requirements:
+https://github.com/mikefarah/yq version 4.x
+
 Enter these commands to spin up a dns3ld instance together with mariadb:
 ```
 ./init # generates CAs and passwords. Requires openssl and yq.

@@ -213,7 +213,9 @@ func (s *V1) GetAllCertResources(caID, crtID string, authz authtypes.Authorizati
 
 // if caID and/or crtID is "", infos will not be filtered on that value.
 // Cannot filter for both
-func (s *V1) GetCertificateInfos(caID string, crtID string, authz authtypes.AuthorizationInfo, pginfo *util.PaginationInfo) ([]apiv1.CertInfoWithCA, error) {
+func (s *V1) GetCertificateInfos(caID string,
+	crtID string, authz authtypes.AuthorizationInfo, pginfo *util.PaginationInfo,
+	search, suffix string) ([]apiv1.CertInfoWithCA, error) {
 
 	s.logAction(authz, fmt.Sprintf("GetCertificateInfos %s %s", caID, crtID))
 
@@ -238,7 +240,7 @@ func (s *V1) GetCertificateInfos(caID string, crtID string, authz authtypes.Auth
 	// we can interpret a len(doms) <= 0 now as "permit all"
 	// note that this request just lists public info, no secrets
 
-	r, err := fu.GetCertificateInfos(caID, crtID, doms, pginfo)
+	r, err := fu.GetCertificateInfos(caID, crtID, doms, pginfo, search, suffix)
 	if err != nil {
 		return nil, err
 	}
