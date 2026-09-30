@@ -161,7 +161,6 @@ func getSuffixParamFromValues(urlValues url.Values) (string, error) {
 	return suffix, nil
 }
 
-// ////////////////////////////////////
 func (hdlr *RestV1Handler) HandleCAAnonCert(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
 	vars := mux.Vars(r)
