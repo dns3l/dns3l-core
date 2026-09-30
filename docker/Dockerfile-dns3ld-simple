@@ -15,7 +15,6 @@ RUN apk add --no-cache \
     ca-certificates \
     && \
     adduser --uid 1000 -D dns3ld
-
 COPY --from=build /go/build/dns3ld .
 USER dns3ld
 ENTRYPOINT ["/app/dns3ld"]
