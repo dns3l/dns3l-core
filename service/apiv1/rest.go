@@ -19,8 +19,8 @@ const (
 	searchKey = "search"
 	suffixKey = "suffix"
 
-	allowedCharsInSearchMessage = "only '.' '*' [A-Z] [1-9] allowde in search"
-	allowedCharsInSuffixMessage = "only '.' [A-Z] [1-9] allowed in suffix"
+	allowedCharsInSearchMessage = "only '-' '.' [A-Z] [1-9] '*' allowde in search"
+	allowedCharsInSuffixMessage = "only '-' '.' [A-Z] [1-9] allowed in suffix"
 )
 
 type RestV1Handler struct {
@@ -112,7 +112,8 @@ func validSearchString(s string) bool {
 		if (r >= 'a' && r <= 'z') ||
 			(r >= 'A' && r <= 'Z') ||
 			(r >= '0' && r <= '9') ||
-			r == '.' || r == '*' {
+			r == '.' || r == '*' ||
+			r == '-' {
 			continue
 		} else {
 			return false
@@ -126,7 +127,8 @@ func validSuffixString(s string) bool {
 		if (r >= 'a' && r <= 'z') ||
 			(r >= 'A' && r <= 'Z') ||
 			(r >= '0' && r <= '9') ||
-			r == '.' {
+			r == '.' ||
+			r == '-' {
 			continue
 		} else {
 			return false
