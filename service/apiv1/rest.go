@@ -19,7 +19,7 @@ const (
 	searchKey = "search"
 	suffixKey = "suffix"
 
-	allowedCharsInSearchMessage = "only '-' '.' [A-Z] [1-9] '*' allowde in search"
+	allowedCharsInSearchMessage = "only '-' '.' [A-Z] [1-9] '*' allowed in search"
 	allowedCharsInSuffixMessage = "only '-' '.' [A-Z] [1-9] allowed in suffix"
 )
 
