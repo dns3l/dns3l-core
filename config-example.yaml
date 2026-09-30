@@ -56,6 +56,9 @@ dns: # DNS service providers
 #   type: pdns # PowerDNS AS
 #   ...
 ca: #ACME and none ACME CA
+  limits:
+    CrtSearchCharacterLimit: 128
+    CrtSuffixSearchCharacterLimit: 128
   providers:
     le: #Add least /directory to endpoint URL
       type: acme
