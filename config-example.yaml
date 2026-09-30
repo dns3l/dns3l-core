@@ -57,8 +57,8 @@ dns: # DNS service providers
 #   ...
 ca: #ACME and none ACME CA
   limits:
-    CrtSearchCharacterLimit: 128
-    CrtSuffixSearchCharacterLimit: 128
+    crtSearchCharacterLimit: 128
+    crtSuffixSearchCharacterLimit: 128
   providers:
     le: #Add least /directory to endpoint URL
       type: acme
