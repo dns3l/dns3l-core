@@ -19,4 +19,5 @@ type ServiceV1 interface {
 	GetCertificateInfos(caID string, crtID string, authz authtypes.AuthorizationInfo, pginfo *util.PaginationInfo, search, suffix string) ([]api.CertInfoWithCA, error)
 	GetCertificateInfo(caID string, crtID string, authz authtypes.AuthorizationInfo) (*api.CertInfoWithCA, error)
 	DeleteCertificatesAllCA(crtID string, authz authtypes.AuthorizationInfo) error
+	GetServerStatus() (*api.ServerStatus, error)
 }

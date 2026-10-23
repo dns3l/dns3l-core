@@ -8,3 +8,4 @@
 dist/
 rampup/config.yaml
 rampup/env
+coverage.out

@@ -201,14 +201,21 @@ func (s *DNSProvider) DeleteRecordA(domainName string) error {
 
 }
 
-func getManagingZone(client *golangsdk.ServiceClient, domainName string) (*zones.Zone, error) {
-
+func getZones(client *golangsdk.ServiceClient) ([]zones.Zone, error) {
 	listOpts := zones.ListOpts{}
 	allPages, err := zones.List(client, listOpts).AllPages()
 	if err != nil {
 		return nil, fmt.Errorf("error while listing zones: %v", err)
 	}
 	allZones, err := zones.ExtractZones(allPages)
+	if err != nil {
+		return nil, err
+	}
+	return allZones, nil
+}
+
+func getManagingZone(client *golangsdk.ServiceClient, domainName string) (*zones.Zone, error) {
+	allZones, err := getZones(client)
 	if err != nil {
 		return nil, err
 	}

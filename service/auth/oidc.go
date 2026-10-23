@@ -336,3 +336,32 @@ func GetBearerToken(r *http.Request) (string, error) {
 	return spl[1], nil
 
 }
+
+func (h *OIDCHandler) GetHealth() map[string]util.Health {
+	healths := make(map[string]util.Health)
+
+	if h.AuthnDisabled && h.AuthzDisabled {
+		return healths
+	}
+
+	for issuer, binding := range h.OIDCBindings {
+		var message string
+		healthy, err := util.CheckHealth(
+			util.CheckDNSResolution(issuer),
+			util.CheckTCPConnection(issuer),
+			util.CheckTLSConnection(issuer, binding.HTTPInsecureSkipVerify),
+		)
+		if err != nil {
+			message = err.Error()
+		}
+		bindingHealth := util.Health{
+			Endpoint: issuer,
+			Healthy:  healthy,
+			Message:  message,
+		}
+
+		healths[issuer] = bindingHealth
+	}
+
+	return healths
+}

@@ -1,6 +1,9 @@
 package types
 
-import dnstypes "github.com/dns3l/dns3l-core/dns/types"
+import (
+	dnstypes "github.com/dns3l/dns3l-core/dns/types"
+	"github.com/dns3l/dns3l-core/util"
+)
 
 type CAProviderInfo struct {
 	Name        string
@@ -13,6 +16,8 @@ type CAProviderInfo struct {
 }
 
 type CAProvider interface {
+	util.HealthCheckable
+
 	//triggered after construction form config to init things
 	Init(ctx ProviderConfigurationContext) error
 

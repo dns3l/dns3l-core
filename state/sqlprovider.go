@@ -165,7 +165,6 @@ func (c *SQLDBProviderDefault) TestDBConn() error {
 	if err != nil {
 		return fmt.Errorf("problems while obtaining established database connection: %v", err)
 	}
-	defer util.LogDefer(log, db.Close)
 	err = db.Ping()
 	if err != nil {
 		return fmt.Errorf("problems while pinging database: %v", err)
@@ -173,6 +172,36 @@ func (c *SQLDBProviderDefault) TestDBConn() error {
 	log.Debug("Successfully tested DB connection")
 
 	return nil
+}
+
+func getObfuscatedDBURL(inputDSN string) string {
+	dsn, err := mysql.ParseDSN(inputDSN) //is mysql code, but should work with all DSN-based SQL DBs
+	if err != nil {
+		return inputDSN 
+	}
+	dsn.Passwd = "********"
+	return dsn.FormatDSN()
+}
+
+func (c *SQLDBProviderDefault) GetHealth() util.Health {
+	var message string
+	healthy, err := util.CheckHealth(
+		func() (bool, error) {
+			err := c.TestDBConn()
+			if err != nil {
+				return false, fmt.Errorf("failed to connect to database: %w", err)
+			}
+			return true, nil
+		},
+	)
+	if err != nil {
+		message = err.Error()
+	}
+	return util.Health{
+		Healthy:  healthy,
+		Message:  message,
+		Endpoint: getObfuscatedDBURL(c.URL),
+	}
 }
 
 func (c *SQLDBProviderDefault) DBName(name string) string {

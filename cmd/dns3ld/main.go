@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"time"
 
 	"github.com/dns3l/dns3l-core/context"
 	"github.com/dns3l/dns3l-core/service"
@@ -52,7 +53,9 @@ var rootCmd = &cobra.Command{
 		if err != nil {
 			panic(err)
 		}
-		svc := service.Service{Config: &conf, Socket: socket, NoRenew: !renew, NoBootstrapCert: !bootstrapcert}
+		svc := service.Service{
+			Config: &conf, Socket: socket, NoRenew: !renew, NoBootstrapCert: !bootstrapcert, Status: service.NewCachingStatusProvider(&conf, 30*time.Second),
+		}
 		err = svc.Run()
 		if err != nil {
 			panic(err)

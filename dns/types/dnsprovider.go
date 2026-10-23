@@ -1,9 +1,13 @@
 package types
 
-import "net"
+import (
+	"net"
 
-//Can spawn a new instance of a DNS provider.
-//Provider-specific config is unmarshaled into the builder's implementing struct.
+	"github.com/dns3l/dns3l-core/util"
+)
+
+// Can spawn a new instance of a DNS provider.
+// Provider-specific config is unmarshaled into the builder's implementing struct.
 type DNSProviderBuilder interface {
 	NewInstance() (DNSProvider, error)
 }
@@ -16,6 +20,7 @@ type DNSProviderInfo struct {
 }
 
 type DNSProvider interface {
+	util.HealthCheckable
 	GetInfo() *DNSProviderInfo
 	GetPrecheckConfig() *PrecheckConfig
 	SetRecordAcmeChallenge(domainName string, challenge string) error
