@@ -7,6 +7,7 @@ import (
 	"github.com/dns3l/dns3l-core/common"
 	"github.com/dns3l/dns3l-core/service/auth"
 	"github.com/dns3l/dns3l-core/service/auth/types"
+	"github.com/dns3l/dns3l-core/util"
 )
 
 type AuthStub struct {
@@ -27,6 +28,14 @@ type AuthStubUser struct {
 func (a *AuthStub) Init() error {
 	a.inited = true
 	return nil
+}
+
+func (a *AuthStub) GetHealth() map[string]util.Health {
+	return map[string]util.Health{
+		"authstub": {
+			Healthy: true,
+		},
+	}
 }
 
 func (a *AuthStub) AuthnGetAuthzInfo(r *http.Request) (types.AuthorizationInfo, error) {

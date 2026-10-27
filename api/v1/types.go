@@ -1,3 +1,4 @@
+// Package v1 contains the v1 API types.
 package v1
 
 import "time"
@@ -63,7 +64,7 @@ type CertClaimInfo struct {
 	Wildcard        bool           `json:"wildcard"`
 	SubjectAltNames []string       `json:"san,omitempty" validate:"dive,required,fqdn|fqdnWildcard"`
 	AutoDNS         *AutoDNSInfo   `json:"autodns,omitempty"`
-	Hints           CertClaimHints `json:"hints,omitempty"`
+	Hints           CertClaimHints `json:"hints"`
 }
 
 type CertClaimHints struct {
@@ -106,4 +107,21 @@ type CertInfoWithCA struct {
 type ErrorMsg struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`
+}
+
+type ServerStatus struct {
+	DNS      []HealthInfo `json:"dns"`
+	CA       []HealthInfo `json:"ca"`
+	DB       []HealthInfo `json:"db"`
+	Auth     []HealthInfo `json:"auth"`
+	Resolver []HealthInfo `json:"resolver"`
+	Cached   bool         `json:"cached"`
+	Age      int32        `json:"age"`
+}
+
+type HealthInfo struct {
+	ID       string `json:"id"`
+	Healthy  bool   `json:"healthy"`
+	Endpoint string `json:"endpoint"`
+	Message  string `json:"message"`
 }

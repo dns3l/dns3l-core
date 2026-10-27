@@ -62,6 +62,23 @@ func (p *CAProvider) Init(c types.ProviderConfigurationContext) error {
 
 }
 
+func (p *CAProvider) GetHealth() util.Health {
+	var message string
+	healthy, err := util.CheckHealth(
+		util.CheckDNSResolution(p.C.URL),
+		util.CheckTCPConnection(p.C.URL),
+		util.CheckTLSConnection(p.C.URL, false),
+	)
+	if err != nil {
+		message = err.Error()
+	}
+	return util.Health{
+		Healthy:  healthy,
+		Message:  message,
+		Endpoint: p.C.URL,
+	}
+}
+
 func makeACMEStateManager(c types.ProviderConfigurationContext) (ACMEStateManager, error) {
 	switch sprovinst := c.GetStateMgr().(type) {
 	case *castate.CAStateManagerSQL:

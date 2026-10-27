@@ -80,6 +80,12 @@ func (p *CAProvider) IsEnabled() bool {
 
 }
 
+func (p *CAProvider) GetHealth() util.Health {
+	return util.Health{
+		Healthy: true,
+	}
+}
+
 func (p *CAProvider) PrecheckClaimCertificate(cinfo *types.CertificateClaimInfo) error {
 	return nil
 }

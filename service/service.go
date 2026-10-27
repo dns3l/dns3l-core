@@ -11,6 +11,7 @@ import (
 type Service struct {
 	Config          *Config
 	Socket          string
+	Status          ServerStatusProvider
 	NoRenew         bool
 	NoBootstrapCert bool
 
@@ -21,7 +22,10 @@ type Service struct {
 }
 
 func (s *Service) GetV1() *V1 {
-	return &V1{s}
+	return &V1{
+		Service:      s,
+		ServerStatus: s.Status,
+	}
 }
 
 func (s *Service) Run() error {

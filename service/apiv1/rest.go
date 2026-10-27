@@ -35,6 +35,7 @@ func (hdlr *RestV1Handler) RegisterHandle(r *mux.Router) {
 
 	r.NotFoundHandler = http.HandlerFunc(hdlr.NotFound)
 	r.HandleFunc("/info", hdlr.GetServerInfo)
+	r.HandleFunc("/status", hdlr.GetServerStatus)
 	r.HandleFunc("/dns", hdlr.GetDNSInfo)
 	r.HandleFunc("/dns/rtzn", hdlr.GetDNSRootzones)
 	r.HandleFunc("/ca", hdlr.GetCAs)
@@ -60,6 +61,18 @@ func (hdlr *RestV1Handler) GetServerInfo(w http.ResponseWriter, r *http.Request)
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(200)
 	util.LogIfError(log, json.NewEncoder(w).Encode(hdlr.Service.GetServerInfo()))
+}
+
+func (hdlr *RestV1Handler) GetServerStatus(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Content-Type", "application/json")
+
+	status, err := hdlr.Service.GetServerStatus()
+	if err != nil {
+		httpError(w, r, http.StatusInternalServerError, err.Error())
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	util.LogIfError(log, json.NewEncoder(w).Encode(status))
 }
 
 func (hdlr *RestV1Handler) GetDNSInfo(w http.ResponseWriter, r *http.Request) {

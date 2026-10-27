@@ -28,6 +28,12 @@ func (p *fakeCAProvider) CleanupAfterDeletion(string, *types.CACertInfo) error {
 	return nil
 }
 
+func (p *fakeCAProvider) GetHealth() util.Health {
+	return util.Health{
+		Healthy: true,
+	}
+}
+
 // fakeStateManager / fakeSession provide a state backend in which the requested
 // certificate exists and is deleted without error.
 type fakeStateManager struct{}

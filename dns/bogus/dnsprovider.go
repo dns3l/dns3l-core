@@ -5,6 +5,7 @@ import (
 
 	dnscommon "github.com/dns3l/dns3l-core/dns/common"
 	"github.com/dns3l/dns3l-core/dns/types"
+	"github.com/dns3l/dns3l-core/util"
 	"github.com/sirupsen/logrus"
 )
 
@@ -59,4 +60,10 @@ func (s *DNSProvider) DeleteRecordA(domainName string) error {
 
 	return nil
 
+}
+
+func (s *DNSProvider) GetHealth() util.Health {
+	return util.Health{
+		Healthy: true,
+	}
 }

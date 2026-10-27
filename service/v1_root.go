@@ -9,6 +9,8 @@ import (
 
 type V1 struct {
 	Service *Service
+
+	ServerStatus ServerStatusProvider
 }
 
 func (s *V1) GetServerInfo() *apiv1.ServerInfo {

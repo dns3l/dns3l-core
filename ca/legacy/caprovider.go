@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/dns3l/dns3l-core/ca/types"
+	"github.com/dns3l/dns3l-core/util"
 )
 
 type CAProvider struct {
@@ -36,6 +37,12 @@ func (p *CAProvider) Init(c types.ProviderConfigurationContext) error {
 
 	return nil
 
+}
+
+func (p *CAProvider) GetHealth() util.Health {
+	return util.Health{
+		Healthy: true,
+	}
 }
 
 func (p *CAProvider) PrecheckClaimCertificate(cinfo *types.CertificateClaimInfo) error {
