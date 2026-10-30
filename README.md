@@ -167,9 +167,6 @@ Example `config.yaml`:
 server: https://my-server.com/api/v1
 ad_user: alice@example.com
 ad_password: change-me
-oidc_client_id: dns3l-api
-oidc_client_secret: change-me
-oidc_daemon_client_id: dns3ld
 timeout: 60s
 timeout_claim: 10m
 ```
@@ -208,11 +205,11 @@ For OIDC authentication, provide these values via config, environment or flags:
 - `server`
 - `ad_user`
 - `ad_password`
-- `oidc_client_id`
-- `oidc_client_secret`
 
 `dns3lcli` then requests an ID token with the OIDC password grant and sends it
-as a bearer token to dns3ld.
+as a bearer token to dns3ld. You can optionally provide `oidc_client_id` or
+`oidc_client_secret` if you want to log in via a different OIDC client
+(default `dns3l-api-pub` without a secret).
 
 If you already have a token, pass it directly:
 

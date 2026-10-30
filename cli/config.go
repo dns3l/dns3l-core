@@ -249,12 +249,6 @@ func missingAuthFields(cfg *RuntimeConfig) []string {
 	if strings.TrimSpace(cfg.ADPassword) == "" {
 		missing = append(missing, "ad_password")
 	}
-	if strings.TrimSpace(cfg.OIDCClientID) == "" {
-		missing = append(missing, "oidc_client_id")
-	}
-	if strings.TrimSpace(cfg.OIDCClientSecret) == "" {
-		missing = append(missing, "oidc_client_secret")
-	}
 	return missing
 }
 
@@ -264,16 +258,12 @@ func (cfg *RuntimeConfig) hasDirectAuth() bool {
 
 func (cfg *RuntimeConfig) hasCompleteOIDCAuth() bool {
 	return strings.TrimSpace(cfg.ADUser) != "" &&
-		strings.TrimSpace(cfg.ADPassword) != "" &&
-		strings.TrimSpace(cfg.OIDCClientID) != "" &&
-		strings.TrimSpace(cfg.OIDCClientSecret) != ""
+		strings.TrimSpace(cfg.ADPassword) != ""
 }
 
 func (cfg *RuntimeConfig) hasPartialOIDCAuth() bool {
 	return strings.TrimSpace(cfg.ADUser) != "" ||
-		strings.TrimSpace(cfg.ADPassword) != "" ||
-		strings.TrimSpace(cfg.OIDCClientID) != "" ||
-		strings.TrimSpace(cfg.OIDCClientSecret) != ""
+		strings.TrimSpace(cfg.ADPassword) != ""
 }
 
 func normalizeServer(raw string) (string, string, error) {
