@@ -259,6 +259,8 @@ func (f *CommandFactory) newCRTListCommand() *cobra.Command {
 	var caID string
 	var limit uint64
 	var offset uint64
+	var search string
+	var suffix string
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List certificates",
@@ -282,6 +284,12 @@ func (f *CommandFactory) newCRTListCommand() *cobra.Command {
 				if offset > 0 {
 					query.Add("offset", strconv.FormatUint(offset, 10))
 				}
+				if search != "" {
+					query.Add("search", search)
+				}
+				if suffix != "" {
+					query.Add("suffix", suffix)
+				}
 				return f.runJSONCommand(cmd, cfg, http.MethodGet, path, query, nil, func(resp *Response) error {
 					certs, err := DecodeJSON[[]apiv1.CertInfoWithCA](resp.Body)
 					if err != nil {
@@ -295,6 +303,8 @@ func (f *CommandFactory) newCRTListCommand() *cobra.Command {
 	cmd.Flags().StringVar(&caID, "ca", "", "limit to a CA ID")
 	cmd.Flags().Uint64Var(&limit, "limit", 0, "maximum number of entries to list (0 means infinite)")
 	cmd.Flags().Uint64Var(&offset, "offset", 0, "number of matching items to skip")
+	cmd.Flags().StringVar(&search, "search", "", "search for certificates")
+	cmd.Flags().StringVar(&suffix, "suffix", "", "filter certificates by suffix")
 	return cmd
 }
 
