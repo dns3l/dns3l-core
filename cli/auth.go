@@ -10,6 +10,10 @@ import (
 	"strings"
 )
 
+const (
+	DefaultOIDCClientID = "dns3l-api-pub"
+)
+
 type TokenFetcher struct {
 	Client *http.Client
 }
@@ -20,6 +24,9 @@ func (f *TokenFetcher) Fetch(ctx context.Context, cfg *RuntimeConfig) (string, e
 	form.Set("scope", fmt.Sprintf("openid profile email groups offline_access audience:server:client_id:%s", cfg.OIDCDaemonClientID))
 	form.Set("username", cfg.ADUser)
 	form.Set("password", cfg.ADPassword)
+	if cfg.OIDCClientID == "" {
+		cfg.OIDCClientID = DefaultOIDCClientID
+	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, cfg.AuthURL, strings.NewReader(form.Encode()))
 	if err != nil {
