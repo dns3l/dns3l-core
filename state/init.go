@@ -139,7 +139,7 @@ func CreateSQLTables(dbProv SQLDBProvider, createdb bool) error {
 	if dbProv.GetType() == "mysql" {
 		err = createWithMySQL(db, dbProv, createdb)
 		if err != nil {
-			return err
+			return fmt.Errorf("could not create or update sql database: %w", err)
 		}
 	} else {
 		return fmt.Errorf(

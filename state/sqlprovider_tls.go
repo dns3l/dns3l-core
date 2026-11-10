@@ -20,6 +20,7 @@ type SQLDBTLSConfig struct {
 	MinVersion         string `yaml:"minVersion"`
 	TrustedChainPEM    string `yaml:"trustedChainPEM"`
 	TrustedChainFile   string `yaml:"trustedChainFile"`
+	ServerName         string `yaml:"serverName"`
 }
 
 func (c *SQLDBProviderDefault) initTLSConfig() error {
@@ -99,6 +100,7 @@ func (c *SQLDBProviderDefault) getTLSConfig() (*tls.Config, error) {
 	tlsConfig := &tls.Config{
 		InsecureSkipVerify: c.TLS.InsecureSkipVerify,
 		MinVersion:         minVersion,
+		ServerName:         c.TLS.ServerName,
 	}
 
 	if !c.TLS.InsecureSkipVerify || len(trustedChainPEM) > 0 {

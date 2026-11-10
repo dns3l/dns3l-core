@@ -178,6 +178,7 @@ db:
   #    ...
   #    -----END CERTIFICATE-----
   #  #trustedChainFile: /etc/dns3l/db-trust-chain.pem
+  #  serverName: my.valid.dns # if empty, hostname in the DSN string is checked against.
 
   # This prefix is added to every table created/used
   dbprefix: dns3l
