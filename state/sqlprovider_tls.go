@@ -11,16 +11,21 @@ import (
 	"github.com/go-sql-driver/mysql"
 )
 
+const (
+	TlsCustomConfigName = "dns3ld-db-custom"
+)
+
+type SQLDBTLSConfig struct {
+	InsecureSkipVerify bool   `yaml:"insecureSkipVerify"`
+	MinVersion         string `yaml:"minVersion"`
+	TrustedChainPEM    string `yaml:"trustedChainPEM"`
+	TrustedChainFile   string `yaml:"trustedChainFile"`
+}
+
 func (c *SQLDBProviderDefault) initTLSConfig() error {
 	tlsConfig, err := c.getTLSConfig()
 	if err != nil {
 		return err
-	}
-
-	cfgName := strings.TrimSpace(c.TLS.Name)
-	if cfgName == "" {
-		// assume no TLS configured
-		return nil
 	}
 
 	if tlsConfig == nil {
@@ -28,9 +33,9 @@ func (c *SQLDBProviderDefault) initTLSConfig() error {
 		return nil
 	}
 	if c.Type == "mysql" {
-		mysql.DeregisterTLSConfig(cfgName)
-		if err := mysql.RegisterTLSConfig(cfgName, tlsConfig); err != nil {
-			return fmt.Errorf("failed to register SQL DB TLS config '%s': %w", cfgName, err)
+		mysql.DeregisterTLSConfig(TlsCustomConfigName)
+		if err := mysql.RegisterTLSConfig(TlsCustomConfigName, tlsConfig); err != nil {
+			return fmt.Errorf("failed to register custom SQL DB TLS config: %w", err)
 		}
 	} else {
 		return fmt.Errorf("TLS config given, but unsupported DB type: %s", c.Type)

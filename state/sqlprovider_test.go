@@ -92,12 +92,10 @@ func TestGetTrustedChainPEMFromFile(t *testing.T) {
 }
 
 func TestInitMySQLTLSConfig(t *testing.T) {
-	const tlsName = "dns3ltestcfg"
 	p := &SQLDBProviderDefault{
 		Type: "mysql",
-		URL:  "user:password@tcp(127.0.0.1:3306)/dns3ld?parseTime=true&tls=" + tlsName,
+		URL:  "user:password@tcp(127.0.0.1:3306)/dns3ld?parseTime=true&tls=dns3ld-db-custom",
 		TLS: &SQLDBTLSConfig{
-			Name:            tlsName,
 			MinVersion:      "1.2",
 			TrustedChainPEM: testTLSRootPEM,
 		},
@@ -108,13 +106,13 @@ func TestInitMySQLTLSConfig(t *testing.T) {
 		t.Fatalf("initMySQLTLSConfig() returned error: %v", err)
 	}
 	t.Cleanup(func() {
-		mysql.DeregisterTLSConfig(tlsName)
+		mysql.DeregisterTLSConfig(TlsCustomConfigName)
 	})
 
 	dsn, err := mysql.ParseDSN(p.URL)
 	if err == nil {
-		if dsn.TLSConfig != tlsName {
-			t.Fatalf("expected DSN tls config %q, got %q", tlsName, dsn.TLSConfig)
+		if dsn.TLSConfig != TlsCustomConfigName {
+			t.Fatalf("expected DSN tls config %q, got %q", TlsCustomConfigName, dsn.TLSConfig)
 		}
 		return
 	}
@@ -122,12 +120,10 @@ func TestInitMySQLTLSConfig(t *testing.T) {
 }
 
 func TestInitMySQLTLSConfigSysCert(t *testing.T) {
-	const tlsName = "dns3ltestcfg"
 	p := &SQLDBProviderDefault{
 		Type: "mysql",
-		URL:  "user:password@tcp(127.0.0.1:3306)/dns3ld?parseTime=true&tls=" + tlsName,
+		URL:  "user:password@tcp(127.0.0.1:3306)/dns3ld?parseTime=true&tls=dns3ld-db-custom",
 		TLS: &SQLDBTLSConfig{
-			Name:            tlsName,
 			MinVersion:      "1.2",
 			TrustedChainPEM: "",
 		},
@@ -138,13 +134,13 @@ func TestInitMySQLTLSConfigSysCert(t *testing.T) {
 		t.Fatalf("initMySQLTLSConfig() returned error: %v", err)
 	}
 	t.Cleanup(func() {
-		mysql.DeregisterTLSConfig(tlsName)
+		mysql.DeregisterTLSConfig(TlsCustomConfigName)
 	})
 
 	dsn, err := mysql.ParseDSN(p.URL)
 	if err == nil {
-		if dsn.TLSConfig != tlsName {
-			t.Fatalf("expected DSN tls config %q, got %q", tlsName, dsn.TLSConfig)
+		if dsn.TLSConfig != TlsCustomConfigName {
+			t.Fatalf("expected DSN tls config %q, got %q", TlsCustomConfigName, dsn.TLSConfig)
 		}
 		return
 	}
@@ -152,12 +148,10 @@ func TestInitMySQLTLSConfigSysCert(t *testing.T) {
 }
 
 func TestInitMySQLTLSConfigWrongName(t *testing.T) {
-	const tlsName = "dns3ltestcfg"
 	p := &SQLDBProviderDefault{
 		Type: "mysql",
 		URL:  "user:password@tcp(127.0.0.1:3306)/dns3ld?parseTime=true&tls=wrongname",
 		TLS: &SQLDBTLSConfig{
-			Name:            tlsName,
 			MinVersion:      "1.2",
 			TrustedChainPEM: testTLSRootPEM,
 		},
@@ -168,7 +162,7 @@ func TestInitMySQLTLSConfigWrongName(t *testing.T) {
 		t.Fatalf("initMySQLTLSConfig() returned error: %v", err)
 	}
 	t.Cleanup(func() {
-		mysql.DeregisterTLSConfig(tlsName)
+		mysql.DeregisterTLSConfig(TlsCustomConfigName)
 	})
 
 	_, err = mysql.ParseDSN(p.URL)
@@ -182,7 +176,6 @@ func TestInitMySQLTLSTrue(t *testing.T) {
 		Type: "mysql",
 		URL:  "user:password@tcp(127.0.0.1:3306)/dns3ld?parseTime=true&tls=true",
 		TLS: &SQLDBTLSConfig{
-			Name:            tlsName,
 			MinVersion:      "1.2",
 			TrustedChainPEM: testTLSRootPEM,
 		},
@@ -206,7 +199,6 @@ func TestInitMySQLTLSPreferred(t *testing.T) {
 		Type: "mysql",
 		URL:  "user:password@tcp(127.0.0.1:3306)/dns3ld?parseTime=true&tls=preferred",
 		TLS: &SQLDBTLSConfig{
-			Name:            tlsName,
 			MinVersion:      "1.2",
 			TrustedChainPEM: testTLSRootPEM,
 		},

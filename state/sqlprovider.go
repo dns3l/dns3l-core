@@ -23,14 +23,6 @@ type SQLDBProvider interface {
 	CreateDB() error
 }
 
-type SQLDBTLSConfig struct {
-	Name               string `yaml:"name"`
-	InsecureSkipVerify bool   `yaml:"insecureSkipVerify"`
-	MinVersion         string `yaml:"minVersion"`
-	TrustedChainPEM    string `yaml:"trustedChainPEM"`
-	TrustedChainFile   string `yaml:"trustedChainFile"`
-}
-
 // DBProviderDefault is the default database provider. Type and URL must be given,
 // which are needed to call sql.Open()
 type SQLDBProviderDefault struct {
@@ -38,7 +30,7 @@ type SQLDBProviderDefault struct {
 	URL         string `yaml:"url" validate:"required"`
 	PreExecFunc func(*sql.DB) error
 	DBPrefix    string          `yaml:"dbprefix" validate:"alphanumUnderscoreDashDot"`
-	TLS         *SQLDBTLSConfig `yaml:"tls"`
+	TLS         *SQLDBTLSConfig `yaml:"tls,omitempty"`
 
 	db *sql.DB
 }
