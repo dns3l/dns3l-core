@@ -29,7 +29,8 @@ type SQLDBProviderDefault struct {
 	Type        string `yaml:"type" validate:"required,alphanumUnderscoreDash"`
 	URL         string `yaml:"url" validate:"required"`
 	PreExecFunc func(*sql.DB) error
-	DBPrefix    string `yaml:"dbprefix" validate:"alphanumUnderscoreDashDot"`
+	DBPrefix    string          `yaml:"dbprefix" validate:"alphanumUnderscoreDashDot"`
+	TLS         *SQLDBTLSConfig `yaml:"tls,omitempty"`
 
 	db *sql.DB
 }
@@ -39,6 +40,11 @@ func (c *SQLDBProviderDefault) Init() error {
 	if c.db != nil {
 		log.Warn("Unnecessary init, DB already inited.")
 		return nil
+	}
+
+	err := c.initTLSConfig()
+	if err != nil {
+		return err
 	}
 
 	db, err := sql.Open(c.Type, c.URL)
@@ -99,6 +105,7 @@ func (c *SQLDBProviderDefault) GetAnonDBConn() (*sql.DB, string, error) {
 		URL:         anondsn,
 		PreExecFunc: c.PreExecFunc,
 		DBPrefix:    c.DBPrefix,
+		TLS:         c.TLS,
 	}
 
 	err = dbprov.Init()
@@ -177,7 +184,7 @@ func (c *SQLDBProviderDefault) TestDBConn() error {
 func getObfuscatedDBURL(inputDSN string) string {
 	dsn, err := mysql.ParseDSN(inputDSN) //is mysql code, but should work with all DSN-based SQL DBs
 	if err != nil {
-		return inputDSN 
+		return inputDSN
 	}
 	dsn.Passwd = "********"
 	return dsn.FormatDSN()
