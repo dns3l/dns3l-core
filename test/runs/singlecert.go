@@ -4,13 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 
-	api "github.com/dns3l/dns3l-core/api/v1"
 	"github.com/dns3l/dns3l-core/service"
 	"github.com/dns3l/dns3l-core/state"
 	"github.com/dns3l/dns3l-core/test/apiv1"
 	testauth "github.com/dns3l/dns3l-core/test/auth"
 	"github.com/dns3l/dns3l-core/test/comp"
 	testhttp "github.com/dns3l/dns3l-core/test/http"
+	api "github.com/dns3l/dns3l-go/api"
 )
 
 func (t *TestRunner) RunSingleEntry() {

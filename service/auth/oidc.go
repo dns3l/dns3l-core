@@ -15,6 +15,7 @@ import (
 	"github.com/dns3l/dns3l-core/service/auth/types"
 	"github.com/dns3l/dns3l-core/util"
 	myvalidation "github.com/dns3l/dns3l-core/util/validation"
+	"github.com/dns3l/dns3l-go/api"
 	"github.com/go-playground/validator/v10"
 )
 
@@ -119,16 +120,16 @@ func (h *OIDCHandler) Init() error {
 
 }
 
-func (h *OIDCHandler) GetServerInfoAuth() ServerInfoAuth {
+func (h *OIDCHandler) GetServerInfoAuth() *api.ServerInfoAuth {
 
 	delim := h.GroupsDomainDelimiter
 	if delim == "" {
 		delim = "." //. is default
 	}
 
-	return OIDCServerInfoAuth{
-		GroupsPrefix:          h.GroupsPrefix,
-		GroupsDomainDelimiter: delim,
+	return &api.ServerInfoAuth{
+		GroupsPrefix:      h.GroupsPrefix,
+		GroupsDomainDelim: delim,
 	}
 }
 

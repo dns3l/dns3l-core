@@ -1,10 +1,10 @@
 package service
 
 import (
-	apiv1 "github.com/dns3l/dns3l-core/api/v1"
 	"github.com/dns3l/dns3l-core/context"
 	srvapiv1 "github.com/dns3l/dns3l-core/service/apiv1"
 	authtypes "github.com/dns3l/dns3l-core/service/auth/types"
+	apiv1 "github.com/dns3l/dns3l-go/api"
 )
 
 type V1 struct {

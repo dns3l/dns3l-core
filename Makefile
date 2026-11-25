@@ -14,7 +14,7 @@ GO_CLI_LDFLAGS := "\
 GOENV := GOARCH=$(GOARCH) GOOS=linux
 GOCLIENV := CGO_ENABLED=0 GOARCH=$(GOARCH) GOOS=linux
 GODIRS := ./ca/... ./cmd/... ./context/...  ./dns/... ./service/... ./util/... ./renew/... ./cli/...
-DOCKER_COMPTEST := $(DOCKER) run -v $(shell pwd):/workdir -t golang:1.24-alpine /workdir/docker/run-in-docker golang-alpine
+DOCKER_COMPTEST := $(DOCKER) run -v $(shell pwd):/workdir -t golang:1.26-alpine /workdir/docker/run-in-docker golang-alpine
 
 all: service
 

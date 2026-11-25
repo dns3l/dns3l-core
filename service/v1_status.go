@@ -4,9 +4,9 @@ import (
 	"sync"
 	"time"
 
-	apiv1 "github.com/dns3l/dns3l-core/api/v1"
 	"github.com/dns3l/dns3l-core/dns"
 	"github.com/dns3l/dns3l-core/util"
+	apiv1 "github.com/dns3l/dns3l-go/api"
 )
 
 func (s *V1) GetServerStatus() (*apiv1.ServerStatus, error) {

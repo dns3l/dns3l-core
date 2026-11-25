@@ -12,7 +12,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	apiv1 "github.com/dns3l/dns3l-core/api/v1"
+	apiv1 "github.com/dns3l/dns3l-go/api"
 )
 
 var pemResourceOrder = []string{"cert", "key", "chain", "root", "rootchain", "fullchain"}
@@ -121,7 +121,7 @@ func CertificateMatchesKey(certPEM, keyPEM []byte) (bool, error) {
 		return ok && pub.N.Cmp(priv.N) == 0 && pub.E == priv.E, nil
 	case *ecdsa.PrivateKey:
 		pub, ok := cert.PublicKey.(*ecdsa.PublicKey)
-		return ok && pub.X.Cmp(priv.X) == 0 && pub.Y.Cmp(priv.Y) == 0, nil
+		return ok && pub.Equal(&priv.PublicKey), nil
 	case ed25519.PrivateKey:
 		pub, ok := cert.PublicKey.(ed25519.PublicKey)
 		return ok && string(pub) == string(priv.Public().(ed25519.PublicKey)), nil

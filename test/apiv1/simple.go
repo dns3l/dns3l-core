@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	api "github.com/dns3l/dns3l-core/api/v1"
 	"github.com/dns3l/dns3l-core/service"
 	httptest "github.com/dns3l/dns3l-core/test/http"
+	api "github.com/dns3l/dns3l-go/api"
 )
 
 func CreateKey(srv *service.Service, caid string, user string, name string, sans []string) *httptest.HttpResult {

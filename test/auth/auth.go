@@ -5,9 +5,9 @@ import (
 	"net/http"
 
 	"github.com/dns3l/dns3l-core/common"
-	"github.com/dns3l/dns3l-core/service/auth"
 	"github.com/dns3l/dns3l-core/service/auth/types"
 	"github.com/dns3l/dns3l-core/util"
+	"github.com/dns3l/dns3l-go/api"
 )
 
 type AuthStub struct {
@@ -63,10 +63,9 @@ func (a *AuthStub) AuthnGetAuthzInfo(r *http.Request) (types.AuthorizationInfo, 
 
 }
 
-func (a *AuthStub) GetServerInfoAuth() auth.ServerInfoAuth {
-	return &struct {
-		Foo string `yaml:"foo"`
-	}{
-		Foo: "Test",
+func (a *AuthStub) GetServerInfoAuth() *api.ServerInfoAuth {
+	return &api.ServerInfoAuth{
+		GroupsPrefix:      "Foo",
+		GroupsDomainDelim: "Bar",
 	}
 }

@@ -6,13 +6,14 @@ import (
 	"github.com/dns3l/dns3l-core/service/auth/token"
 	"github.com/dns3l/dns3l-core/service/auth/types"
 	"github.com/dns3l/dns3l-core/util"
+	"github.com/dns3l/dns3l-go/api"
 )
 
 type RESTAPIAuthProvider interface {
 	util.MultiHealthCheckable
 	Init() error
 	AuthnGetAuthzInfo(r *http.Request) (types.AuthorizationInfo, error)
-	GetServerInfoAuth() ServerInfoAuth
+	GetServerInfoAuth() *api.ServerInfoAuth
 }
 
 type AuthConfig struct {
@@ -47,8 +48,6 @@ func (c *AuthConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	return unmarshal(c.Provider)
 }
 
-type ServerInfoAuth interface{}
-
 func (c *AuthConfig) Init() error {
 	return c.Provider.Init()
 }
@@ -68,6 +67,6 @@ func (c *AuthConfig) AuthnGetAuthzInfo(r *http.Request) (types.AuthorizationInfo
 	return c.Provider.AuthnGetAuthzInfo(r)
 }
 
-func (c *AuthConfig) GetServerInfoAuth() ServerInfoAuth {
+func (c *AuthConfig) GetServerInfoAuth() *api.ServerInfoAuth {
 	return c.Provider.GetServerInfoAuth()
 }

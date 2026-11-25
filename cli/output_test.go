@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	apiv1 "github.com/dns3l/dns3l-core/api/v1"
+	apiv1 "github.com/dns3l/dns3l-go/api"
 )
 
 func TestTableOutputAlignsAfterANSIColor(t *testing.T) {
