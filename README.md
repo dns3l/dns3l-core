@@ -10,7 +10,7 @@ Core parts of dns3l written in Go:
 - CLI client for DNS3L
 - API/Libraries for DNS3L functionality
 
-**Requires go >= 1.24**
+**Requires go >= 1.26**
 
 # dns3ld (backend daemon)
 

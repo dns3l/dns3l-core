@@ -1,9 +1,9 @@
 package apiv1
 
 import (
-	api "github.com/dns3l/dns3l-core/api/v1"
 	authtypes "github.com/dns3l/dns3l-core/service/auth/types"
 	"github.com/dns3l/dns3l-core/util"
+	"github.com/dns3l/dns3l-go/api"
 )
 
 type ServiceV1 interface {

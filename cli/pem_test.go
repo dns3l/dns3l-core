@@ -2,6 +2,8 @@ package cli
 
 import (
 	"bytes"
+	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
@@ -27,6 +29,7 @@ func TestCertificateMatchesKey(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	template := &x509.Certificate{
 		SerialNumber: big.NewInt(1),
 		Subject:      pkix.Name{CommonName: "example.com"},
@@ -53,5 +56,36 @@ func TestCertificateMatchesKey(t *testing.T) {
 	}
 	if !ok {
 		t.Fatal("expected certificate to match key")
+	}
+}
+
+func TestCertificateMatchesECDSAKey(t *testing.T) {
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	otherKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	template := &x509.Certificate{SerialNumber: big.NewInt(1)}
+	der, err := x509.CreateCertificate(rand.Reader, template, template, &key.PublicKey, key)
+	if err != nil {
+		t.Fatal(err)
+	}
+	certPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der})
+	for _, tc := range []struct {
+		key  *ecdsa.PrivateKey
+		want bool
+	}{{key, true}, {otherKey, false}} {
+		keyDER, err := x509.MarshalECPrivateKey(tc.key)
+		if err != nil {
+			t.Fatal(err)
+		}
+		keyPEM := pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: keyDER})
+		got, err := CertificateMatchesKey(certPEM, keyPEM)
+		if err != nil || got != tc.want {
+			t.Fatalf("CertificateMatchesKey() = %v, %v; want %v, nil", got, err, tc.want)
+		}
 	}
 }

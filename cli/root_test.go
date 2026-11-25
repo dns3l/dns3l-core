@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	apiv1 "github.com/dns3l/dns3l-core/api/v1"
 	appctx "github.com/dns3l/dns3l-core/context"
+	apiv1 "github.com/dns3l/dns3l-go/api"
 	"github.com/spf13/cobra"
 )
 

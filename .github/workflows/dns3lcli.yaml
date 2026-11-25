@@ -16,7 +16,7 @@ jobs:
       - name: Set up
         uses: actions/setup-go@v5
         with:
-          go-version: "1.24"
+          go-version: "1.26"
 
       - name: Cache
         uses: actions/cache@v4
@@ -40,7 +40,7 @@ jobs:
       - name: Set up
         uses: actions/setup-go@v5
         with:
-          go-version: "1.24"
+          go-version: "1.26"
 
       - name: Read dns3lcli version
         run: |

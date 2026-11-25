@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	apiv1 "github.com/dns3l/dns3l-core/api/v1"
 	"github.com/dns3l/dns3l-core/ca/types"
 	"github.com/dns3l/dns3l-core/common"
 	"github.com/dns3l/dns3l-core/util"
+	apiv1 "github.com/dns3l/dns3l-go/api"
 	"github.com/sirupsen/logrus"
 
 	authtypes "github.com/dns3l/dns3l-core/service/auth/types"

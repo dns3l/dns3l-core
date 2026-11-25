@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"net/url"
 
-	api "github.com/dns3l/dns3l-core/api/v1"
 	"github.com/dns3l/dns3l-core/common"
 	"github.com/dns3l/dns3l-core/service/auth"
 	"github.com/dns3l/dns3l-core/util"
+	api "github.com/dns3l/dns3l-go/api"
 	"github.com/gorilla/mux"
 )
 

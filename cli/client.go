@@ -10,7 +10,7 @@ import (
 	"net/url"
 	"strings"
 
-	apiv1 "github.com/dns3l/dns3l-core/api/v1"
+	apiv1 "github.com/dns3l/dns3l-go/api"
 	log "github.com/sirupsen/logrus"
 )
 
